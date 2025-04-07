@@ -237,18 +237,19 @@ const WelcomingScreen = () => {
             }}
           >
             <Animated.View entering={FadeInUp.delay(1300).duration(800)}>
-              <Link asChild href="/auth/signup">
-                <AuthButtons
-                  backgroundColor="rgba(255, 255, 255, 0.5)"
-                  title="Create Account"
-                />
-              </Link>
+              <AuthButtons
+                backgroundColor="rgba(255, 255, 255, 0.5)"
+                title="Create Account"
+                navigateTo="/auth/signup"
+              />
             </Animated.View>
 
             <Animated.View entering={FadeInUp.delay(1500).duration(800)}>
-              <Link asChild href="/auth/login">
-                <AuthButtons backgroundColor="" title="Login" />
-              </Link>
+              <AuthButtons
+                backgroundColor=""
+                title="Login"
+                navigateTo="/auth/login"
+              />
             </Animated.View>
           </View>
         </Stagger>
