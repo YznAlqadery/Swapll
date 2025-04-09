@@ -1,11 +1,4 @@
-import {
-  View,
-  Image,
-  Dimensions,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-} from "react-native";
+import { View, Image, Dimensions, StyleSheet, Text } from "react-native";
 import { Marquee } from "@animatereactnative/marquee";
 import { Stagger } from "@animatereactnative/stagger";
 import Animated, {
@@ -21,17 +14,17 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { useState, useEffect } from "react";
-import { Link, useNavigation } from "expo-router";
-import AuthButtons from "./AuthButtons";
+import { useNavigation } from "expo-router";
+import AuthButtons from "./AuthButton";
 
 const images = [
-  "https://images.unsplash.com/photo-1600880292203-757bb62b4baf", // Modern marketplace
-  "https://images.unsplash.com/photo-1522202176988-66273c2fd55f", // People collaborating
-  "https://images.unsplash.com/photo-1542744173-8e7e53415bb0", // Business handshake
-  "https://images.unsplash.com/photo-1517245386807-bb43f82c33c4", // Creative workspace
-  "https://images.unsplash.com/photo-1517048676732-d65bc937f952", // Team meeting
-  "https://images.unsplash.com/photo-1556761175-b413da4baf72", // People exchanging ideas
-  "https://images.unsplash.com/photo-1556761175-4b46a572b786", // Collaborative environment
+  "https://images.unsplash.com/photo-1633613286991-611fe299c4be?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", // Cartoon exchange
+  "https://images.unsplash.com/photo-1580130732478-4e339fb6836f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80", // Cartoon collaboration
+  "https://images.unsplash.com/photo-1607457561901-e6ec3a6d16cf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80", // Cartoon handshake
+  "https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1488&q=80", // Cartoon community
+  "https://images.unsplash.com/photo-1634128221889-82ed6efebfc3?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", // Cartoon sharing
+  "https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1374&q=80", // Cartoon marketplace
+  "https://images.unsplash.com/photo-1633613286848-e6f43bbafb8d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", // Cartoon teamwork
 ];
 
 // Add quality and size parameters to optimize image loading
@@ -98,7 +91,6 @@ const WelcomingScreen = () => {
   const offset = useSharedValue(0); // Shared value for offset
   const [activeIndex, setActiveIndex] = useState(0); // State for active index
   const [imagesLoaded, setImagesLoaded] = useState(false);
-  const navigation = useNavigation();
 
   // Preload images for smoother transitions
   useEffect(() => {
@@ -240,7 +232,7 @@ const WelcomingScreen = () => {
               <AuthButtons
                 backgroundColor="rgba(255, 255, 255, 0.5)"
                 title="Create Account"
-                navigateTo="/auth/signup"
+                navigateTo="Signup"
               />
             </Animated.View>
 
@@ -248,7 +240,7 @@ const WelcomingScreen = () => {
               <AuthButtons
                 backgroundColor=""
                 title="Login"
-                navigateTo="/auth/login"
+                navigateTo="Login"
               />
             </Animated.View>
           </View>
