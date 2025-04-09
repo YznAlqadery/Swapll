@@ -17,13 +17,13 @@ import { useState, useEffect } from "react";
 import AuthButtons from "./AuthButton";
 
 const images = [
-  "https://images.unsplash.com/photo-1582213782179-e0d53f98f2ca?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", // Community sharing
-  "https://images.unsplash.com/photo-1559027615-cd4628902d4a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", // Skill exchange
-  "https://images.unsplash.com/photo-1577962917302-cd874c4e31d2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", // Community support
-  "https://images.unsplash.com/photo-1600880292203-757bb62b4baf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", // Service exchange
-  "https://images.unsplash.com/photo-1517292987719-0369a794ec0f?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", // Item sharing
-  //"https://images.unsplash.com/photo-1559024040-975406394e5e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", // Community garden
-  "https://images.unsplash.com/photo-1531498860502-7c67cf02f657?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1470&q=80", // Knowledge sharing
+  "https://thumbs.dreamstime.com/b/horizontal-banner-smiling-young-men-women-volunteering-doing-volunteer-work-drawn-green-contour-lines-white-117142814.jpg",
+  "https://previews.123rf.com/images/bsd555/bsd5552102/bsd555210204218/164573412-lively-discussion-rgb-color-icon-debate-disputation-work-conversation-reaching-decisions-process.jpg",
+  "https://res.cloudinary.com/people-matters/image/upload/q_auto,f_auto/v1696823865/1696823864.jpg",
+  "https://img.freepik.com/premium-vector/flat-cartoon-people-talking-discussion-group-vector_101884-187.jpg",
+  "https://img.freepik.com/premium-vector/students-group_7388-165.jpg",
+  "https://thumbs.dreamstime.com/b/community-work-day-flat-vector-illustration-volunteers-activists-isolated-cartoon-characters-white-background-young-people-179500663.jpg",
+  "https://img.freepik.com/premium-vector/group-friends-study-together-using-shared-aibased-study-guide-which-adapts-each_216520-76551.jpg",
 ];
 
 // Add quality and size parameters to optimize image loading

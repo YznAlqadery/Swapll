@@ -210,7 +210,7 @@ const SignUp = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#FFF8E1",
+    backgroundColor: "#F0F7F7",
     paddingTop: Platform.OS === "android" ? 25 : 0,
   },
   imageContainer: {
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
     padding: 13,
   },
   signUpText: {
-    color: "#FFF8E1",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -288,7 +288,7 @@ const styles = StyleSheet.create({
     padding: 5,
   },
   datePickerContainer: {
-    backgroundColor: "#FFF8E1",
+    backgroundColor: "#F0F7F7",
     borderRadius: 10,
     padding: 10,
     marginVertical: 10,
