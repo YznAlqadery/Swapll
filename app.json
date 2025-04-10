@@ -33,10 +33,11 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-screen.png",
+          "image": "./assets/images/swapll-logo.png",
+          "imageResizeMode": "contain",
+          "backgroundColor": "#F0F7F7",
           "imageWidth": 200,
-          "resizeMode": "contain",
-          "backgroundColor": "#000"
+          "imageHeight": 200
         }
       ]
     ],

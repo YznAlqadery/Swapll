@@ -89,10 +89,11 @@ const Login = () => {
                   </Text>
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.loginBtn}>
-                  <Text style={styles.loginText}>Login</Text>
-                </TouchableOpacity>
-
+                <Link href="/(tabs)">
+                  <TouchableOpacity style={styles.loginBtn}>
+                    <Text style={styles.loginText}>Login</Text>
+                  </TouchableOpacity>
+                </Link>
                 <View style={styles.signupContainer}>
                   <Text style={styles.accountText}>
                     Don't have an account?{" "}

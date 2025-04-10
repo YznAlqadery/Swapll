@@ -8,23 +8,20 @@ import {
   Platform,
   TextInput,
   KeyboardAvoidingView,
+  ImageBackground,
 } from "react-native";
 import React, { useState } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { FontAwesome } from "@expo/vector-icons";
 import { Link } from "expo-router";
-import DateTimePicker from "@react-native-community/datetimepicker";
+
 import {
-  Gesture,
   GestureHandlerRootView,
   ScrollView,
 } from "react-native-gesture-handler";
 
 const SignUp = () => {
   const [image, setImage] = useState<string | null>(null);
-  const [date, setDate] = useState(new Date());
-  const [showDatePicker, setShowDatePicker] = useState(false);
-  const [dateText, setDateText] = useState("");
 
   // Image picker function for selecting an image on your device
   const selectImage = async () => {
@@ -41,21 +38,6 @@ const SignUp = () => {
     }
   };
 
-  // Date picker function for selecting a date
-
-  const handleDateChange = (event: any, selectedDate?: Date) => {
-    const currentDate = selectedDate || new Date();
-
-    setShowDatePicker(Platform.OS === "ios");
-    setDate(currentDate);
-
-    const formattedDate = currentDate.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-    setDateText(formattedDate);
-  };
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
@@ -104,9 +86,10 @@ const SignUp = () => {
               >
                 <TextInput
                   style={{ ...styles.input, width: "100%" }}
-                  placeholder="Email/Username"
+                  placeholder="Email"
                   placeholderTextColor={"#000"}
                 />
+
                 <View
                   style={{
                     flexDirection: "row",
@@ -126,35 +109,12 @@ const SignUp = () => {
                     placeholderTextColor={"#000"}
                   />
                 </View>
-                <View style={styles.dateInputContainer}>
-                  <TextInput
-                    style={styles.dateInput}
-                    placeholder="Date of Birth"
-                    placeholderTextColor={"#000"}
-                    value={dateText}
-                    editable={false}
-                  />
-                  <TouchableOpacity
-                    style={styles.calendarIcon}
-                    onPress={() => setShowDatePicker((prev) => !prev)}
-                  >
-                    <FontAwesome name="calendar" size={20} color="#008B8B" />
-                  </TouchableOpacity>
-                </View>
-                {showDatePicker && (
-                  <View style={styles.datePickerContainer}>
-                    <DateTimePicker
-                      value={date}
-                      mode="date"
-                      display="spinner"
-                      onChange={handleDateChange}
-                      maximumDate={new Date()}
-                      minimumDate={new Date(1920, 0, 1)}
-                      themeVariant="light"
-                      textColor="#008B8B"
-                    />
-                  </View>
-                )}
+                <TextInput
+                  style={{ ...styles.input, width: "100%" }}
+                  placeholder="Username"
+                  placeholderTextColor={"#000"}
+                />
+
                 <TextInput
                   style={{ ...styles.input, width: "100%" }}
                   placeholder="Password"
@@ -167,11 +127,14 @@ const SignUp = () => {
                   placeholderTextColor={"#000"}
                   secureTextEntry={true}
                 />
-                <TextInput
-                  style={{ ...styles.input, width: "100%" }}
-                  placeholder="Refferal Code"
-                  placeholderTextColor={"#000"}
-                />
+                <View style={styles.referralContainer}>
+                  <TextInput
+                    style={{ ...styles.input, width: "100%" }}
+                    placeholder="Referral Code"
+                    placeholderTextColor={"#555"}
+                  />
+                  <Text style={styles.optionalText}>Optional</Text>
+                </View>
                 <TouchableOpacity style={styles.signUpBtn}>
                   <Text style={styles.signUpText}>Sign Up</Text>
                 </TouchableOpacity>
@@ -210,13 +173,13 @@ const SignUp = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0F7F7",
+    backgroundColor: "transparent",
     paddingTop: Platform.OS === "android" ? 25 : 0,
   },
   imageContainer: {
     width: "100%",
     justifyContent: "flex-start",
-    alignItems: "flex-end",
+    alignItems: "flex-start",
     padding: 20,
   },
   imageWrapper: {
@@ -267,35 +230,47 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "bold",
   },
-  dateInputContainer: {
+  // dateInputContainer: {
+  //   width: "100%",
+  //   flexDirection: "row",
+  //   alignItems: "center",
+  //   position: "relative",
+  //   marginVertical: 15,
+  // },
+  // dateInput: {
+  //   height: 40,
+  //   borderWidth: 2,
+  //   borderColor: "#008B8B",
+  //   padding: 12,
+  //   borderRadius: 10,
+  //   width: "100%",
+  // },
+  // calendarIcon: {
+  //   position: "absolute",
+  //   right: 12,
+  //   padding: 5,
+  // },
+  // datePickerContainer: {
+  //   backgroundColor: "#F0F7F7",
+  //   borderRadius: 10,
+  //   padding: 10,
+  //   marginVertical: 10,
+  //   borderWidth: 2,
+  //   borderColor: "#008B8B",
+  //   width: "100%",
+  //   alignItems: "center",
+  // },
+  referralContainer: {
     width: "100%",
-    flexDirection: "row",
-    alignItems: "center",
     position: "relative",
-    marginVertical: 15,
   },
-  dateInput: {
-    height: 40,
-    borderWidth: 2,
-    borderColor: "#008B8B",
-    padding: 12,
-    borderRadius: 10,
-    width: "100%",
-  },
-  calendarIcon: {
+  optionalText: {
     position: "absolute",
-    right: 12,
-    padding: 5,
-  },
-  datePickerContainer: {
-    backgroundColor: "#F0F7F7",
-    borderRadius: 10,
-    padding: 10,
-    marginVertical: 10,
-    borderWidth: 2,
-    borderColor: "#008B8B",
-    width: "100%",
-    alignItems: "center",
+    right: 10,
+    top: 30,
+    fontSize: 12,
+    color: "#666",
+    fontStyle: "italic",
   },
 });
 
