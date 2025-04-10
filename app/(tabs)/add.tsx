@@ -21,8 +21,8 @@ const AddPost = () => {
 
   const offerTypes = [
     { key: "1", value: "Skill" },
-    { label: "2", value: "Service" },
-    { label: "3", value: "Item" },
+    { key: "2", value: "Service" },
+    { key: "3", value: "Item" },
   ];
 
   const handleSelectImage = async () => {
