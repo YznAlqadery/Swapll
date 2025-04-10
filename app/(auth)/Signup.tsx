@@ -8,10 +8,8 @@ import {
   Platform,
   TextInput,
   KeyboardAvoidingView,
-  ImageBackground,
 } from "react-native";
 import React, { useState } from "react";
-import * as ImagePicker from "expo-image-picker";
 import { FontAwesome } from "@expo/vector-icons";
 import { Link } from "expo-router";
 
@@ -19,22 +17,15 @@ import {
   GestureHandlerRootView,
   ScrollView,
 } from "react-native-gesture-handler";
+import { selectImage } from "@/services/selectImage";
 
 const SignUp = () => {
   const [image, setImage] = useState<string | null>(null);
 
-  // Image picker function for selecting an image on your device
-  const selectImage = async () => {
-    // No permissions request is necessary for launching the image library
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 1,
-    });
-
-    if (!result.canceled) {
-      setImage(result.assets[0].uri);
+  const handleSelectImage = async () => {
+    const selectedImage = await selectImage();
+    if (selectedImage) {
+      setImage(selectedImage);
     }
   };
 
@@ -57,7 +48,7 @@ const SignUp = () => {
               {image ? (
                 <View>
                   <View style={styles.imageWrapper}>
-                    <TouchableOpacity onPress={selectImage}>
+                    <TouchableOpacity onPress={handleSelectImage}>
                       <Image source={{ uri: image }} style={styles.image} />
                     </TouchableOpacity>
                   </View>
@@ -68,7 +59,7 @@ const SignUp = () => {
                   <View style={styles.imageWrapper}>
                     <TouchableOpacity
                       style={styles.iconContainer}
-                      onPress={selectImage}
+                      onPress={handleSelectImage}
                     >
                       <FontAwesome name="user" size={40} color="#008B8B" />
                     </TouchableOpacity>

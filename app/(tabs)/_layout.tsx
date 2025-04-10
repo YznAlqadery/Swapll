@@ -1,15 +1,13 @@
 import { Tabs } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
-import { View, Text } from "react-native";
+import { View } from "react-native";
 
 const TabIcon = ({
   name,
-  color,
   size,
   focused,
 }: {
   name: string;
-  color: string;
   size: number;
   focused: boolean;
 }) => {
@@ -65,7 +63,7 @@ export default function TabLayout() {
         options={{
           title: "Home",
           tabBarIcon: ({ focused }: any) => (
-            <TabIcon name="home" size={26} color="" focused={focused} />
+            <TabIcon name="home" size={26} focused={focused} />
           ),
         }}
       />
@@ -74,7 +72,7 @@ export default function TabLayout() {
         options={{
           title: "Messages",
           tabBarIcon: ({ focused }: any) => (
-            <TabIcon name="envelope" size={24} color="" focused={focused} />
+            <TabIcon name="envelope" size={24} focused={focused} />
           ),
         }}
       />
@@ -84,7 +82,7 @@ export default function TabLayout() {
         options={{
           title: "",
           tabBarIcon: ({ focused }: any) => (
-            <TabIcon name="plus" size={28} color="" focused={focused} />
+            <TabIcon name="plus" size={28} focused={focused} />
           ),
         }}
       />
@@ -93,7 +91,7 @@ export default function TabLayout() {
         options={{
           title: "Search",
           tabBarIcon: ({ focused }: any) => (
-            <TabIcon name="search" size={26} color="" focused={focused} />
+            <TabIcon name="search" size={24} focused={focused} />
           ),
         }}
       />
@@ -102,7 +100,7 @@ export default function TabLayout() {
         options={{
           title: "Profile",
           tabBarIcon: ({ focused }: any) => (
-            <TabIcon name="user" size={26} color="" focused={focused} />
+            <TabIcon name="user" size={26} focused={focused} />
           ),
         }}
       />
