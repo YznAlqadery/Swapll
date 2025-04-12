@@ -80,8 +80,6 @@ const Search = () => {
     );
   }, []);
 
-  const { dismiss } = useBottomSheetModal();
-
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
@@ -242,7 +240,7 @@ const Search = () => {
 
             <TouchableOpacity
               onPress={() => {
-                dismiss();
+                bottomSheetRef.current?.close();
               }}
               style={{
                 width: "92%",
