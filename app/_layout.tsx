@@ -1,4 +1,4 @@
-import { useFonts } from "expo-font";
+import { useFonts, Oswald_700Bold } from "@expo-google-fonts/oswald";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -10,7 +10,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded] = useFonts({
-    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
+    Oswald_700Bold,
   });
 
   useEffect(() => {
