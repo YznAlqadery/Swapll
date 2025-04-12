@@ -25,7 +25,14 @@ const AuthButtons = ({
           alignItems: "center",
         }}
       >
-        <Text style={{ color: "white", fontWeight: "bold", fontSize: 16 }}>
+        <Text
+          style={{
+            color: "white",
+            fontWeight: "bold",
+            fontSize: 16,
+            fontFamily: "OpenSans_700Bold",
+          }}
+        >
           {title}
         </Text>
       </TouchableOpacity>

@@ -148,12 +148,12 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 26,
-    fontWeight: "bold",
     color: "#008B8B",
     marginLeft: 20,
     marginTop: 20,
     marginBottom: 20,
     textAlign: "center",
+    fontFamily: "OpenSans_700Bold",
   },
   form: {
     margin: 20,
@@ -161,9 +161,9 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 18,
-    fontWeight: "bold",
     color: "#008B8B",
     marginBottom: 10,
+    fontFamily: "OpenSans_700Bold",
   },
   input: {
     height: 40,
@@ -173,11 +173,13 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     paddingLeft: 10,
     backgroundColor: "#FFFFFF",
+    fontFamily: "OpenSans_400Regular",
   },
   textArea: {
     height: 100,
     textAlignVertical: "top",
     paddingTop: 10,
+    fontFamily: "OpenSans_400Regular",
   },
   button: {
     backgroundColor: "#008B8B",
@@ -189,7 +191,7 @@ const styles = StyleSheet.create({
   buttonText: {
     color: "#fff",
     fontSize: 18,
-    fontWeight: "bold",
+    fontFamily: "OpenSans_700Bold",
   },
   imagesContainer: {
     flexDirection: "row",
@@ -233,6 +235,7 @@ const styles = StyleSheet.create({
     marginTop: 5,
     fontSize: 12,
     textAlign: "center",
+    fontFamily: "OpenSans_400Regular",
   },
 });
 

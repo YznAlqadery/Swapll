@@ -137,7 +137,13 @@ const SignUp = () => {
                     justifyContent: "center",
                   }}
                 >
-                  <Text style={{ color: "#000", fontSize: 14 }}>
+                  <Text
+                    style={{
+                      color: "#000",
+                      fontSize: 14,
+                      fontFamily: "OpenSans_500Medium",
+                    }}
+                  >
                     Already have an account?{" "}
                   </Text>
                   <Link href="/Login">
@@ -145,7 +151,7 @@ const SignUp = () => {
                       style={{
                         color: "#008B8B",
                         fontSize: 14,
-                        fontWeight: "bold",
+                        fontFamily: "OpenSans_600SemiBold",
                       }}
                     >
                       Login
@@ -164,8 +170,8 @@ const SignUp = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "transparent",
     paddingTop: Platform.OS === "android" ? 25 : 0,
+    backgroundColor: "#F0F7F7",
   },
   imageContainer: {
     width: "100%",
@@ -198,6 +204,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#000",
     marginTop: 10,
+    fontFamily: "OpenSans_500Medium",
   },
   input: {
     height: 45,
@@ -206,6 +213,7 @@ const styles = StyleSheet.create({
     borderColor: "#008B8B",
     padding: 12,
     borderRadius: 10,
+    fontFamily: "OpenSans_400Regular",
   },
   signUpBtn: {
     width: "100%",
@@ -219,38 +227,9 @@ const styles = StyleSheet.create({
   signUpText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: "OpenSans_600SemiBold",
   },
-  // dateInputContainer: {
-  //   width: "100%",
-  //   flexDirection: "row",
-  //   alignItems: "center",
-  //   position: "relative",
-  //   marginVertical: 15,
-  // },
-  // dateInput: {
-  //   height: 40,
-  //   borderWidth: 2,
-  //   borderColor: "#008B8B",
-  //   padding: 12,
-  //   borderRadius: 10,
-  //   width: "100%",
-  // },
-  // calendarIcon: {
-  //   position: "absolute",
-  //   right: 12,
-  //   padding: 5,
-  // },
-  // datePickerContainer: {
-  //   backgroundColor: "#F0F7F7",
-  //   borderRadius: 10,
-  //   padding: 10,
-  //   marginVertical: 10,
-  //   borderWidth: 2,
-  //   borderColor: "#008B8B",
-  //   width: "100%",
-  //   alignItems: "center",
-  // },
+
   referralContainer: {
     width: "100%",
     position: "relative",
@@ -261,7 +240,7 @@ const styles = StyleSheet.create({
     top: 30,
     fontSize: 12,
     color: "#666",
-    fontStyle: "italic",
+    fontFamily: "OpenSans_400Regular",
   },
 });
 

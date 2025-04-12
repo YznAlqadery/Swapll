@@ -188,7 +188,14 @@ const WelcomingScreen = () => {
           duration={500}
           initialEnteringDelay={1000}
         >
-          <Text style={{ color: "white", fontWeight: "500", opacity: 0.5 }}>
+          <Text
+            style={{
+              color: "white",
+
+              opacity: 0.5,
+              fontFamily: "OpenSans_500Medium",
+            }}
+          >
             Welcome to
           </Text>
           <Text
@@ -197,7 +204,7 @@ const WelcomingScreen = () => {
               fontSize: 36,
               fontWeight: "bold",
               marginBottom: 10,
-              fontFamily: "OpenSans_400Regular",
+              fontFamily: "OpenSans_700Bold",
             }}
           >
             Swapll
@@ -209,6 +216,7 @@ const WelcomingScreen = () => {
               textAlign: "center",
               paddingHorizontal: 6,
               marginBottom: 10,
+              fontFamily: "OpenSans_400Regular",
             }}
           >
             Discover a new way to exchange skills, services, and items with no

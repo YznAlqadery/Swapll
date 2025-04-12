@@ -133,23 +133,24 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: 32,
-    fontWeight: "bold",
     color: "#008B8B",
     marginBottom: 5,
+    fontFamily: "OpenSans_700Bold",
   },
   tagline: {
     fontSize: 16,
     color: "#555",
     textAlign: "center",
+    fontFamily: "OpenSans_400Regular",
   },
   formContainer: {
     width: "100%",
   },
   welcomeText: {
     fontSize: 24,
-    fontWeight: "bold",
     color: "#333",
     marginBottom: 20,
+    fontFamily: "OpenSans_600SemiBold",
   },
   input: {
     height: 50,
@@ -159,6 +160,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
+    fontFamily: "OpenSans_400Regular",
   },
   passwordContainer: {
     position: "relative",
@@ -172,6 +174,7 @@ const styles = StyleSheet.create({
     padding: 12,
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
+    fontFamily: "OpenSans_400Regular",
   },
   eyeIcon: {
     position: "absolute",
@@ -186,6 +189,7 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     color: "#008B8B",
     fontWeight: "600",
+    fontFamily: "OpenSans_600SemiBold",
   },
   loginBtn: {
     width: "100%",
@@ -199,7 +203,7 @@ const styles = StyleSheet.create({
   loginText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "bold",
+    fontFamily: "OpenSans_600SemiBold",
   },
   signupContainer: {
     flexDirection: "row",
@@ -210,11 +214,12 @@ const styles = StyleSheet.create({
   accountText: {
     color: "#333",
     fontSize: 14,
+    fontFamily: "OpenSans_400Regular",
   },
   signupText: {
     color: "#008B8B",
     fontSize: 14,
-    fontWeight: "bold",
+    fontFamily: "OpenSans_600SemiBold",
   },
 });
 
