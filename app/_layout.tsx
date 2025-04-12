@@ -1,4 +1,4 @@
-import { useFonts, Oswald_700Bold } from "@expo-google-fonts/oswald";
+import { useFonts, OpenSans_400Regular } from "@expo-google-fonts/open-sans";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
@@ -10,7 +10,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [loaded] = useFonts({
-    Oswald_700Bold,
+    OpenSans_400Regular,
   });
 
   useEffect(() => {

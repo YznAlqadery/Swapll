@@ -197,6 +197,7 @@ const WelcomingScreen = () => {
               fontSize: 36,
               fontWeight: "bold",
               marginBottom: 10,
+              fontFamily: "OpenSans_400Regular",
             }}
           >
             Swapll
