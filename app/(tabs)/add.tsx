@@ -70,6 +70,7 @@ const AddPost = () => {
                   style={{ marginRight: 5 }}
                 />
               }
+              search={false}
             />
             {offerType && (
               <>
