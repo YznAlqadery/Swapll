@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F7F7",
   },
   header: {
-    fontSize: 20,
+    fontSize: 24,
     textAlign: "center",
     padding: 10,
     fontFamily: "OpenSans_700Bold",

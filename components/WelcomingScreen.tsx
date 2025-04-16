@@ -16,6 +16,11 @@ import Animated, {
 import { useState, useEffect } from "react";
 import AuthButtons from "./AuthButton";
 
+const THEME = {
+  background: "#F0F7F7",
+  primary: "#008B8B",
+  secondary: "#66B2B2",
+};
 const images = [
   "https://thumbs.dreamstime.com/b/horizontal-banner-smiling-young-men-women-volunteering-doing-volunteer-work-drawn-green-contour-lines-white-117142814.jpg",
   "https://previews.123rf.com/images/bsd555/bsd5552102/bsd555210204218/164573412-lively-discussion-rgb-color-icon-debate-disputation-work-conversation-reaching-decisions-process.jpg",
@@ -91,6 +96,16 @@ const WelcomingScreen = () => {
   const [activeIndex, setActiveIndex] = useState(0); // State for active index
   const [imagesLoaded, setImagesLoaded] = useState(false);
 
+  const descriptions = [
+    "Discover a new way to exchange skills, services, and items with no mandatory reciprocation.",
+    "Join meaningful conversations and connect with like-minded individuals in your community.",
+    "Build lasting relationships through sharing what you know and learning from others.",
+    "Exchange ideas and collaborate on projects with people from diverse backgrounds.",
+    "Form study groups and share knowledge to help each other grow and learn.",
+    "Volunteer your time and skills to make a positive impact in your community.",
+    "Use modern tools to find the perfect match for your skills and interests.",
+  ];
+
   // Preload images for smoother transitions
   useEffect(() => {
     const preloadImages = async () => {
@@ -130,32 +145,11 @@ const WelcomingScreen = () => {
         flex: 1,
         justifyContent: "center",
         alignItems: "center",
-        backgroundColor: "#000",
+        backgroundColor: THEME.background,
       }}
     >
-      <Animated.View
-        style={[
-          StyleSheet.absoluteFillObject,
-          {
-            opacity: 0.5, // Opacity for the background image
-          },
-        ]}
-      >
-        <Animated.Image
-          key={`image-${activeIndex}`}
-          source={{ uri: optimizedImages[activeIndex] }}
-          style={{ flex: 1 }}
-          blurRadius={50} // Blur effect
-          entering={FadeIn.duration(1000)}
-          exiting={FadeOut.duration(1000)}
-          resizeMode="cover"
-        />
-      </Animated.View>
       {imagesLoaded && (
-        <Marquee
-          spacing={_gap} // Space between items
-          position={offset} // Position of the marquee
-        >
+        <Marquee spacing={_gap} position={offset}>
           <Animated.View
             style={{ flexDirection: "row", alignItems: "center", gap: _gap }}
             entering={FadeInUp.delay(500)
@@ -183,16 +177,14 @@ const WelcomingScreen = () => {
             flex: 0.5,
             justifyContent: "center",
             alignItems: "center",
-            marginTop: 40,
+            marginTop: 60,
           }}
           duration={500}
           initialEnteringDelay={1000}
         >
           <Text
             style={{
-              color: "white",
-
-              opacity: 0.5,
+              color: THEME.secondary,
               fontFamily: "OpenSans_500Medium",
             }}
           >
@@ -200,7 +192,7 @@ const WelcomingScreen = () => {
           </Text>
           <Text
             style={{
-              color: "white",
+              color: THEME.primary,
               fontSize: 36,
               fontWeight: "bold",
               marginBottom: 10,
@@ -209,22 +201,21 @@ const WelcomingScreen = () => {
           >
             Swapll
           </Text>
-          <Text
+          <Animated.Text
+            key={`description-${activeIndex}`}
+            entering={FadeIn.duration(500)}
+            exiting={FadeOut.duration(300)}
             style={{
-              color: "white",
-              opacity: 0.5,
+              color: THEME.secondary,
               textAlign: "center",
-              paddingHorizontal: 6,
+              paddingHorizontal: 20,
               marginBottom: 10,
               fontFamily: "OpenSans_400Regular",
+              height: 80,
             }}
           >
-            Discover a new way to exchange skills, services, and items with no
-            mandatory reciprocation. Our platform connects people who want to
-            share what they have or know, creating a community based on
-            generosity and mutual support rather than strict transaction
-            requirements.
-          </Text>
+            {descriptions[activeIndex]}
+          </Animated.Text>
 
           <View
             style={{
@@ -238,7 +229,7 @@ const WelcomingScreen = () => {
           >
             <Animated.View entering={FadeInUp.delay(1300).duration(800)}>
               <AuthButtons
-                backgroundColor="rgba(255, 255, 255, 0.5)"
+                backgroundColor={THEME.primary}
                 title="Create Account"
                 navigateTo="Signup"
               />
@@ -246,7 +237,7 @@ const WelcomingScreen = () => {
 
             <Animated.View entering={FadeInUp.delay(1500).duration(800)}>
               <AuthButtons
-                backgroundColor=""
+                backgroundColor="rgba(0, 139, 139, 0.6)"
                 title="Login"
                 navigateTo="Login"
               />
