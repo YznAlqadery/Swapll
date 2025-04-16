@@ -126,9 +126,9 @@ const SignUp = () => {
                   />
                   <Text style={styles.optionalText}>Optional</Text>
                 </View>
-                <TouchableOpacity style={styles.signUpBtn}>
+                <Link href={"/(pages)/select"} style={styles.signUpBtn}>
                   <Text style={styles.signUpText}>Sign Up</Text>
-                </TouchableOpacity>
+                </Link>
                 <View
                   style={{
                     flexDirection: "row",
@@ -223,6 +223,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 20,
     padding: 13,
+    textAlign: "center",
   },
   signUpText: {
     color: "#FFFFFF",
