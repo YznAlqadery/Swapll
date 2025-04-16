@@ -7,13 +7,24 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import SelectOffer from "@/components/SelectOffer";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
+import SkipButton from "@/components/SkipButton";
 
 const select = () => {
   const [selected, setSelected] = useState("");
+  const router = useRouter();
 
   const handleSelect = (text: string) => {
     setSelected((prevSelected) => (prevSelected === text ? "" : text));
+  };
+
+  const handleNext = () => {
+    router.push({
+      pathname: `/(pages)/category`,
+      params: {
+        selected: selected,
+      },
+    });
   };
   return (
     <SafeAreaView style={styles.container}>
@@ -56,7 +67,7 @@ const select = () => {
         />
       </View>
       {selected && (
-        <View
+        <TouchableOpacity
           style={{
             backgroundColor: "#008B8B",
             marginHorizontal: 20,
@@ -66,52 +77,20 @@ const select = () => {
             justifyContent: "center",
             alignItems: "center",
           }}
+          onPress={handleNext}
         >
-          <Link href={`/`}>
-            <Text
-              style={{
-                fontSize: 16,
-                fontFamily: "OpenSans_700Bold",
-                color: "#F0F7F7",
-              }}
-            >
-              Next
-            </Text>
-          </Link>
-        </View>
+          <Text
+            style={{
+              fontSize: 16,
+              fontFamily: "OpenSans_700Bold",
+              color: "#F0F7F7",
+            }}
+          >
+            Next
+          </Text>
+        </TouchableOpacity>
       )}
-      <View
-        style={{
-          position: "absolute",
-          bottom: 30,
-          right: 30,
-          flexDirection: "row",
-          alignItems: "center",
-        }}
-      >
-        <Link href={`/(tabs)`}>
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontFamily: "OpenSans_700Bold",
-                color: "#008B8B",
-                marginRight: 5,
-              }}
-            >
-              Skip
-            </Text>
-            <Text
-              style={{
-                fontSize: 18,
-                color: "#008B8B",
-              }}
-            >
-              →
-            </Text>
-          </View>
-        </Link>
-      </View>
+      <SkipButton />
     </SafeAreaView>
   );
 };

@@ -11,6 +11,12 @@ const PagesLayout = () => {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="category"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
     </>
   );
