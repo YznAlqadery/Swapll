@@ -5,8 +5,21 @@ import {
   StyleSheet,
   FlatList,
   TouchableOpacity,
+  Image,
 } from "react-native";
 import React, { useState } from "react";
+
+interface Offer {
+  id: string;
+  title: string;
+  image: string;
+  description: string;
+  price: number;
+  deliveryTime: string;
+  status: string;
+  offerType: string;
+  paymentMethod: string;
+}
 
 const CategoryItem = ({
   item,
@@ -40,6 +53,50 @@ const CategoryItem = ({
   );
 };
 
+const OfferItem = ({ item }: { item: Offer }) => {
+  return (
+    <View style={styles.offerItem}>
+      <View style={styles.offerImageContainer}>
+        <Image
+          source={{ uri: item.image }}
+          style={styles.offerImage}
+          resizeMode="cover"
+        />
+      </View>
+      <View style={styles.offerDetails}>
+        <Text
+          style={{
+            color: "#008B8B",
+            fontFamily: "OpenSans_700Bold",
+            fontSize: 16,
+          }}
+        >
+          {item.title}
+        </Text>
+        <Text
+          style={{
+            color: "#008B8B",
+            fontFamily: "OpenSans_400Regular",
+            fontSize: 14,
+          }}
+        >
+          {item.description}
+        </Text>
+        <Text
+          style={{
+            color: "#008B8B",
+            fontFamily: "OpenSans_700Bold",
+            fontSize: 15,
+            marginTop: 6,
+          }}
+        >
+          ${item.price}
+        </Text>
+      </View>
+    </View>
+  );
+};
+
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
 
@@ -69,9 +126,102 @@ const Index = () => {
     "Other",
   ];
 
+  const offers = [
+    {
+      id: "1",
+      title: "Math Tutoring",
+      description:
+        "Get help with algebra, calculus, and more from an experienced tutor.",
+      price: 20,
+      deliveryTime: "2 days",
+      status: "active",
+      image: "https://images.unsplash.com/photo-1503676382389-4809596d5290",
+      offerType: "skill",
+      paymentMethod: "cash",
+    },
+    {
+      id: "2",
+      title: "Logo Design",
+      description: "Professional logo design for your business or project.",
+      price: 50,
+      deliveryTime: "3 days",
+      status: "active",
+      image: "https://images.unsplash.com/photo-1464983953574-0892a716854b",
+      offerType: "service",
+      paymentMethod: "credit card",
+    },
+    {
+      id: "3",
+      title: "Used Laptop",
+      description: "Dell Inspiron, 8GB RAM, 256GB SSD, lightly used.",
+      price: 300,
+      deliveryTime: "1 day",
+      status: "sold",
+      image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
+      offerType: "item",
+      paymentMethod: "cash",
+    },
+    {
+      id: "4",
+      title: "Guitar Lessons",
+      description: "Learn to play acoustic or electric guitar from scratch.",
+      price: 25,
+      deliveryTime: "1 week",
+      status: "active",
+      image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+      offerType: "skill",
+      paymentMethod: "paypal",
+    },
+    {
+      id: "5",
+      title: "House Cleaning",
+      description: "Thorough cleaning for apartments and houses.",
+      price: 40,
+      deliveryTime: "2 days",
+      status: "active",
+      image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+      offerType: "service",
+      paymentMethod: "credit card",
+    },
+    {
+      id: "6",
+      title: "Mountain Bike",
+      description: "Well-maintained mountain bike, ready for trails.",
+      price: 150,
+      deliveryTime: "Immediate",
+      status: "active",
+      image: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308",
+      offerType: "item",
+      paymentMethod: "cash",
+    },
+    {
+      id: "7",
+      title: "Spanish Translation",
+      description:
+        "Translate documents from English to Spanish quickly and accurately.",
+      price: 15,
+      deliveryTime: "1 day",
+      status: "active",
+      image: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca",
+      offerType: "service",
+      paymentMethod: "paypal",
+    },
+    {
+      id: "8",
+      title: "Handmade Scarf",
+      description: "Warm, stylish, and handmade with love.",
+      price: 30,
+      deliveryTime: "3 days",
+      status: "active",
+      image: "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2",
+      offerType: "item",
+      paymentMethod: "cash",
+    },
+  ];
+
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Popular Categories</Text>
+      <Text style={styles.header}>Popular categories</Text>
       <View style={{ height: 70 }}>
         <FlatList
           data={categories}
@@ -85,6 +235,31 @@ const Index = () => {
           )}
           keyExtractor={(item) => item}
           showsHorizontalScrollIndicator={false}
+        />
+      </View>
+      <View
+        style={{
+          flex: 1,
+          marginVertical: 20,
+          paddingBottom: 40,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 20,
+            fontFamily: "OpenSans_700Bold",
+            marginBottom: 20,
+            color: "#008B8B",
+            marginLeft: 20,
+          }}
+        >
+          Popular offers
+        </Text>
+        <FlatList
+          data={offers}
+          renderItem={({ item }) => <OfferItem item={item} />}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
         />
       </View>
     </SafeAreaView>
@@ -119,6 +294,46 @@ const styles = StyleSheet.create({
     marginTop: 16,
     marginBottom: 8,
     color: "#008B8B",
+  },
+
+  offerItem: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
+    marginVertical: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+
+  offerDescription: {
+    fontSize: 16,
+    fontFamily: "OpenSans_400Regular",
+    color: "#008B8B",
+  },
+
+  offerImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+    marginVertical: 8,
+  },
+
+  offerImageContainer: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+    marginVertical: 8,
+    overflow: "hidden",
+  },
+  offerDetails: {
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginVertical: 8,
   },
 });
 
