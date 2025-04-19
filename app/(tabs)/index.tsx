@@ -8,9 +8,12 @@ import {
   Image,
 } from "react-native";
 import React, { useState } from "react";
+import CustomBottomSheet from "@/components/BottomSheet";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
-interface Offer {
+export interface Offer {
   id: string;
+  owner: string;
   title: string;
   image: string;
   description: string;
@@ -53,9 +56,20 @@ const CategoryItem = ({
   );
 };
 
-const OfferItem = ({ item }: { item: Offer }) => {
+const OfferItem = ({
+  item,
+  selectedOffer,
+  handleSelectOffer,
+}: {
+  item: Offer;
+  selectedOffer: Offer;
+  handleSelectOffer: (item: Offer) => void;
+}) => {
   return (
-    <View style={styles.offerItem}>
+    <TouchableOpacity
+      style={styles.offerItem}
+      onPress={() => handleSelectOffer(item)}
+    >
       <View style={styles.offerImageContainer}>
         <Image
           source={{ uri: item.image }}
@@ -72,6 +86,16 @@ const OfferItem = ({ item }: { item: Offer }) => {
           }}
         >
           {item.title}
+        </Text>
+        <Text
+          style={{
+            color: "#666",
+            fontFamily: "OpenSans_600SemiBold",
+            fontSize: 13,
+            marginBottom: 4,
+          }}
+        >
+          by {item.owner}
         </Text>
         <Text
           style={{
@@ -93,15 +117,29 @@ const OfferItem = ({ item }: { item: Offer }) => {
           ${item.price}
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 
 const Index = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [sheetOpen, setSheetOpen] = useState<boolean>(false);
 
   const handleSelect = (item: string) => {
     setSelectedCategory((prev) => (prev === item ? "" : item));
+  };
+  const handleSelectOffer = (offer: Offer) => {
+    if (selectedOffer?.id === offer.id && sheetOpen) {
+      setSheetOpen(false);
+      setTimeout(() => {
+        setSelectedOffer(offer);
+        setSheetOpen(true);
+      }, 300); // Wait for the sheet to close before reopening
+    } else {
+      setSelectedOffer(offer);
+      setSheetOpen(true);
+    }
   };
   const categories = [
     "Tutoring",
@@ -138,6 +176,7 @@ const Index = () => {
       image: "https://images.unsplash.com/photo-1503676382389-4809596d5290",
       offerType: "skill",
       paymentMethod: "cash",
+      owner: "Alice Johnson",
     },
     {
       id: "2",
@@ -149,6 +188,7 @@ const Index = () => {
       image: "https://images.unsplash.com/photo-1464983953574-0892a716854b",
       offerType: "service",
       paymentMethod: "credit card",
+      owner: "Bob Smith",
     },
     {
       id: "3",
@@ -160,6 +200,7 @@ const Index = () => {
       image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
       offerType: "item",
       paymentMethod: "cash",
+      owner: "Charlie Lee",
     },
     {
       id: "4",
@@ -171,6 +212,7 @@ const Index = () => {
       image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
       offerType: "skill",
       paymentMethod: "paypal",
+      owner: "Diana Evans",
     },
     {
       id: "5",
@@ -182,6 +224,7 @@ const Index = () => {
       image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
       offerType: "service",
       paymentMethod: "credit card",
+      owner: "Emily Carter",
     },
     {
       id: "6",
@@ -193,6 +236,7 @@ const Index = () => {
       image: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308",
       offerType: "item",
       paymentMethod: "cash",
+      owner: "Frank Miller",
     },
     {
       id: "7",
@@ -205,6 +249,7 @@ const Index = () => {
       image: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca",
       offerType: "service",
       paymentMethod: "paypal",
+      owner: "Gabriela Ruiz",
     },
     {
       id: "8",
@@ -216,53 +261,74 @@ const Index = () => {
       image: "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2",
       offerType: "item",
       paymentMethod: "cash",
+      owner: "Helen Kim",
     },
   ];
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Popular categories</Text>
-      <View style={{ height: 70 }}>
-        <FlatList
-          data={categories}
-          horizontal={true}
-          renderItem={({ item }) => (
-            <CategoryItem
-              item={item}
-              selectedCategory={selectedCategory}
-              handleSelect={handleSelect}
-            />
-          )}
-          keyExtractor={(item) => item}
-          showsHorizontalScrollIndicator={false}
-        />
-      </View>
-      <View
-        style={{
-          flex: 1,
-          marginVertical: 20,
-          paddingBottom: 40,
-        }}
-      >
-        <Text
+    <GestureHandlerRootView
+      style={{
+        flex: 1,
+        backgroundColor: "#fff",
+      }}
+    >
+      <SafeAreaView style={styles.container}>
+        <Text style={styles.header}>Popular categories</Text>
+        <View style={{ height: 70 }}>
+          <FlatList
+            data={categories}
+            horizontal={true}
+            renderItem={({ item }) => (
+              <CategoryItem
+                item={item}
+                selectedCategory={selectedCategory}
+                handleSelect={handleSelect}
+              />
+            )}
+            keyExtractor={(item) => item}
+            showsHorizontalScrollIndicator={false}
+          />
+        </View>
+        <View
           style={{
-            fontSize: 20,
-            fontFamily: "OpenSans_700Bold",
-            marginBottom: 20,
-            color: "#008B8B",
-            marginLeft: 20,
+            flex: 1,
+            marginVertical: 20,
+            paddingBottom: 40,
           }}
         >
-          Popular offers
-        </Text>
-        <FlatList
-          data={offers}
-          renderItem={({ item }) => <OfferItem item={item} />}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-        />
-      </View>
-    </SafeAreaView>
+          <Text
+            style={{
+              fontSize: 20,
+              fontFamily: "OpenSans_700Bold",
+              marginBottom: 20,
+              color: "#008B8B",
+              marginLeft: 20,
+            }}
+          >
+            Popular offers
+          </Text>
+          <FlatList
+            data={offers}
+            renderItem={({ item }) => (
+              <OfferItem
+                item={item}
+                selectedOffer={selectedOffer || ({} as Offer)}
+                handleSelectOffer={handleSelectOffer}
+              />
+            )}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+          />
+        </View>
+        {selectedOffer && (
+          <CustomBottomSheet
+            offer={selectedOffer}
+            open={sheetOpen}
+            onClose={() => setSheetOpen(false)}
+          />
+        )}
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 };
 
