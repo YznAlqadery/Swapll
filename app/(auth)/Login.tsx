@@ -11,16 +11,53 @@ import {
 } from "react-native";
 import React, { useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import {
   GestureHandlerRootView,
   ScrollView,
 } from "react-native-gesture-handler";
 
 const Login = () => {
+  const [user, setUser] = useState(null); // Assuming user is an object with properties like [name, email, password etc.]
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const router = useRouter();
+
+  const handleLogin = async () => {
+    const request = {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        usernameOrEmail: email,
+        password,
+      }),
+    };
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        "http://192.168.100.85:8080/api/auth/login",
+        request
+      );
+      const data = await response.json();
+      if (response.ok) {
+        // JWT
+        setUser(data);
+        console.log("User logged in successfully:", data);
+        // Redirect to home page
+        router.replace("/(tabs)/" as any);
+      }
+    } catch (error) {
+      setError(error instanceof Error ? error.message : "An error occurred");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -61,6 +98,11 @@ const Login = () => {
                   onChangeText={setEmail}
                   autoCapitalize="none"
                 />
+                {error && (
+                  <Text style={{ color: "red", marginBottom: 10 }}>
+                    Invalid Email/Username
+                  </Text>
+                )}
 
                 <View style={styles.passwordContainer}>
                   <TextInput
@@ -71,6 +113,11 @@ const Login = () => {
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
                   />
+                  {error && (
+                    <Text style={{ color: "red", marginTop: 10 }}>
+                      Invalid Password
+                    </Text>
+                  )}
                   <TouchableOpacity
                     style={styles.eyeIcon}
                     onPress={() => setShowPassword(!showPassword)}
@@ -89,11 +136,16 @@ const Login = () => {
                   </Text>
                 </TouchableOpacity>
 
-                <Link href="/(tabs)">
-                  <TouchableOpacity style={styles.loginBtn}>
-                    <Text style={styles.loginText}>Login</Text>
-                  </TouchableOpacity>
-                </Link>
+                <TouchableOpacity
+                  style={styles.loginBtn}
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                >
+                  <Text style={styles.loginText}>
+                    {isLoading ? "Logging in..." : "Login"}
+                  </Text>
+                </TouchableOpacity>
+
                 <View style={styles.signupContainer}>
                   <Text style={styles.accountText}>
                     Don't have an account?{" "}

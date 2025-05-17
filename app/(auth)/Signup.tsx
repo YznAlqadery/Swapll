@@ -21,6 +21,12 @@ import { selectImage } from "@/services/selectImage";
 
 const SignUp = () => {
   const [image, setImage] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [confirmPassword, setConfirmPassowrd] = useState<string>("");
 
   const handleSelectImage = async () => {
     const selectedImage = await selectImage();
@@ -79,6 +85,7 @@ const SignUp = () => {
                   style={{ ...styles.input, width: "100%" }}
                   placeholder="Email"
                   placeholderTextColor={"#000"}
+                  onChangeText={(text) => setEmail(text)}
                 />
 
                 <View
@@ -93,17 +100,20 @@ const SignUp = () => {
                     style={{ ...styles.input, width: "48%" }}
                     placeholder="First Name"
                     placeholderTextColor={"#000"}
+                    onChangeText={(text) => setFirstName(text)}
                   />
                   <TextInput
                     style={{ ...styles.input, width: "48%" }}
                     placeholder="Last Name"
                     placeholderTextColor={"#000"}
+                    onChangeText={(text) => setLastName(text)}
                   />
                 </View>
                 <TextInput
                   style={{ ...styles.input, width: "100%" }}
                   placeholder="Username"
                   placeholderTextColor={"#000"}
+                  onChangeText={(text) => setUsername(text)}
                 />
 
                 <TextInput
@@ -111,23 +121,31 @@ const SignUp = () => {
                   placeholder="Password"
                   placeholderTextColor={"#000"}
                   secureTextEntry={true}
+                  onChangeText={(text) => setPassword(text)}
                 />
                 <TextInput
                   style={{ ...styles.input, width: "100%" }}
                   placeholder="Confirm Password"
                   placeholderTextColor={"#000"}
                   secureTextEntry={true}
+                  onChangeText={(text) => setConfirmPassowrd(text)}
                 />
-                <View style={styles.referralContainer}>
-                  <TextInput
-                    style={{ ...styles.input, width: "100%" }}
-                    placeholder="Referral Code"
-                    placeholderTextColor={"#555"}
-                  />
-                  <Text style={styles.optionalText}>Optional</Text>
-                </View>
-                <Link href={"/(pages)/select"} style={styles.signUpBtn}>
-                  <Text style={styles.signUpText}>Sign Up</Text>
+
+                <Link
+                  href={{
+                    pathname: "/(pages)/continueSignUp",
+                    params: {
+                      firstName,
+                      lastName,
+                      username,
+                      email,
+                      password,
+                      image,
+                    },
+                  }}
+                  style={styles.signUpBtn}
+                >
+                  <Text style={styles.signUpText}>Continue Signing Up</Text>
                 </Link>
                 <View
                   style={{

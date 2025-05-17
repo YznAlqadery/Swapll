@@ -17,6 +17,12 @@ const PagesLayout = () => {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="continueSignUp"
+          options={{
+            headerShown: false,
+          }}
+        />
       </Stack>
     </>
   );
