@@ -5,11 +5,15 @@ import {
   TextInput,
   TouchableOpacity,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
+import { AuthContext } from "@/context/AuthContext";
 
 const continueSignUp = () => {
-  const [user, setUser] = useState(null); // Assuming user is an object with properties like [name, email, password etc.]
+  const context = useContext(AuthContext);
+  const user = context?.user;
+  const setUser = context?.setUser;
+
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [referralCode, setReferralCode] = useState("");
@@ -39,7 +43,7 @@ const continueSignUp = () => {
 
     try {
       const response = await fetch(
-        "http://192.168.100.85:8080/api/auth/register",
+        "http://192.168.1.76:8080/api/auth/register",
         request
       );
       console.log(request);
@@ -51,10 +55,9 @@ const continueSignUp = () => {
       }
 
       const data = await response.json();
-      setUser(data);
-      router.replace("/(tabs)" as any);
-
-      console.log(data);
+      console.log("Sign up successful:", data);
+      setUser && setUser(data);
+      router.replace("/(tabs)/" as any);
     } catch (error) {
       console.log(error);
     }

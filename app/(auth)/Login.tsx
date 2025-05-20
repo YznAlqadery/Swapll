@@ -9,16 +9,18 @@ import {
   KeyboardAvoidingView,
   Image,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import {
   GestureHandlerRootView,
   ScrollView,
 } from "react-native-gesture-handler";
+import { AuthContext } from "@/context/AuthContext";
 
 const Login = () => {
-  const [user, setUser] = useState(null); // Assuming user is an object with properties like [name, email, password etc.]
+  const context = useContext(AuthContext);
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -41,14 +43,16 @@ const Login = () => {
     try {
       setIsLoading(true);
       const response = await fetch(
-        "http://192.168.100.85:8080/api/auth/login",
+        "http://192.168.1.76:8080/api/auth/login",
         request
       );
       const data = await response.json();
-      if (response.ok) {
+
+      if (response.ok && context?.setUser) {
         // JWT
-        setUser(data);
         console.log("User logged in successfully:", data);
+        context.setUser(data);
+
         // Redirect to home page
         router.replace("/(tabs)/" as any);
       }
