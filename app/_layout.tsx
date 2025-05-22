@@ -1,3 +1,4 @@
+import { AuthProvider } from "@/context/AuthContext";
 import {
   useFonts,
   OpenSans_400Regular,
@@ -9,6 +10,7 @@ import { BottomSheetModalProvider } from "@gorhom/bottom-sheet";
 import { Stack } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import React from "react";
 import { useEffect } from "react";
 import "react-native-reanimated";
 
@@ -34,7 +36,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <AuthProvider>
       <BottomSheetModalProvider>
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -45,6 +47,6 @@ export default function RootLayout() {
         </Stack>
         <StatusBar style="auto" />
       </BottomSheetModalProvider>
-    </>
+    </AuthProvider>
   );
 }

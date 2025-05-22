@@ -7,12 +7,11 @@ import {
 } from "react-native";
 import React, { useContext, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { AuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
+import * as FileSystem from "expo-file-system";
 
 const continueSignUp = () => {
-  const context = useContext(AuthContext);
-  const user = context?.user;
-  const setUser = context?.setUser;
+  const { setUser } = useAuth();
 
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
@@ -23,30 +22,45 @@ const continueSignUp = () => {
   const router = useRouter();
 
   const handleSignUp = async () => {
-    const request = {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        userName: username,
-        firstName,
-        lastName,
-        password,
-        email,
-        phone,
-        address,
-        profilePic: image,
-        referralCode,
-      }),
+    const userPayload = {
+      userName: username,
+      firstName,
+      lastName,
+      password,
+      email,
+      phone,
+      address,
+      referralCode,
     };
+
+    const formData = new FormData();
+
+    // Append user JSON as a string
+    formData.append("user", JSON.stringify(userPayload));
+
+    // Append image if exists
+    if (image) {
+      // Get file info
+      const fileUri = image as string;
+      const fileInfo = await FileSystem.getInfoAsync(fileUri);
+      if (fileInfo.exists) {
+        formData.append("profilePic", {
+          uri: fileUri,
+          name: "profile.jpg",
+          type: "image/jpeg",
+        } as any);
+      }
+    }
 
     try {
       const response = await fetch(
-        "http://192.168.1.76:8080/api/auth/register",
-        request
+        "http://192.168.68.107:8080/api/auth/register",
+        {
+          method: "POST",
+
+          body: formData,
+        }
       );
-      console.log(request);
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -56,7 +70,7 @@ const continueSignUp = () => {
 
       const data = await response.json();
       console.log("Sign up successful:", data);
-      setUser && setUser(data);
+      setUser && setUser(data.token);
       router.replace("/(tabs)/" as any);
     } catch (error) {
       console.log(error);

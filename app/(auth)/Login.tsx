@@ -9,17 +9,17 @@ import {
   KeyboardAvoidingView,
   Image,
 } from "react-native";
-import React, { useContext, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import {
   GestureHandlerRootView,
   ScrollView,
 } from "react-native-gesture-handler";
-import { AuthContext } from "@/context/AuthContext";
+import { useAuth } from "@/context/AuthContext";
 
 const Login = () => {
-  const context = useContext(AuthContext);
+  const { user, setUser } = useAuth();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,6 +28,11 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
+
+  // Add this useEffect to observe the context user state
+  useEffect(() => {
+    console.log("Context User state changed:", user);
+  }, [user]);
 
   const handleLogin = async () => {
     const request = {
@@ -43,21 +48,24 @@ const Login = () => {
     try {
       setIsLoading(true);
       const response = await fetch(
-        "http://192.168.1.76:8080/api/auth/login",
+        "http://192.168.68.107:8080/api/auth/login",
         request
       );
       const data = await response.json();
 
-      if (response.ok && context?.setUser) {
-        // JWT
+      if (response.ok && setUser) {
         console.log("User logged in successfully:", data);
-        context.setUser(data);
-
-        // Redirect to home page
+        console.log("Token received:", data.token);
+        setUser(data.token);
+        console.log("setUser called with token.");
         router.replace("/(tabs)/" as any);
+      } else {
+        console.log("Login failed:", data);
+        setError(data.message || "Login failed");
       }
     } catch (error) {
       setError(error instanceof Error ? error.message : "An error occurred");
+      console.log("Fetch error during login:", error);
     } finally {
       setIsLoading(false);
     }

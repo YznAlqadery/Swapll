@@ -1,6 +1,8 @@
 import { Tabs } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { View } from "react-native";
+import { AuthProvider } from "@/context/AuthContext";
+import React from "react";
 
 const TabIcon = ({
   name,

@@ -6,7 +6,9 @@ import { AuthProvider } from "@/context/AuthContext";
 const index = () => {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <WelcomingScreen />
+      <AuthProvider>
+        <WelcomingScreen />
+      </AuthProvider>
     </GestureHandlerRootView>
   );
 };

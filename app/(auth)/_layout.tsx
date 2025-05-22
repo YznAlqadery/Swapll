@@ -6,7 +6,7 @@ import React from "react";
 
 export default function AuthLayout() {
   return (
-    <AuthProvider>
+    <>
       <StatusBar style="dark" />
       <Stack
         screenOptions={{
@@ -14,6 +14,6 @@ export default function AuthLayout() {
           animation: "slide_from_right",
         }}
       />
-    </AuthProvider>
+    </>
   );
 }
