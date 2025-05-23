@@ -35,17 +35,16 @@ const continueSignUp = () => {
 
     const formData = new FormData();
 
-    // Append user JSON as a string
+    // Append user JSON as string
     formData.append("user", JSON.stringify(userPayload));
 
-    // Append image if exists
+    // Append image if present
     if (image) {
-      // Get file info
       const fileUri = image as string;
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
       if (fileInfo.exists) {
         formData.append("profilePic", {
-          uri: fileUri,
+          uri: image,
           name: "profile.jpg",
           type: "image/jpeg",
         } as any);
@@ -57,15 +56,24 @@ const continueSignUp = () => {
         "http://192.168.68.107:8080/api/auth/register",
         {
           method: "POST",
-
+          headers: {
+            // DO NOT set 'Content-Type' here when sending FormData; let fetch handle it
+          },
           body: formData,
         }
       );
 
       if (!response.ok) {
-        const errorData = await response.json();
-        console.log("Backend error:", errorData);
-        throw new Error("Sign up failed");
+        const contentType = response.headers.get("content-type");
+        let errorData;
+        if (contentType && contentType.includes("application/json")) {
+          errorData = await response.json();
+        } else {
+          errorData = await response.text();
+        }
+        console.log("Backend error status:", response.status);
+        console.log("Backend error body:", errorData);
+        throw new Error(errorData.error || "Sign up failed");
       }
 
       const data = await response.json();
@@ -73,7 +81,8 @@ const continueSignUp = () => {
       setUser && setUser(data.token);
       router.replace("/(tabs)/" as any);
     } catch (error) {
-      console.log(error);
+      console.log("Sign up error:", error);
+      // Optional: show user-friendly error alert or message here
     }
   };
   return (

@@ -133,7 +133,7 @@ const SignUp = () => {
 
                 <Link
                   href={{
-                    pathname: "/(pages)/continueSignUp",
+                    pathname: "/(auth)/continueSignUp",
                     params: {
                       firstName,
                       lastName,
