@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
   },
   profilePic: { width: 100, height: 100, borderRadius: 50 },
   username: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: "bold",
     marginBottom: 8,
     fontFamily: "OpenSans_700Bold",
