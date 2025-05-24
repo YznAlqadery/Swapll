@@ -37,6 +37,7 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
+      <StatusBar translucent backgroundColor="#F0F7F7" style="dark" />
       <BottomSheetModalProvider>
         <Stack>
           <Stack.Screen name="index" options={{ headerShown: false }} />
@@ -45,7 +46,6 @@ export default function RootLayout() {
           <Stack.Screen name="(pages)" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
         </Stack>
-        <StatusBar style="auto" />
       </BottomSheetModalProvider>
     </AuthProvider>
   );

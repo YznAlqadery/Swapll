@@ -32,6 +32,11 @@ const Profile = () => {
 
   const router = useRouter();
 
+  const handleLogout = () => {
+    authContext?.setUser(null);
+    router.replace("/(auth)/Login");
+  };
+
   useEffect(() => {
     async function fetchUser() {
       if (!token) return;
@@ -97,6 +102,14 @@ const Profile = () => {
       >
         <MaterialIcons name="arrow-back" size={28} color="#008B8B" />
       </TouchableOpacity>
+      <TouchableOpacity
+        style={styles.logout}
+        onPress={handleLogout}
+        activeOpacity={0.7}
+      >
+        <MaterialIcons name="logout" size={28} color="#008B8B" />
+      </TouchableOpacity>
+
       <View style={styles.profileContainer}>
         {isLoading ? (
           <ActivityIndicator size="large" color="#008B8B" />
@@ -278,6 +291,15 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 40,
     left: 16,
+    zIndex: 10,
+    backgroundColor: "#F0F7F7",
+    borderRadius: 20,
+    padding: 4,
+  },
+  logout: {
+    position: "absolute",
+    top: 40,
+    right: 16,
     zIndex: 10,
     backgroundColor: "#F0F7F7",
     borderRadius: 20,
