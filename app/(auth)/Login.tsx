@@ -209,7 +209,7 @@ const styles = StyleSheet.create({
   },
   label: {
     fontSize: 14,
-    color: "#333",
+    color: "#008B8B",
     fontFamily: "Poppins_600SemiBold",
     marginLeft: 5,
   },

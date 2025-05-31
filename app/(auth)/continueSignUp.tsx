@@ -4,24 +4,33 @@ import {
   StyleSheet,
   TextInput,
   TouchableOpacity,
+  Keyboard,
+  Alert,
+  SafeAreaView,
+  ActivityIndicator,
 } from "react-native";
-import React, { useContext, useState } from "react";
+import React, { useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import * as FileSystem from "expo-file-system";
 
-const continueSignUp = () => {
+const ContinueSignUp = () => {
   const { setUser } = useAuth();
 
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [referralCode, setReferralCode] = useState("");
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
   const { firstName, lastName, username, email, password, image } =
     useLocalSearchParams();
   const router = useRouter();
 
   const handleSignUp = async () => {
+    Keyboard.dismiss();
+    setLoading(true);
+
     const userPayload = {
       userName: username,
       firstName,
@@ -35,16 +44,14 @@ const continueSignUp = () => {
 
     const formData = new FormData();
 
-    // Append user JSON as string
     formData.append("user", JSON.stringify(userPayload));
 
-    // Append image if present
     if (image) {
       const fileUri = image as string;
       const fileInfo = await FileSystem.getInfoAsync(fileUri);
       if (fileInfo.exists) {
         formData.append("profilePic", {
-          uri: image,
+          uri: fileUri,
           name: "profile.jpg",
           type: "image/jpeg",
         } as any);
@@ -56,9 +63,7 @@ const continueSignUp = () => {
         "http://192.168.1.71:8080/api/auth/register",
         {
           method: "POST",
-          headers: {
-            // DO NOT set 'Content-Type' here when sending FormData; let fetch handle it
-          },
+          // DO NOT set Content-Type header when sending FormData
           body: formData,
         }
       );
@@ -71,52 +76,156 @@ const continueSignUp = () => {
         } else {
           errorData = await response.text();
         }
-        console.log("Backend error status:", response.status);
-        console.log("Backend error body:", errorData);
+        console.error("Backend error status:", response.status);
+        console.error("Backend error body:", errorData);
         throw new Error(errorData.error || "Sign up failed");
       }
 
       const data = await response.json();
       console.log("Sign up successful:", data);
-      setUser && setUser(data.token);
+      if (setUser) {
+        setUser(data.token);
+      }
       router.replace("/(tabs)/" as any);
-    } catch (error) {
-      console.log("Sign up error:", error);
-      // Optional: show user-friendly error alert or message here
+    } catch (error: any) {
+      console.error("Sign up error:", error);
+      Alert.alert(
+        "Error",
+        error.message || "Sign up failed. Please try again."
+      );
+    } finally {
+      setLoading(false);
     }
   };
+
   return (
-    <View style={styles.referralContainer}>
-      <TextInput
-        style={{ ...styles.input, width: "100%" }}
-        placeholder="Phone Number"
-        placeholderTextColor={"#555"}
-        keyboardType="phone-pad"
-        onChangeText={(text) => setPhone(text)}
-      />
-      <TextInput
-        style={{ ...styles.input, width: "100%" }}
-        placeholder="Address"
-        placeholderTextColor={"#555"}
-        onChangeText={(text) => setAddress(text)}
-      />
-      <TextInput
-        style={{ ...styles.input, width: "100%" }}
-        placeholder="Referral Code"
-        placeholderTextColor={"#555"}
-        onChangeText={(text) => setReferralCode(text)}
-      />
-      <Text style={styles.optionalText}>Optional</Text>
-      <View>
-        <TouchableOpacity style={styles.signUpBtn} onPress={handleSignUp}>
-          <Text style={styles.signUpText}>Sign Up</Text>
+    <SafeAreaView
+      style={{
+        flex: 1,
+        backgroundColor: "#F0F7F7",
+      }}
+    >
+      <View style={styles.container}>
+        <Text style={styles.headingText}>Complete Your Sign Up</Text>
+
+        <View style={styles.inputWrapper}>
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            style={[
+              styles.input,
+              focusedInput === "phone" && styles.inputFocused,
+            ]}
+            placeholder="e.g. 07912345678"
+            placeholderTextColor="#555"
+            keyboardType="phone-pad"
+            onChangeText={setPhone}
+            value={phone}
+            onFocus={() => setFocusedInput("phone")}
+            onBlur={() => setFocusedInput(null)}
+          />
+        </View>
+
+        <View style={styles.inputWrapper}>
+          <Text style={styles.label}>Address</Text>
+          <TextInput
+            style={[
+              styles.input,
+              focusedInput === "address" && styles.inputFocused,
+            ]}
+            placeholder="e.g. Tabrbour Amman, Jordan"
+            placeholderTextColor="#555"
+            onChangeText={setAddress}
+            value={address}
+            onFocus={() => setFocusedInput("address")}
+            onBlur={() => setFocusedInput(null)}
+          />
+        </View>
+
+        <View style={styles.inputWrapper}>
+          <Text style={styles.label}>
+            Referral Code <Text style={styles.optionalLabel}>(Optional)</Text>
+          </Text>
+          <TextInput
+            style={[
+              styles.input,
+              focusedInput === "referralCode" && styles.inputFocused,
+            ]}
+            placeholder="e.g. A1B2C3D4"
+            placeholderTextColor="#555"
+            onChangeText={setReferralCode}
+            value={referralCode}
+            onFocus={() => setFocusedInput("referralCode")}
+            onBlur={() => setFocusedInput(null)}
+          />
+        </View>
+
+        <TouchableOpacity
+          style={[styles.signUpBtn, loading && styles.signUpBtnDisabled]}
+          onPress={handleSignUp}
+          disabled={loading}
+        >
+          <Text style={styles.signUpText}>
+            {loading ? <ActivityIndicator color={"#fff"} /> : "Sign Up"}
+          </Text>
         </TouchableOpacity>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    width: "100%",
+    padding: 20,
+  },
+  headingText: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#008B8B",
+    marginBottom: 25,
+    fontFamily: "OpenSans_700Bold",
+    textAlign: "center",
+  },
+  inputWrapper: {
+    position: "relative",
+    marginVertical: 15,
+    width: "100%",
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#008B8B",
+    marginBottom: 6,
+    fontFamily: "OpenSans_600SemiBold",
+  },
+  optionalLabel: {
+    fontWeight: "400",
+    fontSize: 12,
+    color: "#666",
+  },
+  input: {
+    height: 45,
+    marginBottom: 5,
+    borderWidth: 2,
+    borderColor: "#B0C4C4",
+    padding: 16,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    fontFamily: "Poppins_400Regular",
+    color: "#000",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    transitionDuration: "200ms",
+  },
+  inputFocused: {
+    borderColor: "#008B8B",
+    shadowColor: "#008B8B",
+    shadowOpacity: 0.4,
+    elevation: 5,
+  },
   signUpBtn: {
     width: "100%",
     backgroundColor: "#008B8B",
@@ -124,34 +233,16 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
     marginTop: 20,
-    padding: 15,
+    paddingVertical: 15,
+  },
+  signUpBtnDisabled: {
+    backgroundColor: "#80B8B8",
   },
   signUpText: {
     color: "#FFFFFF",
     fontSize: 16,
     fontFamily: "OpenSans_600SemiBold",
   },
-  referralContainer: {
-    width: "100%",
-    position: "relative",
-  },
-  input: {
-    height: 45,
-    marginVertical: 15,
-    borderWidth: 2,
-    borderColor: "#008B8B",
-    padding: 12,
-    borderRadius: 10,
-    fontFamily: "OpenSans_400Regular",
-  },
-  optionalText: {
-    position: "absolute",
-    right: 10,
-    top: 30,
-    fontSize: 12,
-    color: "#666",
-    fontFamily: "OpenSans_400Regular",
-  },
 });
 
-export default continueSignUp;
+export default ContinueSignUp;
