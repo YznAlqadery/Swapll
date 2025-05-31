@@ -237,7 +237,7 @@ const WelcomingScreen = () => {
 
             <Animated.View entering={FadeInUp.delay(1500).duration(800)}>
               <AuthButtons
-                backgroundColor="rgba(0, 139, 139, 0.6)"
+                backgroundColor="rgba(0, 139, 139, 0.9)"
                 title="Login"
                 navigateTo="Login"
               />
