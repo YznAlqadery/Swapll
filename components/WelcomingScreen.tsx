@@ -1,4 +1,4 @@
-import { View, Image, Dimensions, StyleSheet, Text } from "react-native";
+import { View, Image, Dimensions, Text } from "react-native";
 import { Marquee } from "@animatereactnative/marquee";
 import { Stagger } from "@animatereactnative/stagger";
 import Animated, {
@@ -185,7 +185,7 @@ const WelcomingScreen = () => {
           <Text
             style={{
               color: THEME.secondary,
-              fontFamily: "OpenSans_500Medium",
+              fontFamily: "Poppins_500Medium",
             }}
           >
             Welcome to
@@ -193,10 +193,10 @@ const WelcomingScreen = () => {
           <Text
             style={{
               color: THEME.primary,
-              fontSize: 36,
+              fontSize: 44,
               fontWeight: "bold",
               marginBottom: 10,
-              fontFamily: "OpenSans_700Bold",
+              fontFamily: "Poppins_700Bold",
             }}
           >
             Swapll
@@ -210,7 +210,7 @@ const WelcomingScreen = () => {
               textAlign: "center",
               paddingHorizontal: 20,
               marginBottom: 10,
-              fontFamily: "OpenSans_400Regular",
+              fontFamily: "Poppins_400Regular",
               height: 80,
             }}
           >

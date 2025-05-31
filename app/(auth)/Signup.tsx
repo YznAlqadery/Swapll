@@ -145,7 +145,7 @@ const SignUp = () => {
                   }}
                   style={styles.signUpBtn}
                 >
-                  <Text style={styles.signUpText}>Continue Signing Up</Text>
+                  <Text style={styles.signUpText}>Continue</Text>
                 </Link>
                 <View
                   style={{
@@ -159,7 +159,7 @@ const SignUp = () => {
                     style={{
                       color: "#000",
                       fontSize: 14,
-                      fontFamily: "OpenSans_500Medium",
+                      fontFamily: "Poppins_500Medium",
                     }}
                   >
                     Already have an account?{" "}
@@ -169,7 +169,7 @@ const SignUp = () => {
                       style={{
                         color: "#008B8B",
                         fontSize: 14,
-                        fontFamily: "OpenSans_600SemiBold",
+                        fontFamily: "Poppins_600SemiBold",
                       }}
                     >
                       Login
@@ -222,7 +222,7 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#000",
     marginTop: 10,
-    fontFamily: "OpenSans_500Medium",
+    fontFamily: "Poppins_500Medium",
   },
   input: {
     height: 45,
@@ -231,7 +231,7 @@ const styles = StyleSheet.create({
     borderColor: "#008B8B",
     padding: 12,
     borderRadius: 10,
-    fontFamily: "OpenSans_400Regular",
+    fontFamily: "Poppins_400Regular",
   },
   signUpBtn: {
     width: "100%",
@@ -246,7 +246,7 @@ const styles = StyleSheet.create({
   signUpText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "OpenSans_600SemiBold",
+    fontFamily: "Poppins_600SemiBold",
   },
 
   referralContainer: {
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
     top: 30,
     fontSize: 12,
     color: "#666",
-    fontFamily: "OpenSans_400Regular",
+    fontFamily: "Poppins_400Regular",
   },
 });
 

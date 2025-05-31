@@ -72,7 +72,7 @@ const CustomBottomSheet = ({
             <Text
               style={{
                 fontSize: 20,
-                fontFamily: "OpenSans_700Bold",
+                fontFamily: "Poppins_700Bold",
                 color: "#008B8B",
                 marginBottom: 8,
               }}
@@ -86,7 +86,7 @@ const CustomBottomSheet = ({
           <Text
             style={{
               fontSize: 15,
-              fontFamily: "OpenSans_700Bold",
+              fontFamily: "Poppins_700Bold",
               color: "#666",
               marginBottom: 8,
               textDecorationLine: "underline",
@@ -97,7 +97,7 @@ const CustomBottomSheet = ({
           <Text
             style={{
               fontSize: 16,
-              fontFamily: "OpenSans_400Regular",
+              fontFamily: "Poppins_400Regular",
               color: "#333",
               marginBottom: 12,
             }}
@@ -125,7 +125,7 @@ const CustomBottomSheet = ({
               <Text
                 style={{
                   fontSize: 15,
-                  fontFamily: "OpenSans_600SemiBold",
+                  fontFamily: "Poppins_600SemiBold",
                   color: "#008B8B",
                 }}
               >
@@ -151,7 +151,7 @@ const CustomBottomSheet = ({
               <Text
                 style={{
                   fontSize: 15,
-                  fontFamily: "OpenSans_600SemiBold",
+                  fontFamily: "Poppins_600SemiBold",
                   color: "#008B8B",
                 }}
               >
@@ -171,7 +171,7 @@ const CustomBottomSheet = ({
               <Text
                 style={{
                   fontSize: 15,
-                  fontFamily: "OpenSans_600SemiBold",
+                  fontFamily: "Poppins_600SemiBold",
                   color: "#008B8B",
                 }}
               >
@@ -193,7 +193,7 @@ const CustomBottomSheet = ({
               <Text
                 style={{
                   fontSize: 15,
-                  fontFamily: "OpenSans_600SemiBold",
+                  fontFamily: "Poppins_600SemiBold",
                   color: "#008B8B",
                 }}
               >
@@ -215,7 +215,7 @@ const CustomBottomSheet = ({
               <Text
                 style={{
                   fontSize: 15,
-                  fontFamily: "OpenSans_600SemiBold",
+                  fontFamily: "Poppins_600SemiBold",
                   color: "#008B8B",
                 }}
               >

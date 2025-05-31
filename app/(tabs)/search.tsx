@@ -97,7 +97,7 @@ const Search = () => {
             placeholder="Search"
             style={{
               width: "80%",
-              fontFamily: "OpenSans_400Regular",
+              fontFamily: "Poppins_400Regular",
             }}
             placeholderTextColor="#008B8B"
           />
@@ -153,7 +153,7 @@ const Search = () => {
                     style={{
                       color: "#66B2B2",
                       fontSize: 14,
-                      fontFamily: "OpenSans_400Regular",
+                      fontFamily: "Poppins_400Regular",
                       marginRight: 8,
                     }}
                   >
@@ -193,7 +193,7 @@ const Search = () => {
                     style={{
                       color: "#66B2B2",
                       fontSize: 14,
-                      fontFamily: "OpenSans_400Regular",
+                      fontFamily: "Poppins_400Regular",
                       marginRight: 8,
                     }}
                   >
@@ -219,7 +219,7 @@ const Search = () => {
               }}
               inputStyles={{
                 color: "#008B8B",
-                fontFamily: "OpenSans_400Regular",
+                fontFamily: "Poppins_400Regular",
               }}
               dropdownStyles={{
                 borderRadius: 10,
@@ -258,7 +258,7 @@ const Search = () => {
                 style={{
                   color: "#fff",
                   fontSize: 16,
-                  fontFamily: "OpenSans_500Medium",
+                  fontFamily: "Poppins_500Medium",
                 }}
               >
                 Apply
@@ -280,7 +280,7 @@ const styles = StyleSheet.create({
     fontSize: 24,
     textAlign: "center",
     padding: 10,
-    fontFamily: "OpenSans_700Bold",
+    fontFamily: "Poppins_700Bold",
     color: "#008B8B",
   },
   searchContainer: {
@@ -310,12 +310,12 @@ const styles = StyleSheet.create({
   },
   bottomSheetHeader: {
     fontSize: 20,
-    fontFamily: "OpenSans_700Bold",
+    fontFamily: "Poppins_700Bold",
     color: "#008B8B",
   },
   bottomSheetSubheader: {
     fontSize: 14,
-    fontFamily: "OpenSans_400Regular",
+    fontFamily: "Poppins_400Regular",
     color: "#66B2B2",
     marginTop: 8,
   },
@@ -334,7 +334,7 @@ const styles = StyleSheet.create({
   },
   categoryText: {
     fontSize: 14,
-    fontFamily: "OpenSans_400Regular",
+    fontFamily: "Poppins_400Regular",
     color: "#008B8B",
     textAlign: "center",
   },

@@ -7,12 +7,17 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { AuthContext } from "@/context/AuthContext";
 import { MaterialIcons, FontAwesome5, Entypo } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import * as Clipboard from "expo-clipboard";
+import { Feather } from "@expo/vector-icons";
+
 interface User {
+  myReferralCode: string;
   firstName: string;
   lastName: string;
   userName: string;
@@ -42,7 +47,7 @@ const Profile = () => {
       if (!token) return;
 
       try {
-        const res = await fetch(`http://192.168.68.107:8080/api/user/myinfo`, {
+        const res = await fetch(`http://192.168.1.71:8080/api/user/myinfo`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await res.json();
@@ -62,7 +67,7 @@ const Profile = () => {
       setIsLoading(true);
       try {
         // Compose full image URL
-        const imageUrl = "http://192.168.68.107:8080" + loggedInUser.profilePic;
+        const imageUrl = "http://192.168.1.71:8080" + loggedInUser.profilePic;
 
         // Create a local file path to save the image
         const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
@@ -92,16 +97,19 @@ const Profile = () => {
       </SafeAreaView>
     );
   }
-
+  const copyToClipboard = async (text: string) => {
+    await Clipboard.setStringAsync(text);
+    Alert.alert("Copied!", `${text} copied to clipboard.`);
+  };
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity
+      {/* <TouchableOpacity
         style={styles.backButton}
         onPress={() => router.back()}
         activeOpacity={0.7}
       >
         <MaterialIcons name="arrow-back" size={28} color="#008B8B" />
-      </TouchableOpacity>
+      </TouchableOpacity> */}
       <TouchableOpacity
         style={styles.logout}
         onPress={handleLogout}
@@ -114,8 +122,18 @@ const Profile = () => {
         {isLoading ? (
           <ActivityIndicator size="large" color="#008B8B" />
         ) : localImageUri ? (
-          <View style={styles.profilePicWrapper}>
-            <Image source={{ uri: localImageUri }} style={styles.profilePic} />
+          <View style={styles.profileWrapper}>
+            <Image
+              source={require("@/assets/images/profile-page-bg.png")}
+              style={styles.wavyBackground}
+              resizeMode="cover"
+            />
+            <View style={styles.profilePicWrapper}>
+              <Image
+                source={{ uri: localImageUri }}
+                style={styles.profilePic}
+              />
+            </View>
           </View>
         ) : (
           <Text>No profile picture available</Text>
@@ -129,16 +147,53 @@ const Profile = () => {
               loggedInUser.lastName.substring(1)}
           </Text>
         </View>
-        <Text
+        <View
           style={{
-            fontSize: 14,
-            fontWeight: "bold",
-            fontFamily: "OpenSans_700Bold",
+            flexDirection: "column",
+            gap: 8,
+            alignItems: "center",
             marginBottom: 16,
           }}
         >
-          @{loggedInUser.userName}
-        </Text>
+          <Text
+            style={{
+              fontSize: 14,
+              fontWeight: "bold",
+              fontFamily: "Poppins_700Bold",
+              marginRight: 8,
+            }}
+          >
+            @{loggedInUser.userName}
+          </Text>
+
+          {loggedInUser.myReferralCode && (
+            <TouchableOpacity
+              onPress={() => copyToClipboard(loggedInUser.myReferralCode!)}
+              activeOpacity={0.7}
+              style={{
+                flexDirection: "row", // ✅ icon + text in one line
+                alignItems: "center",
+                backgroundColor: "#008B8B",
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                borderRadius: 4,
+              }}
+            >
+              <Feather name="copy" size={16} color="#fff" />
+              <Text
+                style={{
+                  fontSize: 14,
+                  fontWeight: "bold",
+                  fontFamily: "Poppins_700Bold",
+                  color: "#fff",
+                  marginLeft: 6,
+                }}
+              >
+                {loggedInUser.myReferralCode}
+              </Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
       <Text
         style={{
@@ -147,7 +202,7 @@ const Profile = () => {
           textAlign: "left",
           marginTop: 16,
           marginLeft: 16,
-          fontFamily: "OpenSans_700Bold",
+          fontFamily: "Poppins_700Bold",
         }}
       >
         Personal Information
@@ -232,30 +287,43 @@ const Profile = () => {
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: "#F0F7F7" },
   profileContainer: { alignItems: "center" },
-
+  profileWrapper: {
+    width: "100%",
+    alignItems: "center",
+    paddingTop: 40,
+    paddingBottom: 24,
+    position: "relative",
+  },
   profilePicWrapper: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    overflow: "hidden",
+    marginBottom: 12,
+    backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 60,
-    padding: 2, // More padding for a stronger glow
-    backgroundColor: "#008B8B",
-    borderWidth: 3,
-    borderColor: "#00CED1", // Lighter cyan border for extra pop
-    marginBottom: 24, // More space below the image
-    // Shadow for iOS
-    shadowColor: "#00CED1",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.9,
-    shadowRadius: 24,
-    // Elevation for Android
-    elevation: 24,
   },
-  profilePic: { width: 100, height: 100, borderRadius: 50 },
+  wavyBackground: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: 180,
+    zIndex: -1,
+    borderRadius: 100,
+  },
+  profilePic: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+    zIndex: 1,
+  },
   username: {
     fontSize: 22,
     fontWeight: "bold",
     marginBottom: 8,
-    fontFamily: "OpenSans_700Bold",
+    fontFamily: "Poppins_700Bold",
   },
   personalInfo: {
     flexDirection: "column",
@@ -276,20 +344,20 @@ const styles = StyleSheet.create({
     height: 50,
   },
   infoLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: "bold",
     marginRight: 8,
     color: "#fff",
-    fontFamily: "OpenSans_700Bold",
+    fontFamily: "Poppins_700Bold",
   },
   infoText: {
     fontSize: 14,
     color: "#fff",
-    fontFamily: "OpenSans_400Regular",
+    fontFamily: "Poppins_400Regular",
   },
   backButton: {
     position: "absolute",
-    top: 40,
+    top: 110,
     left: 16,
     zIndex: 10,
     backgroundColor: "#F0F7F7",
@@ -298,7 +366,7 @@ const styles = StyleSheet.create({
   },
   logout: {
     position: "absolute",
-    top: 40,
+    top: 110,
     right: 16,
     zIndex: 10,
     backgroundColor: "#F0F7F7",

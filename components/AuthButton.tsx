@@ -30,7 +30,7 @@ const AuthButtons = ({
             color: "white",
             fontWeight: "bold",
             fontSize: 16,
-            fontFamily: "OpenSans_700Bold",
+            fontFamily: "Poppins_700Bold",
           }}
         >
           {title}

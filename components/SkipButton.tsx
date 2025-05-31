@@ -18,7 +18,7 @@ const SkipButton = () => {
           <Text
             style={{
               fontSize: 18,
-              fontFamily: "OpenSans_700Bold",
+              fontFamily: "Poppins_700Bold",
               color: "#008B8B",
               marginRight: 5,
             }}

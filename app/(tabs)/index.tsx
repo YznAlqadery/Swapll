@@ -46,7 +46,7 @@ const CategoryItem = ({
       <Text
         style={{
           color: selectedCategory === item ? "#F0F7F7" : "#008B8B",
-          fontFamily: "OpenSans_700Bold",
+          fontFamily: "Poppins_700Bold",
           fontSize: 16,
         }}
       >
@@ -81,7 +81,7 @@ const OfferItem = ({
         <Text
           style={{
             color: "#008B8B",
-            fontFamily: "OpenSans_700Bold",
+            fontFamily: "Poppins_700Bold",
             fontSize: 16,
           }}
         >
@@ -90,7 +90,7 @@ const OfferItem = ({
         <Text
           style={{
             color: "#666",
-            fontFamily: "OpenSans_600SemiBold",
+            fontFamily: "Poppins_600SemiBold",
             fontSize: 13,
             marginBottom: 4,
           }}
@@ -100,7 +100,7 @@ const OfferItem = ({
         <Text
           style={{
             color: "#008B8B",
-            fontFamily: "OpenSans_400Regular",
+            fontFamily: "Poppins_400Regular",
             fontSize: 14,
           }}
         >
@@ -109,7 +109,7 @@ const OfferItem = ({
         <Text
           style={{
             color: "#008B8B",
-            fontFamily: "OpenSans_700Bold",
+            fontFamily: "Poppins_700Bold",
             fontSize: 15,
             marginTop: 6,
           }}
@@ -299,7 +299,7 @@ const Index = () => {
           <Text
             style={{
               fontSize: 20,
-              fontFamily: "OpenSans_700Bold",
+              fontFamily: "Poppins_700Bold",
               marginBottom: 20,
               color: "#008B8B",
               marginLeft: 20,
@@ -355,7 +355,7 @@ const styles = StyleSheet.create({
   },
   header: {
     fontSize: 24,
-    fontFamily: "OpenSans_700Bold",
+    fontFamily: "Poppins_700Bold",
     marginHorizontal: 16,
     marginTop: 16,
     marginBottom: 8,
@@ -378,7 +378,7 @@ const styles = StyleSheet.create({
 
   offerDescription: {
     fontSize: 16,
-    fontFamily: "OpenSans_400Regular",
+    fontFamily: "Poppins_400Regular",
     color: "#008B8B",
   },
 

@@ -8,8 +8,9 @@ import {
   Platform,
   KeyboardAvoidingView,
   Image,
+  ActivityIndicator,
 } from "react-native";
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import {
@@ -26,6 +27,7 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [focusedInput, setFocusedInput] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -45,10 +47,14 @@ const Login = () => {
         password,
       }),
     };
+    if (!email || !password) {
+      setError("Please fill in all fields.");
+      return;
+    }
     try {
       setIsLoading(true);
       const response = await fetch(
-        "http://192.168.68.107:8080/api/auth/login",
+        "http://192.168.1.71:8080/api/auth/login",
         request
       );
       const data = await response.json();
@@ -87,48 +93,55 @@ const Login = () => {
           >
             <View style={styles.loginContainer}>
               <View style={styles.logoContainer}>
-                <Image
-                  source={require("@/assets/images/swapll-logo.png")}
-                  style={styles.logo}
-                  resizeMode="contain"
-                />
-
-                <Text style={styles.appName}>Swapll</Text>
+                <View style={styles.logoRow}>
+                  <Image
+                    source={require("@/assets/images/swapll-logo.png")}
+                    style={styles.logoSmall}
+                    resizeMode="contain"
+                  />
+                  <Text style={styles.appName}>Swapll</Text>
+                </View>
                 <Text style={styles.tagline}>
                   Exchange without expectations
                 </Text>
               </View>
 
               <View style={styles.formContainer}>
-                <Text style={styles.welcomeText}>Welcome Back!</Text>
-
+                <Text style={styles.label}>Email or Username</Text>
                 <TextInput
-                  style={styles.input}
-                  placeholder="Email/Username"
-                  placeholderTextColor={"#555"}
+                  style={[
+                    styles.input,
+                    focusedInput === "email" && styles.inputFocused,
+                  ]}
+                  placeholder="example@email.com"
                   value={email}
                   onChangeText={setEmail}
+                  onFocus={() => setFocusedInput("email")}
+                  onBlur={() => setFocusedInput(null)}
                   autoCapitalize="none"
                 />
+
                 {error && (
                   <Text style={{ color: "red", marginBottom: 10 }}>
-                    Invalid Email/Username
+                    Invalid Email or Username
                   </Text>
                 )}
-
+                <Text style={styles.label}>Password</Text>
                 <View style={styles.passwordContainer}>
                   <TextInput
-                    style={styles.passwordInput}
-                    placeholder="Password"
-                    placeholderTextColor={"#555"}
+                    style={[
+                      styles.input,
+                      focusedInput === "password" && styles.inputFocused,
+                    ]}
+                    placeholder="***************"
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry={!showPassword}
+                    onFocus={() => setFocusedInput("password")}
+                    onBlur={() => setFocusedInput(null)}
                   />
                   {error && (
-                    <Text style={{ color: "red", marginTop: 10 }}>
-                      Invalid Password
-                    </Text>
+                    <Text style={{ color: "red" }}>Invalid Password</Text>
                   )}
                   <TouchableOpacity
                     style={styles.eyeIcon}
@@ -154,7 +167,11 @@ const Login = () => {
                   disabled={isLoading}
                 >
                   <Text style={styles.loginText}>
-                    {isLoading ? "Logging in..." : "Login"}
+                    {isLoading ? (
+                      <ActivityIndicator color="#fff" />
+                    ) : (
+                      <Text>Login</Text>
+                    )}
                   </Text>
                 </TouchableOpacity>
 
@@ -190,22 +207,39 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 40,
   },
+  label: {
+    fontSize: 14,
+    color: "#333",
+    fontFamily: "Poppins_600SemiBold",
+    marginLeft: 5,
+  },
   logo: {
     width: 100,
     height: 100,
     marginBottom: 10,
   },
+  logoRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 8,
+  },
+  logoSmall: {
+    width: 70,
+    height: 70,
+    marginRight: 10,
+    borderRadius: 14,
+  },
   appName: {
-    fontSize: 32,
+    fontSize: 28,
     color: "#008B8B",
-    marginBottom: 5,
-    fontFamily: "OpenSans_700Bold",
+    fontFamily: "Poppins_700Bold",
   },
   tagline: {
-    fontSize: 16,
+    fontSize: 18,
     color: "#555",
     textAlign: "center",
-    fontFamily: "OpenSans_400Regular",
+    fontFamily: "Poppins_700Bold",
+    marginBottom: 8,
   },
   formContainer: {
     width: "100%",
@@ -214,36 +248,39 @@ const styles = StyleSheet.create({
     fontSize: 24,
     color: "#333",
     marginBottom: 20,
-    fontFamily: "OpenSans_600SemiBold",
+    fontFamily: "Poppins_600SemiBold",
   },
   input: {
     height: 50,
     marginVertical: 12,
     borderWidth: 2,
-    borderColor: "#008B8B",
-    padding: 12,
+    borderColor: "#B0C4C4", // softer default border
+    padding: 16,
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
-    fontFamily: "OpenSans_400Regular",
+    fontFamily: "Poppins_400Regular",
+    color: "#000",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2, // for Android shadow
+    transitionDuration: "200ms", // smooth transition (iOS & web)
+  },
+  inputFocused: {
+    borderColor: "#008B8B",
+    shadowColor: "#008B8B",
+    shadowOpacity: 0.4,
+    elevation: 5,
   },
   passwordContainer: {
     position: "relative",
     width: "100%",
-    marginVertical: 12,
-  },
-  passwordInput: {
-    height: 50,
-    borderWidth: 2,
-    borderColor: "#008B8B",
-    padding: 12,
-    borderRadius: 10,
-    backgroundColor: "#FFFFFF",
-    fontFamily: "OpenSans_400Regular",
   },
   eyeIcon: {
     position: "absolute",
     right: 12,
-    top: 10,
+    top: 22,
     padding: 5,
   },
   forgotPasswordContainer: {
@@ -253,7 +290,7 @@ const styles = StyleSheet.create({
   forgotPasswordText: {
     color: "#008B8B",
     fontWeight: "600",
-    fontFamily: "OpenSans_600SemiBold",
+    fontFamily: "Poppins_600SemiBold",
   },
   loginBtn: {
     width: "100%",
@@ -267,7 +304,7 @@ const styles = StyleSheet.create({
   loginText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "OpenSans_600SemiBold",
+    fontFamily: "Poppins_600SemiBold",
   },
   signupContainer: {
     flexDirection: "row",
@@ -278,12 +315,12 @@ const styles = StyleSheet.create({
   accountText: {
     color: "#333",
     fontSize: 14,
-    fontFamily: "OpenSans_400Regular",
+    fontFamily: "Poppins_400Regular",
   },
   signupText: {
     color: "#008B8B",
     fontSize: 14,
-    fontFamily: "OpenSans_600SemiBold",
+    fontFamily: "Poppins_600SemiBold",
   },
 });
 
