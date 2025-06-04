@@ -11,10 +11,16 @@ import {
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { AuthContext } from "@/context/AuthContext";
-import { MaterialIcons, FontAwesome5, Entypo } from "@expo/vector-icons";
+import {
+  MaterialIcons,
+  FontAwesome5,
+  Entypo,
+  FontAwesome,
+} from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { Feather } from "@expo/vector-icons";
+import { ScrollView } from "react-native-gesture-handler";
 
 interface User {
   myReferralCode: string;
@@ -116,176 +122,208 @@ const Profile = () => {
       >
         <MaterialIcons name="arrow-back" size={28} color="#008B8B" />
       </TouchableOpacity> */}
-      <TouchableOpacity
-        style={styles.logout}
-        onPress={handleLogout}
-        activeOpacity={0.7}
-      >
-        <MaterialIcons name="logout" size={28} color="#008B8B" />
-      </TouchableOpacity>
-
-      <View style={styles.profileContainer}>
-        {isLoading ? (
-          <ActivityIndicator size="large" color="#008B8B" />
-        ) : localImageUri ? (
-          <View style={styles.profileWrapper}>
-            <Image
-              source={require("@/assets/images/profile-page-bg.png")}
-              style={styles.wavyBackground}
-              resizeMode="cover"
-            />
-            <View style={styles.profilePicWrapper}>
+      <ScrollView style={{ flex: 1 }}>
+        <View style={styles.profileContainer}>
+          {isLoading ? (
+            <ActivityIndicator size="large" color="#008B8B" />
+          ) : localImageUri ? (
+            <View style={styles.profileWrapper}>
               <Image
-                source={{ uri: localImageUri }}
-                style={styles.profilePic}
+                source={require("@/assets/images/profile-page-bg.png")}
+                style={styles.wavyBackground}
+                resizeMode="cover"
               />
+              <View style={styles.profilePicWrapper}>
+                <Image
+                  source={{ uri: localImageUri }}
+                  style={styles.profilePic}
+                />
+              </View>
             </View>
-          </View>
-        ) : (
-          <Text>No profile picture available</Text>
-        )}
+          ) : (
+            <Text>No profile picture available</Text>
+          )}
 
-        <View>
-          <Text style={styles.username}>
-            {loggedInUser.firstName.substring(0, 1).toLocaleUpperCase() +
-              loggedInUser.firstName.substring(1)}{" "}
-            {loggedInUser.lastName.substring(0, 1).toLocaleUpperCase() +
-              loggedInUser.lastName.substring(1)}
-          </Text>
+          <View>
+            <Text style={styles.username}>
+              {loggedInUser.firstName.substring(0, 1).toLocaleUpperCase() +
+                loggedInUser.firstName.substring(1)}{" "}
+              {loggedInUser.lastName.substring(0, 1).toLocaleUpperCase() +
+                loggedInUser.lastName.substring(1)}
+            </Text>
+          </View>
+          <View
+            style={{
+              flexDirection: "column",
+              gap: 8,
+              alignItems: "center",
+              marginBottom: 16,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 14,
+                fontWeight: "bold",
+                fontFamily: "Poppins_700Bold",
+                marginRight: 8,
+              }}
+            >
+              @{loggedInUser.userName}
+            </Text>
+
+            {loggedInUser.myReferralCode && (
+              <TouchableOpacity
+                onPress={() => copyToClipboard(loggedInUser.myReferralCode!)}
+                activeOpacity={0.7}
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: "#008B8B",
+                  paddingHorizontal: 8,
+                  paddingVertical: 4,
+                  borderRadius: 4,
+                }}
+              >
+                <Feather name="copy" size={16} color="#fff" />
+                <Text
+                  style={{
+                    fontSize: 14,
+                    fontWeight: "bold",
+                    fontFamily: "Poppins_700Bold",
+                    color: "#fff",
+                    marginLeft: 6,
+                  }}
+                >
+                  {loggedInUser.myReferralCode}
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
         </View>
         <View
           style={{
-            flexDirection: "column",
-            gap: 8,
+            flexDirection: "row",
+            justifyContent: "space-between",
             alignItems: "center",
-            marginBottom: 16,
+            marginHorizontal: 16,
+            marginTop: 16,
           }}
         >
           <Text
             style={{
-              fontSize: 14,
+              fontSize: 16,
               fontWeight: "bold",
               fontFamily: "Poppins_700Bold",
-              marginRight: 8,
             }}
           >
-            @{loggedInUser.userName}
+            Personal Information
           </Text>
 
-          {loggedInUser.myReferralCode && (
-            <TouchableOpacity
-              onPress={() => copyToClipboard(loggedInUser.myReferralCode!)}
-              activeOpacity={0.7}
+          <TouchableOpacity
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              padding: 4,
+            }}
+            activeOpacity={0.7}
+          >
+            <Feather name="edit" size={18} color="#008B8B" />
+            <Text
               style={{
-                flexDirection: "row", // ✅ icon + text in one line
-                alignItems: "center",
-                backgroundColor: "#008B8B",
-                paddingHorizontal: 8,
-                paddingVertical: 4,
-                borderRadius: 4,
+                marginLeft: 4,
+                color: "#008B8B",
+                fontFamily: "Poppins_600SemiBold",
+                fontSize: 14,
               }}
             >
-              <Feather name="copy" size={16} color="#fff" />
-              <Text
-                style={{
-                  fontSize: 14,
-                  fontWeight: "bold",
-                  fontFamily: "Poppins_700Bold",
-                  color: "#fff",
-                  marginLeft: 6,
-                }}
-              >
-                {loggedInUser.myReferralCode}
-              </Text>
-            </TouchableOpacity>
-          )}
+              Edit
+            </Text>
+          </TouchableOpacity>
         </View>
-      </View>
-      <Text
-        style={{
-          fontSize: 16,
-          fontWeight: "bold",
-          textAlign: "left",
-          marginTop: 16,
-          marginLeft: 16,
-          fontFamily: "Poppins_700Bold",
-        }}
-      >
-        Personal Information
-      </Text>
 
-      <View style={styles.personalInfo}>
-        <View style={styles.infoBox}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <MaterialIcons
-              name="email"
-              size={20}
-              color="#fff"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.infoLabel}>Email</Text>
+        <View style={styles.personalInfo}>
+          <View style={styles.infoBox}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <MaterialIcons
+                name="email"
+                size={20}
+                color="#fff"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.infoLabel}>Email</Text>
+            </View>
+            <Text style={styles.infoText}>{loggedInUser.email}</Text>
           </View>
-          <Text style={styles.infoText}>{loggedInUser.email}</Text>
-        </View>
-        <View style={styles.infoBox}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <FontAwesome5
-              name="phone"
-              size={20}
-              color="#fff"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.infoLabel}>Phone</Text>
+          <View style={styles.infoBox}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <FontAwesome5
+                name="phone"
+                size={20}
+                color="#fff"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.infoLabel}>Phone</Text>
+            </View>
+            <Text style={styles.infoText}>{loggedInUser.phone}</Text>
           </View>
-          <Text style={styles.infoText}>{loggedInUser.phone}</Text>
-        </View>
-        <View style={styles.infoBox}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <Entypo
-              name="address"
-              size={20}
-              color="#fff"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.infoLabel}>Address</Text>
+          <View style={styles.infoBox}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <Entypo
+                name="address"
+                size={20}
+                color="#fff"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.infoLabel}>Address</Text>
+            </View>
+            <Text style={styles.infoText}>{loggedInUser.address}</Text>
           </View>
-          <Text style={styles.infoText}>{loggedInUser.address}</Text>
-        </View>
-        <View style={styles.infoBox}>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-            }}
-          >
-            <FontAwesome5
-              name="gift"
-              size={20}
-              color="#fff"
-              style={{ marginRight: 6 }}
-            />
-            <Text style={styles.infoLabel}>Referral Code</Text>
+          <View style={styles.infoBox}>
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <FontAwesome5
+                name="gift"
+                size={20}
+                color="#fff"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.infoLabel}>Referral Code</Text>
+            </View>
+            <Text style={styles.infoText}>
+              {loggedInUser.referralCode ?? "N/A"}
+            </Text>
           </View>
-          <Text style={styles.infoText}>
-            {loggedInUser.referralCode ?? "N/A"}
-          </Text>
         </View>
-      </View>
+        <View style={styles.logoutContainer}>
+          <TouchableOpacity
+            style={styles.logoutButton}
+            onPress={handleLogout}
+            activeOpacity={0.8}
+          >
+            <FontAwesome name="sign-out" size={20} color="#008B8B" />
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -370,14 +408,25 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     padding: 4,
   },
-  logout: {
-    position: "absolute",
-    top: 110,
-    right: 16,
-    zIndex: 10,
-    backgroundColor: "#F0F7F7",
-    borderRadius: 20,
-    padding: 4,
+  logoutContainer: {
+    width: "100%",
+    padding: 16,
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fff",
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#B0C4C4",
+  },
+  logoutText: {
+    color: "#008B8B",
+    fontSize: 16,
+    marginLeft: 10,
+    fontFamily: "Poppins_700Bold",
   },
 });
 

@@ -2,6 +2,7 @@ import { Tabs } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
 import { View } from "react-native";
 import React from "react";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const TabIcon = ({
   name,
@@ -36,75 +37,77 @@ const TabIcon = ({
 
 export default function TabLayout() {
   return (
-    <Tabs
-      screenOptions={{
-        tabBarShowLabel: false,
-        headerShown: false,
-        tabBarItemStyle: {
-          width: "100%",
-          height: "100%",
-          justifyContent: "center",
-          alignItems: "center",
-        },
-        tabBarStyle: {
-          backgroundColor: "#008B8B",
-          borderRadius: 50,
-          marginHorizontal: 20,
-          marginBottom: 28,
-          height: 50,
-          position: "absolute",
-          overflow: "hidden",
-          borderWidth: 1,
-          borderColor: "#008B8B",
-        },
-      }}
-    >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
-          tabBarIcon: ({ focused }: any) => (
-            <TabIcon name="home" size={26} focused={focused} />
-          ),
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Tabs
+        screenOptions={{
+          tabBarShowLabel: false,
+          headerShown: false,
+          tabBarItemStyle: {
+            width: "100%",
+            height: "100%",
+            justifyContent: "center",
+            alignItems: "center",
+          },
+          tabBarStyle: {
+            backgroundColor: "#008B8B",
+            borderRadius: 50,
+            marginHorizontal: 20,
+            marginBottom: 28,
+            height: 50,
+            position: "absolute",
+            overflow: "hidden",
+            borderWidth: 1,
+            borderColor: "#008B8B",
+          },
         }}
-      />
-      <Tabs.Screen
-        name="messages"
-        options={{
-          title: "Messages",
-          tabBarIcon: ({ focused }: any) => (
-            <TabIcon name="envelope" size={24} focused={focused} />
-          ),
-        }}
-      />
+      >
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Home",
+            tabBarIcon: ({ focused }: any) => (
+              <TabIcon name="home" size={26} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="messages"
+          options={{
+            title: "Messages",
+            tabBarIcon: ({ focused }: any) => (
+              <TabIcon name="envelope" size={24} focused={focused} />
+            ),
+          }}
+        />
 
-      <Tabs.Screen
-        name="add"
-        options={{
-          title: "",
-          tabBarIcon: ({ focused }: any) => (
-            <TabIcon name="plus" size={28} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="search"
-        options={{
-          title: "Search",
-          tabBarIcon: ({ focused }: any) => (
-            <TabIcon name="search" size={24} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "Profile",
-          tabBarIcon: ({ focused }: any) => (
-            <TabIcon name="user" size={26} focused={focused} />
-          ),
-        }}
-      />
-    </Tabs>
+        <Tabs.Screen
+          name="add"
+          options={{
+            title: "",
+            tabBarIcon: ({ focused }: any) => (
+              <TabIcon name="plus" size={28} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="search"
+          options={{
+            title: "Search",
+            tabBarIcon: ({ focused }: any) => (
+              <TabIcon name="search" size={24} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="profile"
+          options={{
+            title: "Profile",
+            tabBarIcon: ({ focused }: any) => (
+              <TabIcon name="user" size={26} focused={focused} />
+            ),
+          }}
+        />
+      </Tabs>
+    </GestureHandlerRootView>
   );
 }

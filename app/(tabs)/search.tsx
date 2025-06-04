@@ -220,17 +220,21 @@ const Search = () => {
               placeholder="Select payment method"
               boxStyles={{
                 width: "100%",
-                borderColor: "#008B8B",
-                borderWidth: 1,
+
+                marginBottom: 5,
+                borderWidth: 2,
+                borderColor: "#B0C4C4",
+                padding: 16,
                 borderRadius: 10,
-                padding: 10,
-                marginBottom: 10,
-                marginTop: 10,
+                backgroundColor: "#FFFFFF",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                elevation: 2,
+                transitionDuration: "200ms",
               }}
-              inputStyles={{
-                color: "#008B8B",
-                fontFamily: "Poppins_400Regular",
-              }}
+              fontFamily="Poppins_400Regular"
               dropdownStyles={{
                 borderRadius: 10,
                 borderColor: "#008B8B",
@@ -263,8 +267,16 @@ const Search = () => {
                   justifyContent: "space-between",
                 }}
               >
-                <Text style={{ color: "#008B8B" }}>Min: {minPrice} JD</Text>
-                <Text style={{ color: "#008B8B" }}>Max: {maxPrice} JD</Text>
+                <Text
+                  style={{ color: "#008B8B", fontFamily: "Poppins_400Regular" }}
+                >
+                  Min: {minPrice} JD
+                </Text>
+                <Text
+                  style={{ color: "#008B8B", fontFamily: "Poppins_400Regular" }}
+                >
+                  Max: {maxPrice} JD
+                </Text>
               </View>
               <Slider
                 style={{ width: "100%", height: 40 }}
@@ -384,12 +396,22 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     gap: 10,
     padding: 10,
-    borderRadius: 10,
-    borderColor: "#008B8B",
-    borderWidth: 1,
     marginTop: 10,
     marginRight: 10,
-    backgroundColor: "#fff",
+    height: 45,
+    marginBottom: 5,
+    borderWidth: 2,
+    borderColor: "#B0C4C4",
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    fontFamily: "Poppins_400Regular",
+    color: "#000",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
+    transitionDuration: "200ms",
   },
   categoryText: {
     fontSize: 14,

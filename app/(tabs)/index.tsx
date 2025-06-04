@@ -106,16 +106,28 @@ const OfferItem = ({
         >
           {item.description}
         </Text>
-        <Text
-          style={{
-            color: "#008B8B",
-            fontFamily: "Poppins_700Bold",
-            fontSize: 15,
-            marginTop: 6,
-          }}
+        <View
+          style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}
         >
-          ${item.price}
-        </Text>
+          <Image
+            style={{
+              width: 18,
+              height: 18,
+              marginRight: 4,
+              borderRadius: 50,
+            }}
+            source={require("@/assets/images/swapll-logo.png")}
+          />
+          <Text
+            style={{
+              color: "#008B8B",
+              fontFamily: "Poppins_700Bold",
+              fontSize: 15,
+            }}
+          >
+            {item.price}
+          </Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
