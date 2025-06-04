@@ -13,9 +13,9 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import BottomSheet, {
   BottomSheetBackdrop,
   BottomSheetView,
-  useBottomSheetModal,
 } from "@gorhom/bottom-sheet";
 import { SelectList } from "react-native-dropdown-select-list";
+import Slider from "@react-native-community/slider";
 
 const CategoryItem = ({ item, isActive, onPress }: any) => {
   return (
@@ -37,6 +37,8 @@ const CategoryItem = ({ item, isActive, onPress }: any) => {
 const Search = () => {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string>("");
+  const [minPrice, setMinPrice] = useState<number>(0);
+  const [maxPrice, setMaxPrice] = useState<number>(1000);
   // dummy data
   const categories = [
     { key: "1", value: "Electronics", icon: "laptop" },
@@ -84,31 +86,39 @@ const Search = () => {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <View>
-          <Text style={styles.header}>Search Anything...</Text>
+          <Text style={styles.header}>Find Skills, Services, or Items</Text>
         </View>
-        <View style={styles.searchContainer}>
-          <FontAwesome
-            name="search"
-            size={20}
-            color="#008B8B"
-            style={{ margin: 10 }}
-          />
-          <TextInput
-            placeholder="Search"
-            style={{
-              width: "80%",
-              fontFamily: "Poppins_400Regular",
-            }}
-            placeholderTextColor="#008B8B"
-          />
-          <TouchableOpacity onPress={openBottomSheet}>
+        <View
+          style={{
+            flexDirection: "row",
+            gap: 17,
+            alignItems: "center",
+          }}
+        >
+          <View style={styles.searchContainer}>
             <FontAwesome
-              name="filter"
+              name="search"
               size={20}
               color="#008B8B"
               style={{ margin: 10 }}
             />
-          </TouchableOpacity>
+            <TextInput
+              placeholder="Search"
+              style={{
+                width: "80%",
+                fontFamily: "Poppins_400Regular",
+              }}
+              placeholderTextColor="#008B8B"
+            />
+          </View>
+          <View>
+            <TouchableOpacity
+              onPress={openBottomSheet}
+              style={styles.filterButton}
+            >
+              <FontAwesome name="sliders" size={20} color="#008B8B" />
+            </TouchableOpacity>
+          </View>
         </View>
         <BottomSheet
           ref={bottomSheetRef}
@@ -237,6 +247,48 @@ const Search = () => {
               }
               search={false}
             />
+            <View style={{ marginTop: 20, marginBottom: 10 }}>
+              <Text
+                style={{
+                  ...styles.bottomSheetHeader,
+                  fontSize: 16,
+                  marginBottom: 8,
+                }}
+              >
+                Price Range
+              </Text>
+              <View
+                style={{
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                }}
+              >
+                <Text style={{ color: "#008B8B" }}>Min: {minPrice} JD</Text>
+                <Text style={{ color: "#008B8B" }}>Max: {maxPrice} JD</Text>
+              </View>
+              <Slider
+                style={{ width: "100%", height: 40 }}
+                minimumValue={0}
+                maximumValue={maxPrice}
+                value={minPrice}
+                onValueChange={setMinPrice}
+                minimumTrackTintColor="#008B8B"
+                maximumTrackTintColor="#B0C4C4"
+                thumbTintColor="#008B8B"
+                step={1}
+              />
+              <Slider
+                style={{ width: "100%", height: 40 }}
+                minimumValue={minPrice}
+                maximumValue={1000}
+                value={maxPrice}
+                onValueChange={setMaxPrice}
+                minimumTrackTintColor="#008B8B"
+                maximumTrackTintColor="#B0C4C4"
+                thumbTintColor="#008B8B"
+                step={1}
+              />
+            </View>
 
             <TouchableOpacity
               onPress={() => {
@@ -284,17 +336,24 @@ const styles = StyleSheet.create({
     color: "#008B8B",
   },
   searchContainer: {
-    width: "90%",
+    width: "80%",
     justifyContent: "center",
     flexDirection: "row",
     alignItems: "center",
-    alignSelf: "center",
+    alignSelf: "flex-start",
     marginTop: 10,
-    borderRadius: 16,
-    backgroundColor: "#fff",
+    marginLeft: 6,
+    borderWidth: 2,
+    borderColor: "#B0C4C4",
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    fontFamily: "Poppins_400Regular",
+    color: "#000",
     shadowColor: "#000",
-    borderColor: "#008B8B",
-    borderWidth: 1,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   bottomSheetContainer: {
     flex: 1,
@@ -341,6 +400,22 @@ const styles = StyleSheet.create({
   activeCategoryContainer: {
     backgroundColor: "rgba(0, 139, 139, 0.1)",
     borderWidth: 2,
+  },
+  filterButton: {
+    padding: 10,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    marginTop: 10,
+
+    borderWidth: 2,
+    borderColor: "#B0C4C4",
+    fontFamily: "Poppins_400Regular",
+    color: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
 });
 export default Search;

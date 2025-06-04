@@ -47,9 +47,13 @@ const Profile = () => {
       if (!token) return;
 
       try {
-        const res = await fetch(`http://192.168.1.71:8080/api/user/myinfo`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        const res = await fetch(
+          // `http://192.168.1.71:8080/api/user/myinfo`,
+          `http://192.168.68.104:8080/api/user/myinfo`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
         const data = await res.json();
         setLoggedInUser(data);
       } catch (error) {
@@ -67,7 +71,9 @@ const Profile = () => {
       setIsLoading(true);
       try {
         // Compose full image URL
-        const imageUrl = "http://192.168.1.71:8080" + loggedInUser.profilePic;
+        //    const imageUrl = "http://192.168.1.71:8080" + loggedInUser.profilePic;
+
+        const imageUrl = "http://192.168.68.104:8080" + loggedInUser.profilePic;
 
         // Create a local file path to save the image
         const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;

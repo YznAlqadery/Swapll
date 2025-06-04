@@ -54,7 +54,8 @@ const Login = () => {
     try {
       setIsLoading(true);
       const response = await fetch(
-        "http://192.168.1.71:8080/api/auth/login",
+        // "http://192.168.1.71:8080/api/auth/login",
+        "http://192.168.68.104:8080/api/auth/login",
         request
       );
       const data = await response.json();
@@ -118,6 +119,7 @@ const Login = () => {
                   onChangeText={setEmail}
                   onFocus={() => setFocusedInput("email")}
                   onBlur={() => setFocusedInput(null)}
+                  placeholderTextColor="#888"
                   autoCapitalize="none"
                 />
 
@@ -139,6 +141,7 @@ const Login = () => {
                     secureTextEntry={!showPassword}
                     onFocus={() => setFocusedInput("password")}
                     onBlur={() => setFocusedInput(null)}
+                    placeholderTextColor="#888"
                   />
                   {error && (
                     <Text style={{ color: "red" }}>Invalid Password</Text>
