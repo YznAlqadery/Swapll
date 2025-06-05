@@ -17,7 +17,7 @@ import {
   Entypo,
   FontAwesome,
 } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { Feather } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
@@ -219,26 +219,28 @@ const Profile = () => {
             Personal Information
           </Text>
 
-          <TouchableOpacity
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              padding: 4,
-            }}
-            activeOpacity={0.7}
-          >
-            <Feather name="edit" size={18} color="#008B8B" />
-            <Text
+          <Link href="/(pages)/EditProfile" asChild>
+            <TouchableOpacity
               style={{
-                marginLeft: 4,
-                color: "#008B8B",
-                fontFamily: "Poppins_600SemiBold",
-                fontSize: 14,
+                flexDirection: "row",
+                alignItems: "center",
+                padding: 4,
               }}
+              activeOpacity={0.7}
             >
-              Edit
-            </Text>
-          </TouchableOpacity>
+              <Feather name="edit" size={18} color="#008B8B" />
+              <Text
+                style={{
+                  marginLeft: 4,
+                  color: "#008B8B",
+                  fontFamily: "Poppins_600SemiBold",
+                  fontSize: 14,
+                }}
+              >
+                Edit
+              </Text>
+            </TouchableOpacity>
+          </Link>
         </View>
 
         <View style={styles.personalInfo}>

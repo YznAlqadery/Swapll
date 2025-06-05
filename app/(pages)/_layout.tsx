@@ -5,24 +5,7 @@ import React from "react";
 const PagesLayout = () => {
   return (
     <Stack>
-      <Stack.Screen
-        name="select"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="category"
-        options={{
-          headerShown: false,
-        }}
-      />
-      <Stack.Screen
-        name="continueSignUp"
-        options={{
-          headerShown: false,
-        }}
-      />
+      <Stack.Screen name="EditProfile" options={{ headerShown: false }} />
     </Stack>
   );
 };
