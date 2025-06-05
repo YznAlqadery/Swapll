@@ -6,6 +6,7 @@ const PagesLayout = () => {
   return (
     <Stack>
       <Stack.Screen name="EditProfile" options={{ headerShown: false }} />
+      <Stack.Screen name="ChatPage" options={{ headerShown: false }} />
     </Stack>
   );
 };
