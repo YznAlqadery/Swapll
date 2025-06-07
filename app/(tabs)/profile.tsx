@@ -21,6 +21,7 @@ import { Link, useRouter } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { Feather } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
+import { useLoggedInUser } from "@/context/LoggedInUserContext";
 
 interface User {
   myReferralCode: string;
@@ -36,8 +37,9 @@ interface User {
 
 const Profile = () => {
   const authContext = useContext(AuthContext);
+  const { user, setUser } = useLoggedInUser();
   const token = authContext?.user ?? null;
-  const [loggedInUser, setLoggedInUser] = useState<User | null>(null);
+
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,7 +62,7 @@ const Profile = () => {
           }
         );
         const data = await res.json();
-        setLoggedInUser(data);
+        setUser(data);
       } catch (error) {
         console.error("Failed fetching user info:", error);
       }
@@ -71,12 +73,11 @@ const Profile = () => {
 
   useEffect(() => {
     async function fetchProfileImage() {
-      if (!loggedInUser?.profilePic || !token) return;
+      if (!user?.profilePic || !token) return;
 
       setIsLoading(true);
       try {
-        const imageUrl =
-          process.env.EXPO_PUBLIC_API_URL + loggedInUser.profilePic;
+        const imageUrl = process.env.EXPO_PUBLIC_API_URL + user.profilePic;
 
         // Create a local file path to save the image
         const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
@@ -96,9 +97,9 @@ const Profile = () => {
     }
 
     fetchProfileImage();
-  }, [loggedInUser, token]);
+  }, [user, token]);
 
-  if (!loggedInUser) {
+  if (!user) {
     return (
       <SafeAreaView>
         <ActivityIndicator size="large" color="#008B8B" />
@@ -143,10 +144,10 @@ const Profile = () => {
 
           <View>
             <Text style={styles.username}>
-              {loggedInUser.firstName.substring(0, 1).toLocaleUpperCase() +
-                loggedInUser.firstName.substring(1)}{" "}
-              {loggedInUser.lastName.substring(0, 1).toLocaleUpperCase() +
-                loggedInUser.lastName.substring(1)}
+              {user.firstName.substring(0, 1).toLocaleUpperCase() +
+                user.firstName.substring(1)}{" "}
+              {user.lastName.substring(0, 1).toLocaleUpperCase() +
+                user.lastName.substring(1)}
             </Text>
           </View>
           <View
@@ -165,12 +166,12 @@ const Profile = () => {
                 marginRight: 8,
               }}
             >
-              @{loggedInUser.userName}
+              @{user.userName}
             </Text>
 
-            {loggedInUser.myReferralCode && (
+            {user.myReferralCode && (
               <TouchableOpacity
-                onPress={() => copyToClipboard(loggedInUser.myReferralCode!)}
+                onPress={() => copyToClipboard(user.myReferralCode)}
                 activeOpacity={0.7}
                 style={{
                   flexDirection: "row",
@@ -191,7 +192,7 @@ const Profile = () => {
                     marginLeft: 6,
                   }}
                 >
-                  {loggedInUser.myReferralCode}
+                  {user.myReferralCode}
                 </Text>
               </TouchableOpacity>
             )}
@@ -256,7 +257,7 @@ const Profile = () => {
               />
               <Text style={styles.infoLabel}>Email</Text>
             </View>
-            <Text style={styles.infoText}>{loggedInUser.email}</Text>
+            <Text style={styles.infoText}>{user.email}</Text>
           </View>
           <View style={styles.infoBox}>
             <View
@@ -273,7 +274,7 @@ const Profile = () => {
               />
               <Text style={styles.infoLabel}>Phone</Text>
             </View>
-            <Text style={styles.infoText}>{loggedInUser.phone}</Text>
+            <Text style={styles.infoText}>{user.phone}</Text>
           </View>
           <View style={styles.infoBox}>
             <View
@@ -290,7 +291,7 @@ const Profile = () => {
               />
               <Text style={styles.infoLabel}>Address</Text>
             </View>
-            <Text style={styles.infoText}>{loggedInUser.address}</Text>
+            <Text style={styles.infoText}>{user.address}</Text>
           </View>
           <View style={styles.infoBox}>
             <View
@@ -307,9 +308,7 @@ const Profile = () => {
               />
               <Text style={styles.infoLabel}>Referral Code</Text>
             </View>
-            <Text style={styles.infoText}>
-              {loggedInUser.referralCode ?? "N/A"}
-            </Text>
+            <Text style={styles.infoText}>{user.referralCode ?? "N/A"}</Text>
           </View>
         </View>
         <View style={styles.logoutContainer}>

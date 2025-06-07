@@ -1,4 +1,5 @@
 import { AuthProvider } from "@/context/AuthContext";
+import { LoggedInUserProvider } from "@/context/LoggedInUserContext";
 import {
   useFonts,
   Poppins_400Regular,
@@ -39,16 +40,18 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <StatusBar translucent backgroundColor="#F0F7F7" style="dark" />
-        <BottomSheetModalProvider>
-          <Stack>
-            <Stack.Screen name="index" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="(auth)" options={{ headerShown: false }} />
-            <Stack.Screen name="(pages)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-        </BottomSheetModalProvider>
+        <LoggedInUserProvider>
+          <StatusBar translucent backgroundColor="#F0F7F7" style="dark" />
+          <BottomSheetModalProvider>
+            <Stack>
+              <Stack.Screen name="index" options={{ headerShown: false }} />
+              <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="(auth)" options={{ headerShown: false }} />
+              <Stack.Screen name="(pages)" options={{ headerShown: false }} />
+              <Stack.Screen name="+not-found" />
+            </Stack>
+          </BottomSheetModalProvider>
+        </LoggedInUserProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
