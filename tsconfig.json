@@ -3,7 +3,7 @@
     "target": "ESNext",
     "module": "ESNext",
     "jsx": "react-native",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -16,12 +16,16 @@
     "paths": {
       "@/*": [
         "./*"
+      ],
+      "@env": [
+        "./env.d.ts"
       ]
     }
   },
   "include": [
     "**/*.ts",
     "**/*.tsx",
+    "env.d.ts",
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],

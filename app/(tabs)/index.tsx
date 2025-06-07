@@ -136,9 +136,12 @@ const OfferItem = ({
 };
 
 const fetchCategories = async (userToken: string) => {
-  const response = await fetch(`http://192.168.68.104:8080/api/categories`, {
-    headers: { Authorization: `Bearer ${userToken}` },
-  });
+  const response = await fetch(
+    `${process.env.EXPO_PUBLIC_API_URL}/api/categories`,
+    {
+      headers: { Authorization: `Bearer ${userToken}` },
+    }
+  );
   if (response.ok) {
     const data = await response.json();
     return data;

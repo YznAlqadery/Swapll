@@ -54,8 +54,7 @@ const Login = () => {
     try {
       setIsLoading(true);
       const response = await fetch(
-        // "http://192.168.1.71:8080/api/auth/login",
-        "http://192.168.68.104:8080/api/auth/login",
+        `${process.env.EXPO_PUBLIC_API_URL}/api/auth/login`,
         request
       );
       const data = await response.json();

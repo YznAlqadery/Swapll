@@ -60,8 +60,7 @@ const ContinueSignUp = () => {
 
     try {
       const response = await fetch(
-        // "http://192.168.1.71:8080/api/auth/register",
-        "http://192.168.68.104:8080/api/auth/register",
+        `${process.env.EXPO_PUBLIC_API_URL}/api/auth/register`,
         {
           method: "POST",
           // DO NOT set Content-Type header when sending FormData
