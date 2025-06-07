@@ -12,6 +12,7 @@ import CustomBottomSheet from "@/components/BottomSheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
+import CategoryFlatlist from "@/components/CategoryFlatlist";
 
 export interface Offer {
   id: string;
@@ -25,38 +26,6 @@ export interface Offer {
   offerType: string;
   paymentMethod: string;
 }
-
-const CategoryItem = ({
-  item,
-  selectedCategory,
-  handleSelect,
-}: {
-  item: string;
-  selectedCategory: string;
-  handleSelect: (item: string) => void;
-}) => {
-  return (
-    <TouchableOpacity
-      style={[
-        styles.categoryItem,
-        {
-          backgroundColor: selectedCategory === item ? "#008B8B" : "#fff",
-        },
-      ]}
-      onPress={() => handleSelect(item)}
-    >
-      <Text
-        style={{
-          color: selectedCategory === item ? "#F0F7F7" : "#008B8B",
-          fontFamily: "Poppins_700Bold",
-          fontSize: 16,
-        }}
-      >
-        {item}
-      </Text>
-    </TouchableOpacity>
-  );
-};
 
 const OfferItem = ({
   item,
@@ -289,18 +258,10 @@ const Index = () => {
       <SafeAreaView style={styles.container}>
         <Text style={styles.header}>Popular categories</Text>
         <View style={{ height: 70 }}>
-          <FlatList
-            data={data}
-            horizontal={true}
-            renderItem={({ item }) => (
-              <CategoryItem
-                item={item.title} // pass the title string here
-                selectedCategory={selectedCategory}
-                handleSelect={handleSelect}
-              />
-            )}
-            keyExtractor={(item) => item.id.toString()} // use id as key
-            showsHorizontalScrollIndicator={false}
+          <CategoryFlatlist
+            data={data || []}
+            selectedCategory={selectedCategory}
+            handleSelect={handleSelect}
           />
         </View>
         <View
@@ -352,21 +313,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F7F7",
   },
 
-  categoryItem: {
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingVertical: 0,
-    paddingHorizontal: 10,
-    marginHorizontal: 8,
-    marginVertical: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    justifyContent: "center",
-    alignItems: "center",
-  },
   header: {
     fontSize: 24,
     fontFamily: "Poppins_700Bold",

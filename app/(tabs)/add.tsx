@@ -9,18 +9,29 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import React, { useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import { selectImage } from "@/services/selectImage";
 import { SelectList } from "react-native-dropdown-select-list";
+import * as FileSystem from "expo-file-system";
+import { useQueryClient } from "@tanstack/react-query";
 
 const AddPost = () => {
-  const [images, setImages] = useState<string[]>([]);
+  const [title, setTitle] = useState<string>("");
+  const [description, setDescription] = useState<string>("");
+  const [price, setPrice] = useState<number>(0);
+  const [categoryId, setCategoryId] = useState<number>(0);
+  const [image, setImage] = useState<string>();
   const [offerType, setOfferType] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<string>("");
-  const [status, setStatus] = useState<string>("");
   const [deliveryTime, setDeliveryTime] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const queryClient = useQueryClient();
+
+  const categories = queryClient.getQueryData(["categories"]);
 
   const offerTypes = [
     { key: "1", value: "Skill" },
@@ -34,22 +45,78 @@ const AddPost = () => {
     { key: "3", value: "BOTH" },
   ];
 
-  const statusOptions = [
-    { key: "1", value: "Active" },
-    { key: "2", value: "Inactive" },
-  ];
-
   const handleSelectImage = async () => {
     const selectedImage = await selectImage();
     if (selectedImage) {
-      setImages([...images, selectedImage]);
+      setImage(selectedImage);
     }
   };
+  console.log(categories);
 
-  const removeImage = (index: number) => {
-    const newImages = [...images];
-    newImages.splice(index, 1);
-    setImages(newImages);
+  const removeImage = () => setImage(undefined);
+
+  const handleAddOffer = async () => {
+    // Replace these with your actual state variables
+    const offer = {
+      title,
+      description,
+      price,
+      offerType,
+      paymentMethod,
+      deliveryTime,
+      //  categoryId,
+      // add more fields as needed
+    };
+
+    const selectedImage = image; // make sure this exists in your component state
+    const formData = new FormData();
+
+    // Append offer JSON as string
+    formData.append("offer", JSON.stringify(offer));
+
+    // Append image if exists
+    if (image) {
+      const fileInfo = await FileSystem.getInfoAsync(image);
+      if (fileInfo.exists) {
+        formData.append("image", {
+          uri: image,
+          name: "offer-image.jpg",
+          type: "image/jpeg",
+        } as any); // React Native FormData typing workaround
+      }
+    }
+
+    try {
+      setIsLoading(true);
+
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/offer/add`,
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
+
+      if (!response.ok) {
+        const contentType = response.headers.get("content-type");
+        const errorData = contentType?.includes("application/json")
+          ? await response.json()
+          : await response.text();
+
+        console.error("Upload failed:", errorData);
+        throw new Error(errorData?.error || "Failed to add offer");
+      }
+
+      const data = await response.json();
+      console.log("Offer added:", data);
+      Alert.alert("Success", "Offer added successfully!");
+      // Do something like reset form or navigate
+    } catch (error: any) {
+      console.error("Error:", error.message);
+      Alert.alert("Error", error.message || "Could not add offer.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -83,14 +150,14 @@ const AddPost = () => {
               search={false}
             />
 
-            <Text style={styles.label}>Images</Text>
+            <Text style={styles.label}>Image</Text>
             <View style={styles.imagesContainer}>
-              {images.map((image, index) => (
-                <View key={index} style={styles.imageWrapper}>
+              {image ? (
+                <View style={styles.imageWrapper}>
                   <Image source={{ uri: image }} style={styles.image} />
                   <TouchableOpacity
                     style={styles.removeImageBtn}
-                    onPress={() => removeImage(index)}
+                    onPress={removeImage}
                   >
                     <FontAwesome
                       name="times-circle"
@@ -99,16 +166,13 @@ const AddPost = () => {
                     />
                   </TouchableOpacity>
                 </View>
-              ))}
-              {images.length < 5 && (
+              ) : (
                 <TouchableOpacity
                   style={styles.addImageBtn}
                   onPress={handleSelectImage}
                 >
                   <FontAwesome name="plus" size={24} color="#008B8B" />
-                  <Text style={styles.addImageText}>
-                    {images.length === 0 ? "Add Image" : "Add Another"}
-                  </Text>
+                  <Text style={styles.addImageText}>Add Image</Text>
                 </TouchableOpacity>
               )}
             </View>
@@ -117,7 +181,7 @@ const AddPost = () => {
             <TextInput
               style={styles.input}
               placeholder="Enter title"
-              placeholderTextColor={"#888"}
+              placeholderTextColor="#888"
             />
             <Text style={styles.label}>Description</Text>
             <TextInput
@@ -125,23 +189,22 @@ const AddPost = () => {
               placeholder="Enter description"
               multiline
               numberOfLines={4}
-              placeholderTextColor={"gray"}
+              placeholderTextColor="gray"
             />
             <Text style={styles.label}>Price</Text>
             <TextInput
               style={styles.input}
-              placeholder="Enter price"
-              placeholderTextColor={"gray"}
+              placeholder="Enter price in JOD"
+              placeholderTextColor="gray"
             />
             <Text style={styles.label}>Delivery Time</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter delivery time (e.g. 2 days)"
-              placeholderTextColor={"gray"}
+              placeholderTextColor="gray"
               value={deliveryTime}
               onChangeText={setDeliveryTime}
             />
-
             <Text style={styles.label}>Payment Method</Text>
             <SelectList
               setSelected={(val: any) => setPaymentMethod(val)}
@@ -160,24 +223,7 @@ const AddPost = () => {
               }
               search={false}
             />
-            <Text style={styles.label}>Status</Text>
-            <SelectList
-              setSelected={(val: any) => setStatus(val)}
-              data={statusOptions}
-              save="value"
-              boxStyles={styles.input}
-              fontFamily="Poppins_400Regular"
-              placeholder="Select status"
-              arrowicon={
-                <FontAwesome
-                  name="angle-down"
-                  size={20}
-                  color="#008B8B"
-                  style={{ marginRight: 5 }}
-                />
-              }
-              search={false}
-            />
+
             <TouchableOpacity style={styles.button}>
               <Text style={styles.buttonText}>Add</Text>
             </TouchableOpacity>
@@ -232,8 +278,8 @@ const styles = StyleSheet.create({
     textAlignVertical: "top",
     paddingTop: 10,
     fontFamily: "Poppins_400Regular",
-    fontSize: 16, // Match sign up/login
-    color: "#000", // Match sign up/login
+    fontSize: 16,
+    color: "#000",
   },
   button: {
     backgroundColor: "#008B8B",
@@ -249,13 +295,12 @@ const styles = StyleSheet.create({
   },
   imagesContainer: {
     flexDirection: "row",
-    flexWrap: "wrap",
     marginBottom: 20,
+    alignItems: "center",
   },
   imageWrapper: {
     width: 100,
     height: 100,
-    margin: 5,
     position: "relative",
   },
   image: {
@@ -281,7 +326,6 @@ const styles = StyleSheet.create({
     borderRadius: 5,
     justifyContent: "center",
     alignItems: "center",
-    margin: 5,
     backgroundColor: "rgba(0, 139, 139, 0.1)",
   },
   addImageText: {
