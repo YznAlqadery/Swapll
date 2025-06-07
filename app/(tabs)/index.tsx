@@ -10,6 +10,8 @@ import {
 import React, { useState } from "react";
 import CustomBottomSheet from "@/components/BottomSheet";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/context/AuthContext";
 
 export interface Offer {
   id: string;
@@ -133,7 +135,26 @@ const OfferItem = ({
   );
 };
 
+const fetchCategories = async (userToken: string) => {
+  const response = await fetch(`http://192.168.68.104:8080/api/categories`, {
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+  if (response.ok) {
+    const data = await response.json();
+    return data;
+  } else {
+    throw new Error("Failed to fetch categories");
+  }
+};
+
 const Index = () => {
+  const { user } = useAuth();
+
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => fetchCategories(user || ""),
+  });
+
   const [selectedCategory, setSelectedCategory] = useState<string>("");
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
@@ -153,28 +174,6 @@ const Index = () => {
       setSheetOpen(true);
     }
   };
-  const categories = [
-    "Tutoring",
-    "Programming",
-    "Design",
-    "Writing",
-    "Translation",
-    "Gardening",
-    "Repairs",
-    "Pet Care",
-    "Music",
-    "Cooking",
-    "Fitness",
-    "Cleaning",
-    "Photography",
-    "Crafts",
-    "Language Learning",
-    "Business Help",
-    "Legal Help",
-    "Marketing",
-    "IT Support",
-    "Other",
-  ];
 
   const offers = [
     {
@@ -288,16 +287,16 @@ const Index = () => {
         <Text style={styles.header}>Popular categories</Text>
         <View style={{ height: 70 }}>
           <FlatList
-            data={categories}
+            data={data}
             horizontal={true}
             renderItem={({ item }) => (
               <CategoryItem
-                item={item}
+                item={item.title} // pass the title string here
                 selectedCategory={selectedCategory}
                 handleSelect={handleSelect}
               />
             )}
-            keyExtractor={(item) => item}
+            keyExtractor={(item) => item.id.toString()} // use id as key
             showsHorizontalScrollIndicator={false}
           />
         </View>
