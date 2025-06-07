@@ -390,8 +390,9 @@ const styles = StyleSheet.create({
 
   offerDescription: {
     fontSize: 16,
+    color: "#666",
     fontFamily: "Poppins_400Regular",
-    color: "#008B8B",
+    marginTop: 4,
   },
 
   offerImage: {

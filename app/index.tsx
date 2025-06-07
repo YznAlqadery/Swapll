@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from "@/context/AuthContext";
 import WelcomingScreen from "@/components/WelcomingScreen";
 import React from "react";
 import { useRouter } from "expo-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { Text, View } from "react-native";
 
@@ -42,11 +43,15 @@ const InnerIndex = () => {
 };
 
 export default function Index() {
+  const queryClient = new QueryClient();
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <InnerIndex />
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <InnerIndex />
+        </AuthProvider>
+      </QueryClientProvider>
     </GestureHandlerRootView>
   );
 }
