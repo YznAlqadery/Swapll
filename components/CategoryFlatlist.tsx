@@ -10,10 +10,12 @@ const CategoryItem = ({
   item,
   selectedCategoryId,
   handleSelect,
+  setCategory,
 }: {
   item: Category;
   selectedCategoryId: number | null;
   handleSelect: (id: number) => void;
+  setCategory?: React.Dispatch<React.SetStateAction<string>>;
 }) => {
   const isSelected = selectedCategoryId === item.id;
 
@@ -23,7 +25,14 @@ const CategoryItem = ({
         styles.categoryItem,
         { backgroundColor: isSelected ? "#008B8B" : "#fff" },
       ]}
-      onPress={() => handleSelect(item.id)}
+      onPress={() => {
+        handleSelect(item.id);
+        if (setCategory) {
+          setCategory((prevCategory) =>
+            prevCategory === item.title ? "" : item.title
+          );
+        }
+      }}
     >
       <Text
         style={{
@@ -42,12 +51,14 @@ interface CategoryFlatlistProps {
   data: Category[];
   selectedCategoryId: number | null;
   setSelectedCategoryId: React.Dispatch<React.SetStateAction<number | null>>;
+  setCategory?: React.Dispatch<React.SetStateAction<string>>;
 }
 
 const CategoryFlatlist: React.FC<CategoryFlatlistProps> = ({
   data,
   selectedCategoryId,
   setSelectedCategoryId,
+  setCategory,
 }) => {
   const handleSelect = (id: number) => {
     setSelectedCategoryId((prevId) => (prevId === id ? null : id));
@@ -62,6 +73,7 @@ const CategoryFlatlist: React.FC<CategoryFlatlistProps> = ({
           item={item}
           selectedCategoryId={selectedCategoryId}
           handleSelect={handleSelect}
+          setCategory={setCategory}
         />
       )}
       keyExtractor={(item) => item.id.toString()}

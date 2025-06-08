@@ -6,6 +6,7 @@ import {
   FlatList,
   TouchableOpacity,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import React, { useState } from "react";
 import CustomBottomSheet from "@/components/BottomSheet";
@@ -15,6 +16,9 @@ import { useAuth } from "@/context/AuthContext";
 import CategoryFlatlist from "@/components/CategoryFlatlist";
 
 export interface Offer {
+  username: string;
+  firstName: string;
+  lastName: string;
   id: string;
   owner: string;
   title: string;
@@ -69,7 +73,7 @@ const OfferItem = ({
             marginBottom: 4,
           }}
         >
-          by {item.owner}
+          by {item.username}
         </Text>
         <Text
           style={{
@@ -107,6 +111,66 @@ const OfferItem = ({
   );
 };
 
+const SkeletonOfferItem = () => {
+  return (
+    <View style={[styles.offerItem, { opacity: 0.3 }]}>
+      <View style={styles.offerImageContainer}>
+        <View style={[styles.offerImage, { backgroundColor: "#ccc" }]} />
+      </View>
+      <View style={styles.offerDetails}>
+        <View
+          style={{
+            width: "60%",
+            height: 20,
+            backgroundColor: "#ccc",
+            marginBottom: 6,
+            borderRadius: 4,
+          }}
+        />
+        <View
+          style={{
+            width: "40%",
+            height: 15,
+            backgroundColor: "#ccc",
+            marginBottom: 6,
+            borderRadius: 4,
+          }}
+        />
+        <View
+          style={{
+            width: "80%",
+            height: 15,
+            backgroundColor: "#ccc",
+            marginBottom: 6,
+            borderRadius: 4,
+          }}
+        />
+        <View
+          style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}
+        >
+          <View
+            style={{
+              width: 18,
+              height: 18,
+              backgroundColor: "#ccc",
+              borderRadius: 9,
+              marginRight: 4,
+            }}
+          />
+          <View
+            style={{
+              width: 40,
+              height: 15,
+              backgroundColor: "#ccc",
+              borderRadius: 4,
+            }}
+          />
+        </View>
+      </View>
+    </View>
+  );
+};
+
 const fetchCategories = async (userToken: string) => {
   const response = await fetch(
     `${process.env.EXPO_PUBLIC_API_URL}/api/categories`,
@@ -121,18 +185,48 @@ const fetchCategories = async (userToken: string) => {
     throw new Error("Failed to fetch categories");
   }
 };
+const fetchTopRatedOffers = async (
+  userToken: string,
+  categoryId: number | null
+) => {
+  const url = categoryId
+    ? `${process.env.EXPO_PUBLIC_API_URL}/api/offers/category/${categoryId}`
+    : `${process.env.EXPO_PUBLIC_API_URL}/api/offers/top-rated`;
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch top rated offers");
+  }
+
+  const data = await response.json();
+  return data;
+};
 
 const Index = () => {
   const { user } = useAuth();
+  const [categoryId, setCategoryId] = useState<number | null>(0);
+  const [category, setCategory] = useState("");
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["categories"],
     queryFn: () => fetchCategories(user || ""),
   });
 
+  const {
+    data: offers,
+    isLoading: offersLoading,
+    error: offersError,
+  } = useQuery({
+    queryKey: ["top-rated-offers", categoryId],
+    queryFn: () => fetchTopRatedOffers(user || "", categoryId),
+    enabled: !!user, // prevents it from running before user is available
+  });
+
   const categories = data as Category[];
 
-  const [categoryId, setCategoryId] = useState<number | null>(0);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
 
@@ -149,106 +243,106 @@ const Index = () => {
     }
   };
 
-  const offers = [
-    {
-      id: "1",
-      title: "Math Tutoring",
-      description:
-        "Get help with algebra, calculus, and more from an experienced tutor.",
-      price: 20,
-      deliveryTime: "2 days",
-      status: "active",
-      image: "https://images.unsplash.com/photo-1503676382389-4809596d5290",
-      offerType: "skill",
-      paymentMethod: "cash",
-      owner: "Alice Johnson",
-    },
-    {
-      id: "2",
-      title: "Logo Design",
-      description: "Professional logo design for your business or project.",
-      price: 50,
-      deliveryTime: "3 days",
-      status: "active",
-      image: "https://images.unsplash.com/photo-1464983953574-0892a716854b",
-      offerType: "service",
-      paymentMethod: "credit card",
-      owner: "Bob Smith",
-    },
-    {
-      id: "3",
-      title: "Used Laptop",
-      description: "Dell Inspiron, 8GB RAM, 256GB SSD, lightly used.",
-      price: 300,
-      deliveryTime: "1 day",
-      status: "sold",
-      image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
-      offerType: "item",
-      paymentMethod: "cash",
-      owner: "Charlie Lee",
-    },
-    {
-      id: "4",
-      title: "Guitar Lessons",
-      description: "Learn to play acoustic or electric guitar from scratch.",
-      price: 25,
-      deliveryTime: "1 week",
-      status: "active",
-      image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
-      offerType: "skill",
-      paymentMethod: "paypal",
-      owner: "Diana Evans",
-    },
-    {
-      id: "5",
-      title: "House Cleaning",
-      description: "Thorough cleaning for apartments and houses.",
-      price: 40,
-      deliveryTime: "2 days",
-      status: "active",
-      image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
-      offerType: "service",
-      paymentMethod: "credit card",
-      owner: "Emily Carter",
-    },
-    {
-      id: "6",
-      title: "Mountain Bike",
-      description: "Well-maintained mountain bike, ready for trails.",
-      price: 150,
-      deliveryTime: "Immediate",
-      status: "active",
-      image: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308",
-      offerType: "item",
-      paymentMethod: "cash",
-      owner: "Frank Miller",
-    },
-    {
-      id: "7",
-      title: "Spanish Translation",
-      description:
-        "Translate documents from English to Spanish quickly and accurately.",
-      price: 15,
-      deliveryTime: "1 day",
-      status: "active",
-      image: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca",
-      offerType: "service",
-      paymentMethod: "paypal",
-      owner: "Gabriela Ruiz",
-    },
-    {
-      id: "8",
-      title: "Handmade Scarf",
-      description: "Warm, stylish, and handmade with love.",
-      price: 30,
-      deliveryTime: "3 days",
-      status: "active",
-      image: "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2",
-      offerType: "item",
-      paymentMethod: "cash",
-      owner: "Helen Kim",
-    },
-  ];
+  // const offers = [
+  //   {
+  //     id: "1",
+  //     title: "Math Tutoring",
+  //     description:
+  //       "Get help with algebra, calculus, and more from an experienced tutor.",
+  //     price: 20,
+  //     deliveryTime: "2 days",
+  //     status: "active",
+  //     image: "https://images.unsplash.com/photo-1503676382389-4809596d5290",
+  //     offerType: "skill",
+  //     paymentMethod: "cash",
+  //     owner: "Alice Johnson",
+  //   },
+  //   {
+  //     id: "2",
+  //     title: "Logo Design",
+  //     description: "Professional logo design for your business or project.",
+  //     price: 50,
+  //     deliveryTime: "3 days",
+  //     status: "active",
+  //     image: "https://images.unsplash.com/photo-1464983953574-0892a716854b",
+  //     offerType: "service",
+  //     paymentMethod: "credit card",
+  //     owner: "Bob Smith",
+  //   },
+  //   {
+  //     id: "3",
+  //     title: "Used Laptop",
+  //     description: "Dell Inspiron, 8GB RAM, 256GB SSD, lightly used.",
+  //     price: 300,
+  //     deliveryTime: "1 day",
+  //     status: "sold",
+  //     image: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8",
+  //     offerType: "item",
+  //     paymentMethod: "cash",
+  //     owner: "Charlie Lee",
+  //   },
+  //   {
+  //     id: "4",
+  //     title: "Guitar Lessons",
+  //     description: "Learn to play acoustic or electric guitar from scratch.",
+  //     price: 25,
+  //     deliveryTime: "1 week",
+  //     status: "active",
+  //     image: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4",
+  //     offerType: "skill",
+  //     paymentMethod: "paypal",
+  //     owner: "Diana Evans",
+  //   },
+  //   {
+  //     id: "5",
+  //     title: "House Cleaning",
+  //     description: "Thorough cleaning for apartments and houses.",
+  //     price: 40,
+  //     deliveryTime: "2 days",
+  //     status: "active",
+  //     image: "https://images.unsplash.com/photo-1506744038136-46273834b3fb",
+  //     offerType: "service",
+  //     paymentMethod: "credit card",
+  //     owner: "Emily Carter",
+  //   },
+  //   {
+  //     id: "6",
+  //     title: "Mountain Bike",
+  //     description: "Well-maintained mountain bike, ready for trails.",
+  //     price: 150,
+  //     deliveryTime: "Immediate",
+  //     status: "active",
+  //     image: "https://images.unsplash.com/photo-1519125323398-675f0ddb6308",
+  //     offerType: "item",
+  //     paymentMethod: "cash",
+  //     owner: "Frank Miller",
+  //   },
+  //   {
+  //     id: "7",
+  //     title: "Spanish Translation",
+  //     description:
+  //       "Translate documents from English to Spanish quickly and accurately.",
+  //     price: 15,
+  //     deliveryTime: "1 day",
+  //     status: "active",
+  //     image: "https://images.unsplash.com/photo-1465101046530-73398c7f28ca",
+  //     offerType: "service",
+  //     paymentMethod: "paypal",
+  //     owner: "Gabriela Ruiz",
+  //   },
+  //   {
+  //     id: "8",
+  //     title: "Handmade Scarf",
+  //     description: "Warm, stylish, and handmade with love.",
+  //     price: 30,
+  //     deliveryTime: "3 days",
+  //     status: "active",
+  //     image: "https://images.unsplash.com/photo-1515378791036-0648a3ef77b2",
+  //     offerType: "item",
+  //     paymentMethod: "cash",
+  //     owner: "Helen Kim",
+  //   },
+  // ];
 
   return (
     <GestureHandlerRootView
@@ -264,6 +358,7 @@ const Index = () => {
             data={categories}
             selectedCategoryId={categoryId}
             setSelectedCategoryId={setCategoryId}
+            setCategory={setCategory}
           />
         </View>
         <View
@@ -282,8 +377,28 @@ const Index = () => {
               marginLeft: 20,
             }}
           >
-            Popular offers
+            {category ? `Offers in ${category}` : "Top rated offers"}
           </Text>
+          {offersLoading ? (
+            <>
+              <SkeletonOfferItem />
+              <SkeletonOfferItem />
+              <SkeletonOfferItem />
+            </>
+          ) : (
+            !offers && (
+              <Text
+                style={{
+                  textAlign: "center",
+                  marginTop: 20,
+                  fontFamily: "Poppins_700Bold",
+                }}
+              >
+                No offers found in this category.
+              </Text>
+            )
+          )}
+
           <FlatList
             data={offers}
             renderItem={({ item }) => (
