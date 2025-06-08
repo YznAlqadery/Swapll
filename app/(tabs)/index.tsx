@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   Image,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import CustomBottomSheet from "@/components/BottomSheet";
@@ -385,6 +386,7 @@ const Index = () => {
         backgroundColor: "#fff",
       }}
     >
+      <StatusBar barStyle={"dark-content"} />
       <SafeAreaView style={styles.container}>
         <ScrollView>
           <View

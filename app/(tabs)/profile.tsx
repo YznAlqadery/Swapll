@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
+  StatusBar,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { AuthContext } from "@/context/AuthContext";
@@ -112,33 +113,35 @@ const Profile = () => {
   };
   return (
     <SafeAreaView style={styles.container}>
+      <StatusBar barStyle={"light-content"} />
+      <View style={styles.profileWrapper}>
+        <Image
+          source={require("@/assets/images/profile-page-bg.png")}
+          style={styles.wavyBackground}
+          resizeMode="cover"
+        />
+      </View>
+      {!isLoading && (
+        <View style={styles.profilePicWrapper}>
+          {localImageUri ? (
+            <Image source={{ uri: localImageUri }} style={styles.profilePic} />
+          ) : (
+            <Image
+              source={require("@/assets/images/profile-pic-placeholder.png")}
+              style={styles.profilePic}
+            />
+          )}
+        </View>
+      )}
+
       <ScrollView style={{ flex: 1 }}>
         <View style={styles.profileContainer}>
-          {isLoading ? (
-            <ActivityIndicator size="large" color="#008B8B" />
-          ) : (
-            <View style={styles.profileWrapper}>
-              <Image
-                source={require("@/assets/images/profile-page-bg.png")}
-                style={styles.wavyBackground}
-                resizeMode="cover"
-              />
-              <View style={styles.profilePicWrapper}>
-                {localImageUri ? (
-                  <Image
-                    source={{
-                      uri: localImageUri,
-                    }}
-                    style={styles.profilePic}
-                  />
-                ) : (
-                  <Image
-                    source={require("@/assets/images/profile-pic-placeholder.png")}
-                    style={styles.profilePic}
-                  />
-                )}
-              </View>
-            </View>
+          {isLoading && (
+            <ActivityIndicator
+              size="large"
+              color="#008B8B"
+              style={{ marginTop: 200 }}
+            />
           )}
 
           <View>
@@ -334,7 +337,10 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 40,
     paddingBottom: 24,
-    position: "relative",
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
   },
   profilePicWrapper: {
     width: 120,
@@ -345,6 +351,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
+    alignSelf: "center",
   },
   wavyBackground: {
     position: "absolute",
@@ -353,7 +360,8 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 180,
     zIndex: -1,
-    borderRadius: 100,
+    borderBottomRightRadius: 30,
+    borderBottomLeftRadius: 30,
   },
   profilePic: {
     width: 100,
@@ -364,8 +372,8 @@ const styles = StyleSheet.create({
   username: {
     fontSize: 22,
     fontWeight: "bold",
-    marginBottom: 8,
     fontFamily: "Poppins_700Bold",
+    marginTop: 30,
   },
   personalInfo: {
     flexDirection: "column",
