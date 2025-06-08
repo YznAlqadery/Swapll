@@ -130,7 +130,9 @@ const Index = () => {
     queryFn: () => fetchCategories(user || ""),
   });
 
-  const [selectedCategory, setSelectedCategory] = useState<string>("");
+  const categories = data as Category[];
+
+  const [categoryId, setCategoryId] = useState<number | null>(0);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
 
@@ -259,9 +261,9 @@ const Index = () => {
         <Text style={styles.header}>Popular categories</Text>
         <View style={{ height: 70 }}>
           <CategoryFlatlist
-            data={data || []}
-            selectedCategory={selectedCategory}
-            setSelectedCategory={setSelectedCategory}
+            data={categories}
+            selectedCategoryId={categoryId}
+            setSelectedCategoryId={setCategoryId}
           />
         </View>
         <View
