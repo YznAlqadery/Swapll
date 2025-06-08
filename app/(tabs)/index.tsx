@@ -10,11 +10,15 @@ import {
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import CustomBottomSheet from "@/components/BottomSheet";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
+import {
+  GestureHandlerRootView,
+  ScrollView,
+} from "react-native-gesture-handler";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import CategoryFlatlist from "@/components/CategoryFlatlist";
 import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
+import { useLoggedInUser } from "@/context/LoggedInUserContext";
 
 export interface Offer {
   username: string;
@@ -93,12 +97,12 @@ const OfferItem = ({
         >
           <Image
             style={{
-              width: 18,
-              height: 18,
+              width: 25,
+              height: 25,
               marginRight: 4,
               borderRadius: 50,
             }}
-            source={require("@/assets/images/swapll-logo.png")}
+            source={require("@/assets/images/swapll_coin.png")}
           />
           <Text
             style={{
@@ -189,13 +193,38 @@ const fetchCategories = async (userToken: string) => {
     throw new Error("Failed to fetch categories");
   }
 };
-const fetchTopRatedOffers = async (
-  userToken: string,
-  categoryId: number | null
-) => {
-  const url = categoryId
-    ? `${process.env.EXPO_PUBLIC_API_URL}/api/offers/category/${categoryId}`
-    : `${process.env.EXPO_PUBLIC_API_URL}/api/offers/top-rated`;
+const fetchTopRatedOffers = async (userToken: string) => {
+  const url = `${process.env.EXPO_PUBLIC_API_URL}/api/offers/top-rated`;
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch top rated offers");
+  }
+
+  const data = await response.json();
+  return data;
+};
+
+const fetchRecentOffers = async (userToken: string) => {
+  const url = `${process.env.EXPO_PUBLIC_API_URL}/api/offers/recent`;
+
+  const response = await fetch(url, {
+    headers: { Authorization: `Bearer ${userToken}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch top rated offers");
+  }
+
+  const data = await response.json();
+  return data;
+};
+
+const fetchOffersByCategory = async (userToken: string, categoryId: number) => {
+  const url = `${process.env.EXPO_PUBLIC_API_URL}/api/offers/category/${categoryId}`;
 
   const response = await fetch(url, {
     headers: { Authorization: `Bearer ${userToken}` },
@@ -210,7 +239,8 @@ const fetchTopRatedOffers = async (
 };
 
 const Index = () => {
-  const { user } = useAuth();
+  const { user: token } = useAuth();
+  const { user, setUser } = useLoggedInUser();
   const [categoryId, setCategoryId] = useState<number | null>(0);
   const [category, setCategory] = useState("");
 
@@ -222,17 +252,37 @@ const Index = () => {
     error,
   } = useQuery({
     queryKey: ["categories"],
-    queryFn: () => fetchCategories(user || ""),
+    queryFn: () => fetchCategories(token || ""),
   });
 
   const {
-    data: offers,
-    isLoading: offersLoading,
-    error: offersError,
+    data: topRatedOffers,
+    isLoading: topRatedOffersIsLoading,
+    error: topRatedOffersError,
   } = useQuery({
     queryKey: ["top-rated-offers", categoryId],
-    queryFn: () => fetchTopRatedOffers(user || "", categoryId),
+    queryFn: () => fetchTopRatedOffers(token || ""),
     enabled: !!user, // prevents it from running before user is available
+  });
+
+  const {
+    data: recentOffers,
+    isLoading: recentOffersLoading,
+    error: recentOffersError,
+  } = useQuery({
+    queryKey: ["recent-offers"],
+    queryFn: () => fetchRecentOffers(token || ""),
+    enabled: !!user, // prevents it from running before user is available
+  });
+
+  const {
+    data: offersByCategory,
+    isLoading: offersByCategoryLoading,
+    error: offersByCategoryError,
+  } = useQuery({
+    queryKey: ["offers-by-category", categoryId],
+    queryFn: () => fetchOffersByCategory(token || "", categoryId || 0),
+    enabled: !!user && !!categoryId, // prevents it from running before user and categoryId are available
   });
 
   const categories = data as Category[];
@@ -268,10 +318,10 @@ const Index = () => {
   }
 
   useEffect(() => {
-    if (offers && user) {
-      fetchOfferImages(offers, user);
+    if (topRatedOffers && user) {
+      fetchOfferImages(topRatedOffers, token || "");
     }
-  }, [offers, user]);
+  }, [topRatedOffers, user]);
 
   const handleSelectOffer = (offer: Offer) => {
     if (selectedOffer?.id === offer.id && sheetOpen) {
@@ -286,6 +336,36 @@ const Index = () => {
     }
   };
 
+  useEffect(() => {
+    async function fetchUser() {
+      if (!token) return;
+
+      try {
+        const res = await fetch(
+          `${process.env.EXPO_PUBLIC_API_URL}/api/user/myinfo`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+        const data = await res.json();
+        setUser(data);
+      } catch (error) {
+        console.error("Failed fetching user info:", error);
+      }
+    }
+
+    fetchUser();
+  }, [token]);
+
+  if (!user) {
+    return (
+      <SafeAreaView>
+        <ActivityIndicator size="large" color="#008B8B" />
+        <Text>Loading user data...</Text>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <GestureHandlerRootView
       style={{
@@ -294,74 +374,184 @@ const Index = () => {
       }}
     >
       <SafeAreaView style={styles.container}>
-        <Text style={styles.header}>Popular categories</Text>
-        <View style={{ height: 70 }}>
-          <CategoryFlatlist
-            data={categories}
-            selectedCategoryId={categoryId}
-            setSelectedCategoryId={setCategoryId}
-            setCategory={setCategory}
-          />
-        </View>
-        <View
-          style={{
-            flex: 1,
-            marginVertical: 20,
-            paddingBottom: 40,
-          }}
-        >
-          <Text
+        <ScrollView>
+          <View
             style={{
-              fontSize: 20,
-              fontFamily: "Poppins_700Bold",
-              marginBottom: 20,
-              color: "#008B8B",
-              marginLeft: 20,
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              marginBottom: 40,
+              padding: 10,
             }}
           >
-            {category ? `Offers in ${category}` : "Top rated offers"}
-          </Text>
-          {offersLoading || isLoading ? (
-            <>
-              <SkeletonOfferItem />
-              <SkeletonOfferItem />
-              <SkeletonOfferItem />
-            </>
-          ) : (
-            !offers && (
+            <Image
+              source={require("@/assets/images/swapll_home.png")}
+              style={{
+                width: 120,
+                height: 50,
+                objectFit: "contain",
+                marginTop: 10,
+                marginLeft: 20,
+              }}
+            />
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                justifyContent: "center",
+                marginRight: 14,
+                marginTop: 10,
+                backgroundColor: "#008B8B",
+                paddingVertical: 5,
+                paddingHorizontal: 14,
+                borderRadius: 10,
+              }}
+            >
+              <Image
+                style={{
+                  width: 30,
+                  height: 30,
+                }}
+                source={require("@/assets/images/swapll_coin.png")}
+              />
               <Text
                 style={{
-                  textAlign: "center",
-                  marginTop: 20,
+                  fontSize: 16,
+                  marginLeft: 5,
+                  color: "#fff",
                   fontFamily: "Poppins_700Bold",
                 }}
               >
-                No offers found in this category.
+                {user?.balance}
               </Text>
-            )
-          )}
+            </View>
+          </View>
 
-          <FlatList
-            data={offers}
-            renderItem={({ item }) => (
-              <OfferItem
-                item={item}
-                selectedOffer={selectedOffer || ({} as Offer)}
-                handleSelectOffer={handleSelectOffer}
-                offerImageMap={offerImageMap}
+          <Text style={styles.header}>Popular Categories</Text>
+
+          <View
+            style={{
+              height: 70,
+            }}
+          >
+            <CategoryFlatlist
+              data={categories}
+              selectedCategoryId={categoryId}
+              setSelectedCategoryId={setCategoryId}
+              setCategory={setCategory}
+            />
+          </View>
+
+          <View
+            style={{
+              flex: 1,
+              marginVertical: 20,
+              paddingBottom: 40,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 24,
+                fontFamily: "Poppins_700Bold",
+                marginBottom: 10,
+                color: "#008B8B",
+                marginLeft: 20,
+              }}
+            >
+              {category ? `Offers in ${category}` : "Our Community's Favorites"}
+            </Text>
+            {topRatedOffersIsLoading || isLoading ? (
+              <>
+                <SkeletonOfferItem />
+                <SkeletonOfferItem />
+                <SkeletonOfferItem />
+              </>
+            ) : (
+              topRatedOffersError && (
+                <Text
+                  style={{
+                    textAlign: "center",
+                    marginTop: 20,
+                    fontFamily: "Poppins_700Bold",
+                  }}
+                >
+                  No offers found in this category.
+                </Text>
+              )
+            )}
+            {!categoryId && (
+              <FlatList
+                data={topRatedOffers}
+                renderItem={({ item }) => (
+                  <OfferItem
+                    item={item}
+                    selectedOffer={selectedOffer || ({} as Offer)}
+                    handleSelectOffer={handleSelectOffer}
+                    offerImageMap={offerImageMap}
+                  />
+                )}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                horizontal={true}
               />
             )}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-          />
-        </View>
-        {selectedOffer && (
-          <CustomBottomSheet
-            offer={selectedOffer}
-            open={sheetOpen}
-            onClose={() => setSheetOpen(false)}
-          />
-        )}
+
+            {!categoryId && (
+              <View>
+                <Text
+                  style={{
+                    fontSize: 24,
+                    fontFamily: "Poppins_700Bold",
+                    marginBottom: 10,
+                    color: "#008B8B",
+                    marginLeft: 20,
+                    marginTop: 40,
+                  }}
+                >
+                  Latest Deals for You
+                </Text>
+                <FlatList
+                  data={recentOffers}
+                  renderItem={({ item }) => (
+                    <OfferItem
+                      item={item}
+                      selectedOffer={selectedOffer || ({} as Offer)}
+                      handleSelectOffer={handleSelectOffer}
+                      offerImageMap={offerImageMap}
+                    />
+                  )}
+                  keyExtractor={(item) => item.id}
+                  showsVerticalScrollIndicator={false}
+                  horizontal={true}
+                />
+              </View>
+            )}
+
+            {categoryId && (
+              <FlatList
+                data={offersByCategory}
+                renderItem={({ item }) => (
+                  <OfferItem
+                    item={item}
+                    selectedOffer={selectedOffer || ({} as Offer)}
+                    handleSelectOffer={handleSelectOffer}
+                    offerImageMap={offerImageMap}
+                  />
+                )}
+                keyExtractor={(item) => item.id}
+                showsVerticalScrollIndicator={false}
+                horizontal={false}
+              />
+            )}
+          </View>
+          {selectedOffer && (
+            <CustomBottomSheet
+              offer={selectedOffer}
+              open={sheetOpen}
+              onClose={() => setSheetOpen(false)}
+            />
+          )}
+        </ScrollView>
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -377,18 +567,16 @@ const styles = StyleSheet.create({
     fontSize: 24,
     fontFamily: "Poppins_700Bold",
     marginHorizontal: 16,
-    marginTop: 16,
-    marginBottom: 8,
     color: "#008B8B",
   },
 
   offerItem: {
+    width: 300,
     backgroundColor: "#fff",
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 16,
     marginHorizontal: 16,
-    marginVertical: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,

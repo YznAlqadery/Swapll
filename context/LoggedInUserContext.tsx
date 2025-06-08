@@ -12,6 +12,7 @@ type User = {
   address?: string;
   bio?: string;
   profilePic?: string;
+  balance: number;
   // add other user fields as needed
 };
 
