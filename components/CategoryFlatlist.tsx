@@ -1,50 +1,70 @@
 import React from "react";
 import { FlatList, StyleSheet, Text, TouchableOpacity } from "react-native";
+
+type Category = {
+  id: number;
+  title: string;
+};
+
 const CategoryItem = ({
   item,
-  selectedCategory,
+  selectedCategoryId,
   handleSelect,
 }: {
-  item: string;
-  selectedCategory: string;
-  handleSelect: (item: string) => void;
+  item: Category;
+  selectedCategoryId: number | null;
+  handleSelect: (id: number) => void;
 }) => {
+  const isSelected = selectedCategoryId === item.id;
+
   return (
     <TouchableOpacity
       style={[
         styles.categoryItem,
-        {
-          backgroundColor: selectedCategory === item ? "#008B8B" : "#fff",
-        },
+        { backgroundColor: isSelected ? "#008B8B" : "#fff" },
       ]}
-      onPress={() => handleSelect(item)}
+      onPress={() => handleSelect(item.id)}
     >
       <Text
         style={{
-          color: selectedCategory === item ? "#F0F7F7" : "#008B8B",
+          color: isSelected ? "#F0F7F7" : "#008B8B",
           fontFamily: "Poppins_700Bold",
           fontSize: 16,
         }}
       >
-        {item}
+        {item.title}
       </Text>
     </TouchableOpacity>
   );
 };
 
-const CategoryFlatlist = ({ data, handleSelect, selectedCategory }: any) => {
+interface CategoryFlatlistProps {
+  data: Category[];
+  selectedCategoryId: number | null;
+  setSelectedCategoryId: React.Dispatch<React.SetStateAction<number | null>>;
+}
+
+const CategoryFlatlist: React.FC<CategoryFlatlistProps> = ({
+  data,
+  selectedCategoryId,
+  setSelectedCategoryId,
+}) => {
+  const handleSelect = (id: number) => {
+    setSelectedCategoryId((prevId) => (prevId === id ? null : id));
+  };
+
   return (
     <FlatList
       data={data}
       horizontal={true}
       renderItem={({ item }) => (
         <CategoryItem
-          item={item.title} // pass the title string here
-          selectedCategory={selectedCategory}
+          item={item}
+          selectedCategoryId={selectedCategoryId}
           handleSelect={handleSelect}
         />
       )}
-      keyExtractor={(item) => item.id.toString()} // use id as key
+      keyExtractor={(item) => item.id.toString()}
       showsHorizontalScrollIndicator={false}
     />
   );

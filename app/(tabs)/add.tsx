@@ -17,12 +17,20 @@ import { selectImage } from "@/services/selectImage";
 import { SelectList } from "react-native-dropdown-select-list";
 import * as FileSystem from "expo-file-system";
 import { useQueryClient } from "@tanstack/react-query";
+import CategoryFlatlist from "@/components/CategoryFlatlist";
+import { useAuth } from "@/context/AuthContext";
+
+type Category = {
+  id: number;
+  title: string;
+};
 
 const AddPost = () => {
+  const { user: token } = useAuth();
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [price, setPrice] = useState<number>(0);
-  const [categoryId, setCategoryId] = useState<number>(0);
+  const [categoryId, setCategoryId] = useState<number | null>(0);
   const [image, setImage] = useState<string>();
   const [offerType, setOfferType] = useState<string>("");
   const [paymentMethod, setPaymentMethod] = useState<string>("");
@@ -31,12 +39,12 @@ const AddPost = () => {
 
   const queryClient = useQueryClient();
 
-  const categories = queryClient.getQueryData(["categories"]);
+  const categories = queryClient.getQueryData(["categories"]) as Category[];
 
   const offerTypes = [
-    { key: "1", value: "Skill" },
-    { key: "2", value: "Service" },
-    { key: "3", value: "Item" },
+    { key: "1", value: "SKILL" },
+    { key: "2", value: "SERVICE" },
+    { key: "3", value: "ITEM" },
   ];
 
   const paymentMethods = [
@@ -51,7 +59,6 @@ const AddPost = () => {
       setImage(selectedImage);
     }
   };
-  console.log(categories);
 
   const removeImage = () => setImage(undefined);
 
@@ -61,14 +68,12 @@ const AddPost = () => {
       title,
       description,
       price,
-      offerType,
+      type: offerType,
       paymentMethod,
       deliveryTime,
-      //  categoryId,
-      // add more fields as needed
+      categoryId,
     };
 
-    const selectedImage = image; // make sure this exists in your component state
     const formData = new FormData();
 
     // Append offer JSON as string
@@ -78,11 +83,19 @@ const AddPost = () => {
     if (image) {
       const fileInfo = await FileSystem.getInfoAsync(image);
       if (fileInfo.exists) {
+        const filename = image.split("/").pop() ?? "profile.jpg";
+        const ext = filename.split(".").pop()?.toLowerCase();
+        const mimeType =
+          ext === "png"
+            ? "image/png"
+            : ext === "jpg" || ext === "jpeg"
+            ? "image/jpeg"
+            : "application/octet-stream";
         formData.append("image", {
           uri: image,
-          name: "offer-image.jpg",
-          type: "image/jpeg",
-        } as any); // React Native FormData typing workaround
+          name: filename,
+          type: mimeType,
+        } as any);
       }
     }
 
@@ -90,9 +103,12 @@ const AddPost = () => {
       setIsLoading(true);
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/offer/add`,
+        `${process.env.EXPO_PUBLIC_API_URL}/api/offer/add`,
         {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: formData,
         }
       );
@@ -149,7 +165,13 @@ const AddPost = () => {
               }
               search={false}
             />
-
+            <View style={{ height: 70 }}>
+              <CategoryFlatlist
+                data={categories}
+                setSelectedCategoryId={setCategoryId}
+                selectedCategoryId={categoryId}
+              />
+            </View>
             <Text style={styles.label}>Image</Text>
             <View style={styles.imagesContainer}>
               {image ? (
@@ -182,6 +204,7 @@ const AddPost = () => {
               style={styles.input}
               placeholder="Enter title"
               placeholderTextColor="#888"
+              onChangeText={setTitle}
             />
             <Text style={styles.label}>Description</Text>
             <TextInput
@@ -190,12 +213,14 @@ const AddPost = () => {
               multiline
               numberOfLines={4}
               placeholderTextColor="gray"
+              onChangeText={setDescription}
             />
             <Text style={styles.label}>Price</Text>
             <TextInput
               style={styles.input}
               placeholder="Enter price in JOD"
               placeholderTextColor="gray"
+              onChangeText={(val) => setPrice(parseFloat(val))}
             />
             <Text style={styles.label}>Delivery Time</Text>
             <TextInput
@@ -224,8 +249,14 @@ const AddPost = () => {
               search={false}
             />
 
-            <TouchableOpacity style={styles.button}>
-              <Text style={styles.buttonText}>Add</Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleAddOffer}
+              disabled={isLoading}
+            >
+              <Text style={styles.buttonText}>
+                {isLoading ? "Adding..." : "Add"}
+              </Text>
             </TouchableOpacity>
           </View>
         </ScrollView>

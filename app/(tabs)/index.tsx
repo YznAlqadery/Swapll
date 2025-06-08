@@ -26,7 +26,10 @@ export interface Offer {
   offerType: string;
   paymentMethod: string;
 }
-
+type Category = {
+  id: number;
+  title: string;
+};
 const OfferItem = ({
   item,
   selectedOffer,
@@ -131,9 +134,6 @@ const Index = () => {
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [sheetOpen, setSheetOpen] = useState<boolean>(false);
 
-  const handleSelect = (item: string) => {
-    setSelectedCategory((prev) => (prev === item ? "" : item));
-  };
   const handleSelectOffer = (offer: Offer) => {
     if (selectedOffer?.id === offer.id && sheetOpen) {
       setSheetOpen(false);
@@ -261,7 +261,7 @@ const Index = () => {
           <CategoryFlatlist
             data={data || []}
             selectedCategory={selectedCategory}
-            handleSelect={handleSelect}
+            setSelectedCategory={setSelectedCategory}
           />
         </View>
         <View
