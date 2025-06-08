@@ -323,6 +323,18 @@ const Index = () => {
     }
   }, [topRatedOffers, user]);
 
+  useEffect(() => {
+    if (recentOffers && user) {
+      fetchOfferImages(recentOffers, token || "");
+    }
+  }, [recentOffers, user]);
+
+  useEffect(() => {
+    if (offersByCategory && user) {
+      fetchOfferImages(offersByCategory, token || "");
+    }
+  }, [offersByCategory, user]);
+
   const handleSelectOffer = (offer: Offer) => {
     if (selectedOffer?.id === offer.id && sheetOpen) {
       setSheetOpen(false);
@@ -449,17 +461,32 @@ const Index = () => {
               paddingBottom: 40,
             }}
           >
-            <Text
-              style={{
-                fontSize: 24,
-                fontFamily: "Poppins_700Bold",
-                marginBottom: 10,
-                color: "#008B8B",
-                marginLeft: 20,
-              }}
-            >
-              {category ? `Offers in ${category}` : "Our Community's Favorites"}
-            </Text>
+            {category ? (
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontFamily: "Poppins_700Bold",
+                  marginBottom: 10,
+                  color: "#008B8B",
+                  marginLeft: 20,
+                }}
+              >
+                Offers in ${category}`
+              </Text>
+            ) : (
+              <Text
+                style={{
+                  fontSize: 24,
+                  fontFamily: "Poppins_700Bold",
+                  marginBottom: 10,
+                  color: "#008B8B",
+                  marginLeft: 20,
+                  marginTop: 40,
+                }}
+              >
+                Our Community's Favorites
+              </Text>
+            )}
             {topRatedOffersIsLoading || isLoading ? (
               <>
                 <SkeletonOfferItem />

@@ -9,7 +9,6 @@ import {
   ScrollView,
   Image,
   Keyboard,
-  Alert,
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
@@ -20,6 +19,30 @@ import { selectImage } from "@/services/selectImage";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
 import { useAuth } from "@/context/AuthContext";
 import * as FileSystem from "expo-file-system";
+import Toast, {
+  BaseToast,
+  BaseToastProps,
+  ErrorToast,
+} from "react-native-toast-message";
+
+const toastConfig = {
+  success: (props: React.JSX.IntrinsicAttributes & BaseToastProps) => (
+    <BaseToast
+      {...props}
+      style={{ borderLeftColor: "#008B8B" }}
+      text1Style={{ fontWeight: "bold", fontFamily: "Poppins_700Bold" }}
+      text2Style={{ color: "#008B8B", fontFamily: "Poppins_500Medium" }}
+    />
+  ),
+  error: (props: React.JSX.IntrinsicAttributes & BaseToastProps) => (
+    <ErrorToast
+      {...props}
+      style={{ borderLeftColor: "red" }}
+      text1Style={{ fontWeight: "bold" }}
+      text2Style={{ color: "red" }}
+    />
+  ),
+};
 
 const EditProfile = () => {
   const { user, setUser } = useLoggedInUser();
@@ -144,11 +167,25 @@ const EditProfile = () => {
       }
 
       const data = await response.json();
-      Alert.alert("Success", "Profile updated successfully");
+      Toast.show({
+        type: "success",
+        text1: "Success",
+        text2: "Profile updated successfully",
+        position: "top",
+        visibilityTime: 3000,
+      });
+
       if (setUser) setUser(data);
+
       router.back();
     } catch (err: any) {
-      Alert.alert("Error", err.message || "Update failed");
+      Toast.show({
+        type: "error",
+        text1: "Error",
+        text2: err.message || "Update failed",
+        position: "top",
+        visibilityTime: 3000,
+      });
     } finally {
       setIsLoading(false);
     }

@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   StyleSheet,
   TouchableOpacity,
-  Alert,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { AuthContext } from "@/context/AuthContext";
@@ -22,6 +21,11 @@ import * as Clipboard from "expo-clipboard";
 import { Feather } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
+import Toast, {
+  BaseToast,
+  BaseToastProps,
+  ErrorToast,
+} from "react-native-toast-message";
 
 interface User {
   myReferralCode: string;
@@ -34,6 +38,25 @@ interface User {
   referralCode: string | null;
   profilePic: string;
 }
+
+const toastConfig = {
+  success: (props: React.JSX.IntrinsicAttributes & BaseToastProps) => (
+    <BaseToast
+      {...props}
+      style={{ borderLeftColor: "#008B8B" }}
+      text1Style={{ fontWeight: "bold", fontFamily: "Poppins_700Bold" }}
+      text2Style={{ color: "#008B8B", fontFamily: "Poppins_500Medium" }}
+    />
+  ),
+  error: (props: React.JSX.IntrinsicAttributes & BaseToastProps) => (
+    <ErrorToast
+      {...props}
+      style={{ borderLeftColor: "red" }}
+      text1Style={{ fontWeight: "bold" }}
+      text2Style={{ color: "red" }}
+    />
+  ),
+};
 
 const Profile = () => {
   const authContext = useContext(AuthContext);
@@ -79,17 +102,16 @@ const Profile = () => {
 
   const copyToClipboard = async (text: string) => {
     await Clipboard.setStringAsync(text);
-    Alert.alert("Copied!", `${text} copied to clipboard.`);
+    Toast.show({
+      type: "success",
+      text1: "Copied!",
+      text2: `${text} copied to clipboard.`,
+      position: "top", // or 'top'
+      visibilityTime: 2000, // duration in ms
+    });
   };
   return (
     <SafeAreaView style={styles.container}>
-      {/* <TouchableOpacity
-        style={styles.backButton}
-        onPress={() => router.back()}
-        activeOpacity={0.7}
-      >
-        <MaterialIcons name="arrow-back" size={28} color="#008B8B" />
-      </TouchableOpacity> */}
       <ScrollView style={{ flex: 1 }}>
         <View style={styles.profileContainer}>
           {isLoading ? (
@@ -299,6 +321,7 @@ const Profile = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
+      <Toast config={toastConfig} />
     </SafeAreaView>
   );
 };
