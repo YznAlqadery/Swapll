@@ -121,7 +121,7 @@ const OfferItem = ({
   );
 };
 
-const fetchCategories = async (userToken: string) => {
+export const fetchCategories = async (userToken: string) => {
   const response = await fetch(
     `${process.env.EXPO_PUBLIC_API_URL}/api/categories`,
     {
@@ -165,7 +165,10 @@ const fetchRecentOffers = async (userToken: string) => {
   return data;
 };
 
-const fetchOffersByCategory = async (userToken: string, categoryId: number) => {
+export const fetchOffersByCategory = async (
+  userToken: string,
+  categoryId: number
+) => {
   const url = `${process.env.EXPO_PUBLIC_API_URL}/api/offers/category/${categoryId}`;
 
   const response = await fetch(url, {

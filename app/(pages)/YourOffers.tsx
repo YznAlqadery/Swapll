@@ -1,6 +1,6 @@
 import { useAuth } from "@/context/AuthContext";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import {
   View,
@@ -14,6 +14,9 @@ import {
 import { Offer } from "../(tabs)";
 import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
 import SkeletonOfferItem from "@/components/SkeletonItem";
+import { Feather, FontAwesome5 } from "@expo/vector-icons";
+import { useNavigation, useRouter } from "expo-router";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 async function fetchOffers(userId: number, token: string) {
   const url = `${process.env.EXPO_PUBLIC_API_URL}/api/offers/user/${userId}`;
@@ -22,21 +25,36 @@ async function fetchOffers(userId: number, token: string) {
   });
 
   if (!response.ok) {
-    throw new Error("Failed to fetch top rated offers");
+    throw new Error("Failed to fetch your offers");
   }
 
-  const data = await response.json();
-  return data;
+  return await response.json();
+}
+
+async function handleDelete(offerId: number, token: string) {
+  const url = `${process.env.EXPO_PUBLIC_API_URL}/api/offer/${offerId}`;
+  const response = await fetch(url, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to delete offer");
+  }
 }
 
 const YourOffers = () => {
   const { user: token } = useAuth();
   const { user } = useLoggedInUser();
+  const navigation = useNavigation();
+  const router = useRouter();
+  const queryClient = useQueryClient();
 
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [offerImageMap, setOfferImageMap] = useState<Map<string, string>>(
     new Map()
   );
+
   const {
     data: yourOffers,
     isLoading: yourOffersLoading,
@@ -44,14 +62,20 @@ const YourOffers = () => {
   } = useQuery({
     queryKey: ["yourOffers"],
     queryFn: () => fetchOffers(user?.id as number, token as string),
-    enabled: !!user, // prevents it from running before user is available
+    enabled: !!user,
   });
 
-  async function fetchOfferImages(offers: Offer[], token: string) {
-    setIsLoading(true);
+  const deleteOfferMutation = useMutation({
+    mutationFn: (offerId: number) => handleDelete(offerId, token as string),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["yourOffers"] });
+    },
+  });
+
+  const fetchOfferImages = async (offers: Offer[], token: string) => {
+    setIsLoadingImages(true);
     try {
       const imageMap = new Map<string, string>();
-
       await Promise.all(
         offers.map(async (offer) => {
           const uri = await downloadImageWithAuth(
@@ -62,109 +86,112 @@ const YourOffers = () => {
           if (uri) imageMap.set(offer.id, uri);
         })
       );
-
       setOfferImageMap(imageMap);
     } catch (error) {
-      console.error("Error fetching offer images:", error);
+      console.error("Error fetching images", error);
     } finally {
-      setIsLoading(false);
+      setIsLoadingImages(false);
     }
-  }
+  };
 
   useEffect(() => {
-    if (yourOffers && !isLoading) {
-      fetchOfferImages(yourOffers, token as string);
+    if (yourOffers && token) {
+      fetchOfferImages(yourOffers, token);
     }
-  }, [yourOffers, isLoading, token]);
+  }, [yourOffers, token]);
 
-  const renderOffer = ({ item }: { item: Offer }) => (
-    <TouchableOpacity
-      style={styles.offerItem}
-      // onPress={() => handleSelectOffer(item)}
-    >
-      <View style={styles.offerImageContainer}>
-        <Image
-          source={{ uri: offerImageMap.get(item.id) }}
-          style={styles.offerImage}
-          resizeMode="cover"
-        />
-      </View>
-      <View style={styles.offerDetails}>
-        <Text
-          style={{
-            color: "#008B8B",
-            fontFamily: "Poppins_700Bold",
-            fontSize: 16,
-          }}
-        >
-          {item.title}
-        </Text>
-        <Text
-          style={{
-            color: "#666",
-            fontFamily: "Poppins_600SemiBold",
-            fontSize: 13,
-            marginBottom: 4,
-          }}
-        >
-          by {item.username}
-        </Text>
-        <Text
-          style={{
-            color: "#008B8B",
-            fontFamily: "Poppins_400Regular",
-            fontSize: 14,
-          }}
-        >
-          {item.description}
-        </Text>
-        <View
-          style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}
-        >
+  const renderOffer = ({ item }: { item: Offer }) => {
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => {
+          router.push({
+            pathname: "/(pages)/OfferDetails",
+            params: {
+              offerId: item.id,
+              // you can pass other fields or just an ID and fetch details on the detail page
+            },
+          });
+        }}
+      >
+        <View style={styles.offerImageContainer}>
           <Image
-            style={{
-              width: 25,
-              height: 25,
-              marginRight: 4,
-              borderRadius: 50,
-            }}
-            source={require("@/assets/images/swapll_coin.png")}
+            source={{ uri: offerImageMap.get(item.id) }}
+            style={styles.offerImage}
+            resizeMode="cover"
           />
-          <Text
-            style={{
-              color: "#008B8B",
-              fontFamily: "Poppins_700Bold",
-              fontSize: 15,
-            }}
-          >
-            {item.price}
-          </Text>
         </View>
-      </View>
-    </TouchableOpacity>
-  );
+
+        <View style={styles.offerDetails}>
+          <Text style={styles.title}>{item.title}</Text>
+          <Text style={styles.username}>by {item.username}</Text>
+          <Text style={styles.description}>{item.description}</Text>
+
+          <View style={styles.priceContainer}>
+            <Image
+              style={styles.coin}
+              source={require("@/assets/images/swapll_coin.png")}
+            />
+            <Text style={styles.price}>{item.price}</Text>
+          </View>
+
+          <View style={styles.buttonRow}>
+            <TouchableOpacity style={styles.editButton}>
+              <Feather name="edit" size={18} color="#fff" />
+              <Text style={styles.buttonText}>Edit</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={styles.deleteButton}
+              onPress={() =>
+                deleteOfferMutation.mutate(item.id as unknown as number)
+              }
+            >
+              <FontAwesome5 name="trash-alt" size={16} color="#fff" />
+              <Text style={styles.buttonText}>Delete</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Your Offers</Text>
-      {yourOffersLoading && (
-        <>
-          <SkeletonOfferItem />
-          <SkeletonOfferItem />
-          <SkeletonOfferItem />
-        </>
-      )}
-      <FlatList
-        data={yourOffers}
-        keyExtractor={(item) => item.id}
-        renderItem={renderOffer as any}
-        contentContainerStyle={styles.listContainer}
-      />
-    </SafeAreaView>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container}>
+        <View style={styles.headerContainer}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Feather name="arrow-left" size={24} color="#008B8B" />
+          </TouchableOpacity>
+          <Text style={styles.header}>Your Offers</Text>
+        </View>
+        {(yourOffersLoading || isLoadingImages) && (
+          <>
+            <SkeletonOfferItem />
+            <SkeletonOfferItem />
+            <SkeletonOfferItem />
+          </>
+        )}
+
+        {yourOffersError && (
+          <Text style={{ color: "red", textAlign: "center" }}>
+            Failed to load your offers.
+          </Text>
+        )}
+
+        <FlatList
+          data={yourOffers}
+          keyExtractor={(item) => item.id}
+          renderItem={renderOffer}
+          contentContainerStyle={styles.listContainer}
+        />
+      </SafeAreaView>
+    </GestureHandlerRootView>
   );
 };
-
-export default YourOffers;
 
 const styles = StyleSheet.create({
   container: {
@@ -172,50 +199,15 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
   },
   header: {
-    fontSize: 28,
-    fontWeight: "bold",
-    marginBottom: 20,
+    fontSize: 24,
+    fontFamily: "Poppins_700Bold",
     color: "#008B8B",
-    padding: 10,
+    textAlign: "center",
+    marginBottom: 24,
   },
   listContainer: {
     padding: 10,
   },
-
-  offerText: {
-    fontSize: 16,
-    color: "#00796b",
-  },
-  offerItem: {
-    width: 350,
-    backgroundColor: "#fff",
-    borderRadius: 12,
-    paddingVertical: 10,
-    paddingHorizontal: 16,
-    marginHorizontal: 16,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    marginBottom: 16,
-    alignSelf: "center",
-  },
-
-  offerDescription: {
-    fontSize: 16,
-    color: "#666",
-    fontFamily: "Poppins_400Regular",
-    marginTop: 4,
-  },
-
-  offerImage: {
-    width: "100%",
-    height: 200,
-    borderRadius: 12,
-    marginVertical: 8,
-  },
-
   offerImageContainer: {
     width: "100%",
     height: 200,
@@ -223,9 +215,99 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     overflow: "hidden",
   },
+  offerImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+  },
   offerDetails: {
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginVertical: 8,
   },
+  card: {
+    flexDirection: "column",
+    marginVertical: 20,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    elevation: 2,
+  },
+  title: {
+    color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
+    fontSize: 16,
+  },
+  username: {
+    color: "#666",
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  description: {
+    color: "#008B8B",
+    fontFamily: "Poppins_400Regular",
+    fontSize: 14,
+  },
+  priceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+  },
+  coin: {
+    width: 25,
+    height: 25,
+    marginRight: 4,
+    borderRadius: 50,
+  },
+  price: {
+    color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
+    fontSize: 15,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "flex-end",
+    width: "100%",
+    marginTop: 10,
+    gap: 10,
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#4CAF50",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#f44336",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Poppins_600SemiBold",
+    marginLeft: 6,
+  },
+  backButton: {
+    position: "absolute",
+    top: 8,
+    left: 10,
+    zIndex: 1,
+  },
+  headerContainer: {
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
 });
+
+export default YourOffers;
