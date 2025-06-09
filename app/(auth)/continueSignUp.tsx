@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
     marginBottom: 5,
     borderWidth: 2,
     borderColor: "#B0C4C4",
-    padding: 16,
+    paddingHorizontal: 16,
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
     fontFamily: "Poppins_400Regular",

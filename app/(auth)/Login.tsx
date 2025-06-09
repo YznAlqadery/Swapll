@@ -257,7 +257,7 @@ const styles = StyleSheet.create({
     marginVertical: 12,
     borderWidth: 2,
     borderColor: "#B0C4C4", // softer default border
-    padding: 16,
+    paddingHorizontal: 16,
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
     fontFamily: "Poppins_400Regular",

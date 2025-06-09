@@ -46,7 +46,7 @@ const ReviewItem: React.FC<ReviewItemProps> = ({
           <Ionicons name="person-circle-outline" size={40} color="#ccc" />
         )}
         <View style={styles.userInfo}>
-          <Text style={styles.username}>{username}</Text>
+          <Text style={styles.username}>@{username}</Text>
           <View style={styles.ratingContainer}>
             {[1, 2, 3, 4, 5].map((star) => (
               <Ionicons
@@ -112,6 +112,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
     color: "#333",
     marginTop: 4,
+    marginLeft: 50,
   },
 });
 
