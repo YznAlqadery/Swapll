@@ -1,6 +1,6 @@
 import { Tabs } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
-import { StatusBar, View } from "react-native";
+import { StatusBar, View, Image } from "react-native";
 import React from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
@@ -8,10 +8,12 @@ const TabIcon = ({
   name,
   size,
   focused,
+  isHome = false,
 }: {
   name: string;
   size: number;
   focused: boolean;
+  isHome?: boolean;
 }) => {
   return (
     <View
@@ -26,11 +28,23 @@ const TabIcon = ({
         padding: 6,
       }}
     >
-      <FontAwesome
-        name={name}
-        size={size}
-        color={focused ? "#008B8B" : "#CCECEC"}
-      />
+      {isHome ? (
+        <Image
+          source={require("@/assets/images/swapll_tabs.png")} // replace with your image path
+          style={{
+            width: 45,
+            height: 45,
+            tintColor: focused ? "#008B8B" : "#CCECEC",
+            resizeMode: "contain",
+          }}
+        />
+      ) : (
+        <FontAwesome
+          name={name}
+          size={size}
+          color={focused ? "#008B8B" : "#CCECEC"}
+        />
+      )}
     </View>
   );
 };
@@ -62,15 +76,6 @@ export default function TabLayout() {
         }}
       >
         <Tabs.Screen
-          name="index"
-          options={{
-            title: "Home",
-            tabBarIcon: ({ focused }: any) => (
-              <TabIcon name="home" size={26} focused={focused} />
-            ),
-          }}
-        />
-        <Tabs.Screen
           name="messages"
           options={{
             title: "Messages",
@@ -79,13 +84,21 @@ export default function TabLayout() {
             ),
           }}
         />
-
         <Tabs.Screen
           name="add"
           options={{
             title: "",
             tabBarIcon: ({ focused }: any) => (
               <TabIcon name="plus" size={28} focused={focused} />
+            ),
+          }}
+        />
+        <Tabs.Screen
+          name="index"
+          options={{
+            title: "Home",
+            tabBarIcon: ({ focused }: any) => (
+              <TabIcon name="home" size={26} focused={focused} isHome />
             ),
           }}
         />

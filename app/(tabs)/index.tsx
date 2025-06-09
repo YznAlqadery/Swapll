@@ -61,7 +61,11 @@ const OfferItem = ({
     >
       <View style={styles.offerImageContainer}>
         <Image
-          source={{ uri: offerImageMap.get(item.id) }}
+          source={
+            item.image
+              ? { uri: offerImageMap.get(item.id) }
+              : require("@/assets/images/no_image.jpeg")
+          }
           style={styles.offerImage}
           resizeMode="cover"
         />
@@ -495,7 +499,7 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 200,
     borderRadius: 12,
-    marginVertical: 8,
+    marginBottom: 8,
   },
 
   offerImageContainer: {
