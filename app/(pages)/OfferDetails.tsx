@@ -18,6 +18,19 @@ import * as FileSystem from "expo-file-system";
 import { Ionicons } from "@expo/vector-icons";
 import { fetchCategories, fetchOffersByCategory } from "../(tabs)";
 import OfferCard from "@/components/OfferCard";
+import ReviewItem from "@/components/ReviewItem";
+import Divider from "@/components/Divider";
+
+async function fetchReviews(offerId: number, token: string) {
+  const response = await fetch(
+    `${process.env.EXPO_PUBLIC_API_URL}/api/reviews/offer/${offerId}`,
+    {
+      headers: { Authorization: `Bearer ${token}` },
+    }
+  );
+  if (!response.ok) throw new Error("Failed to fetch");
+  return response.json();
+}
 
 const OfferDetails = () => {
   const { offerId } = useLocalSearchParams();
@@ -56,6 +69,12 @@ const OfferDetails = () => {
     queryFn: () =>
       fetchOffersByCategory(token as string, data?.categoryId as number),
     enabled: !!data?.categoryId,
+    staleTime: 1000 * 60 * 5,
+  });
+
+  const { data: reviews, isLoading: reviewsIsLoading } = useQuery({
+    queryKey: ["reviews", offerId],
+    queryFn: () => fetchReviews(data?.id as number, token as string),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -136,7 +155,10 @@ const OfferDetails = () => {
 
           <View style={styles.row}>
             <Ionicons name="star" size={16} color="#FFA500" />
-            <Text style={styles.rating}>{data?.averageRating}</Text>
+            <Text style={styles.rating}>
+              {data?.averageRating} ({data?.numberOfReviews})
+            </Text>
+
             <Text style={styles.label}>{data?.type}</Text>
           </View>
 
@@ -165,12 +187,25 @@ const OfferDetails = () => {
               <Text style={styles.meta}>{data?.price}</Text>
             </View>
           </View>
+          <View style={styles.descriptionBox}>
+            <Text
+              style={[
+                styles.meta,
+                {
+                  fontSize: 16,
+                  fontFamily: "Poppins_400Regular",
+                  color: "#008B8B",
+                },
+              ]}
+            >
+              {data?.description}
+            </Text>
+          </View>
         </View>
 
         {/* Divider */}
-        <View style={styles.divider} />
+        <Divider />
 
-        {/* Sample Item List like "Picks for you 🔥" */}
         <Text style={styles.sectionTitle}>Picks for you 🔥</Text>
         <FlatList
           data={offersByCategory}
@@ -188,6 +223,28 @@ const OfferDetails = () => {
             justifyContent: "center",
           }}
         />
+        <Divider />
+        {/* Reviews Section */}
+        <Text style={styles.sectionTitle}>Reviews ({reviews?.length})</Text>
+        {reviewsIsLoading ? (
+          <ActivityIndicator size="large" />
+        ) : reviews?.length === 0 ? (
+          <Text style={styles.sectionTitle}>No reviews yet</Text>
+        ) : (
+          <FlatList
+            data={reviews}
+            keyExtractor={(item) => item.userId.toString()}
+            renderItem={({ item }) => (
+              <ReviewItem
+                username={item.userName}
+                comment={item.comment}
+                rating={item.rating}
+                image={item.profilePicture}
+                userId={item.userId}
+              />
+            )}
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
@@ -198,7 +255,7 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   infoContainer: { padding: 16 },
   name: {
-    fontSize: 22,
+    fontSize: 26,
     fontWeight: "bold",
     color: "#008B8B",
     fontFamily: "Poppins_700Bold",
@@ -217,11 +274,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
   },
   meta: { color: "#666", fontSize: 14, fontFamily: "Poppins_400Regular" },
-  divider: {
-    height: 1,
-    backgroundColor: "#EEE",
-    marginVertical: 10,
-  },
+
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
@@ -273,6 +326,16 @@ const styles = StyleSheet.create({
     shadowRadius: 2,
     elevation: 2,
     zIndex: 10,
+  },
+  ratingContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  descriptionBox: {
+    backgroundColor: "#F0FDFD",
+    padding: 10,
+    borderRadius: 8,
+    marginTop: 10,
   },
 });
 

@@ -21,6 +21,7 @@ import CategoryFlatlist from "@/components/CategoryFlatlist";
 import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
 import SkeletonOfferItem from "@/components/SkeletonItem";
+import Divider from "@/components/Divider";
 
 export interface Offer {
   username: string;
@@ -384,7 +385,7 @@ const Index = () => {
               </Text>
             </View>
           </View>
-
+          <Divider />
           <Text style={styles.header}>Popular Categories</Text>
 
           <View
@@ -399,7 +400,7 @@ const Index = () => {
               setCategory={setCategory}
             />
           </View>
-
+          <Divider />
           <View
             style={{
               flex: 1,
