@@ -165,7 +165,7 @@ const AddPost = () => {
               }
               search={false}
             />
-            <View style={{ height: 70 }}>
+            <View style={{ height: 70, marginLeft: -10 }}>
               <CategoryFlatlist
                 data={categories}
                 setSelectedCategoryId={setCategoryId}

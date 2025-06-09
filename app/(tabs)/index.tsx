@@ -20,6 +20,7 @@ import { useAuth } from "@/context/AuthContext";
 import CategoryFlatlist from "@/components/CategoryFlatlist";
 import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
+import SkeletonOfferItem from "@/components/SkeletonItem";
 
 export interface Offer {
   username: string;
@@ -117,66 +118,6 @@ const OfferItem = ({
         </View>
       </View>
     </TouchableOpacity>
-  );
-};
-
-const SkeletonOfferItem = () => {
-  return (
-    <View style={[styles.offerItem, { opacity: 0.3 }]}>
-      <View style={styles.offerImageContainer}>
-        <View style={[styles.offerImage, { backgroundColor: "#ccc" }]} />
-      </View>
-      <View style={styles.offerDetails}>
-        <View
-          style={{
-            width: "60%",
-            height: 20,
-            backgroundColor: "#ccc",
-            marginBottom: 6,
-            borderRadius: 4,
-          }}
-        />
-        <View
-          style={{
-            width: "40%",
-            height: 15,
-            backgroundColor: "#ccc",
-            marginBottom: 6,
-            borderRadius: 4,
-          }}
-        />
-        <View
-          style={{
-            width: "80%",
-            height: 15,
-            backgroundColor: "#ccc",
-            marginBottom: 6,
-            borderRadius: 4,
-          }}
-        />
-        <View
-          style={{ flexDirection: "row", alignItems: "center", marginTop: 6 }}
-        >
-          <View
-            style={{
-              width: 18,
-              height: 18,
-              backgroundColor: "#ccc",
-              borderRadius: 9,
-              marginRight: 4,
-            }}
-          />
-          <View
-            style={{
-              width: 40,
-              height: 15,
-              backgroundColor: "#ccc",
-              borderRadius: 4,
-            }}
-          />
-        </View>
-      </View>
-    </View>
   );
 };
 
@@ -473,7 +414,7 @@ const Index = () => {
                   marginLeft: 20,
                 }}
               >
-                Offers in ${category}`
+                Offers in {category}
               </Text>
             ) : (
               <Text

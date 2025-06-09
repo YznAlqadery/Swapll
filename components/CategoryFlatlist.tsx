@@ -88,7 +88,6 @@ const styles = StyleSheet.create({
   categoryItem: {
     backgroundColor: "#fff",
     borderRadius: 12,
-    paddingVertical: 0,
     paddingHorizontal: 10,
     marginHorizontal: 8,
     marginVertical: 16,

@@ -3,7 +3,7 @@ import React, { createContext, useContext, useState, ReactNode } from "react";
 type User = {
   referralCode: string;
   myReferralCode: string;
-  id: string;
+  id: number;
   userName: string;
   firstName: string;
   lastName: string;

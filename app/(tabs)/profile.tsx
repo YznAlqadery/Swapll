@@ -295,25 +295,65 @@ const Profile = () => {
             </View>
             <Text style={styles.infoText}>{user?.address}</Text>
           </View>
-          <View style={styles.infoBox}>
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <FontAwesome5
-                name="gift"
-                size={20}
-                color="#fff"
-                style={{ marginRight: 6 }}
-              />
-              <Text style={styles.infoLabel}>Referral Code</Text>
+          {user?.referralCode && (
+            <View style={styles.infoBox}>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                }}
+              >
+                <FontAwesome5
+                  name="link"
+                  size={20}
+                  color="#fff"
+                  style={{ marginRight: 6 }}
+                />
+                <Text style={styles.infoLabel}>Referral Code</Text>
+              </View>
+              <Text style={styles.infoText}>{user?.referralCode ?? "N/A"}</Text>
             </View>
-            <Text style={styles.infoText}>{user?.referralCode ?? "N/A"}</Text>
-          </View>
+          )}
         </View>
-        <View style={styles.logoutContainer}>
+
+        <TouchableOpacity
+          onPress={() => router.push("/(pages)/YourOffers")}
+          style={styles.personalInfo}
+        >
+          <View
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              backgroundColor: "#FFF",
+              width: "100%",
+              padding: 16,
+              borderRadius: 10,
+            }}
+          >
+            <FontAwesome5
+              name="box"
+              size={20}
+              color="#008B8B"
+              style={{ marginRight: 6 }}
+            />
+            <Text
+              style={[
+                styles.infoLabel,
+                {
+                  fontSize: 16,
+                  fontWeight: "bold",
+                  fontFamily: "Poppins_700Bold",
+                  color: "#008B8B",
+                },
+              ]}
+            >
+              Your offers
+            </Text>
+            <FontAwesome5 name="chevron-right" size={16} color="#008B8B" />
+          </View>
+        </TouchableOpacity>
+
+        {/* <View style={styles.logoutContainer}>
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={handleLogout}
@@ -322,7 +362,7 @@ const Profile = () => {
             <FontAwesome name="sign-out" size={20} color="#008B8B" />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
-        </View>
+        </View> */}
       </ScrollView>
       <Toast config={toastConfig} />
     </SafeAreaView>
@@ -360,8 +400,8 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 180,
     zIndex: -1,
-    borderBottomRightRadius: 30,
-    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 5,
+    borderBottomLeftRadius: 5,
   },
   profilePic: {
     width: 100,
