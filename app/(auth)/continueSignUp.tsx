@@ -9,7 +9,7 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from "react-native";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import * as FileSystem from "expo-file-system";
@@ -22,6 +22,9 @@ const ContinueSignUp = () => {
   const [referralCode, setReferralCode] = useState("");
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [referralUser, setReferralUser] = useState<string | null>(null);
+  const [checkingReferral, setCheckingReferral] = useState(false);
+  const [referralError, setReferralError] = useState("");
 
   const { firstName, lastName, username, email, password, image } =
     useLocalSearchParams();
@@ -98,6 +101,39 @@ const ContinueSignUp = () => {
     }
   };
 
+  const checkReferralCode = async (code: string) => {
+    setCheckingReferral(true);
+    setReferralError("");
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/user/ref/${code}`
+      );
+      if (!response.ok) {
+        throw new Error("Referral not found");
+      }
+      const username = await response.text(); // plain text response
+      setReferralUser(username); // store the string
+    } catch (err: any) {
+      setReferralUser(null);
+      setReferralError(err.message || "Invalid referral code");
+    } finally {
+      setCheckingReferral(false);
+    }
+  };
+
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      if (referralCode.trim()) {
+        checkReferralCode(referralCode.trim());
+      } else {
+        setReferralUser(null);
+        setReferralError("");
+      }
+    }, 500); // wait 500ms after user stops typing
+
+    return () => clearTimeout(delayDebounce);
+  }, [referralCode]);
+
   return (
     <SafeAreaView
       style={{
@@ -157,6 +193,42 @@ const ContinueSignUp = () => {
             onFocus={() => setFocusedInput("referralCode")}
             onBlur={() => setFocusedInput(null)}
           />
+
+          {checkingReferral && (
+            <Text style={{ color: "#666", marginTop: 4 }}>
+              Checking referral...
+            </Text>
+          )}
+
+          {referralUser && referralUser.length > 9 && (
+            <View style={styles.referralBox}>
+              <Text
+                style={{
+                  color: "#008b8b",
+                  fontFamily: "Poppins_400Regular",
+                }}
+              >
+                🔴 {referralUser}
+              </Text>
+            </View>
+          )}
+
+          {referralUser && referralUser.length < 9 && (
+            <View style={styles.referralBox}>
+              <Text
+                style={{ color: "#008b8b", fontFamily: "Poppins_400Regular" }}
+              >
+                🟢 Nice! Referred by{" "}
+                <Text style={{ fontFamily: "Poppins_700Bold" }}>
+                  {referralUser}
+                </Text>
+              </Text>
+            </View>
+          )}
+
+          {referralError ? (
+            <Text style={{ color: "red", marginTop: 4 }}>{referralError}</Text>
+          ) : null}
         </View>
 
         <TouchableOpacity
@@ -242,6 +314,14 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: 16,
     fontFamily: "OpenSans_600SemiBold",
+  },
+  referralBox: {
+    backgroundColor: "#E0FFFF",
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#008b8b",
   },
 });
 
