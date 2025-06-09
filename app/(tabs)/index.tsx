@@ -208,7 +208,7 @@ const Index = () => {
   } = useQuery({
     queryKey: ["top-rated-offers", categoryId],
     queryFn: () => fetchTopRatedOffers(token || ""),
-    enabled: !!user, // prevents it from running before user is available
+    enabled: !!user,
   });
 
   const {
@@ -218,7 +218,7 @@ const Index = () => {
   } = useQuery({
     queryKey: ["recent-offers"],
     queryFn: () => fetchRecentOffers(token || ""),
-    enabled: !!user, // prevents it from running before user is available
+    enabled: !!user,
   });
 
   const {
@@ -228,7 +228,7 @@ const Index = () => {
   } = useQuery({
     queryKey: ["offers-by-category", categoryId],
     queryFn: () => fetchOffersByCategory(token || "", categoryId || 0),
-    enabled: !!user && !!categoryId, // prevents it from running before user and categoryId are available
+    enabled: !!user && !!categoryId,
   });
 
   const categories = data as Category[];
@@ -287,7 +287,7 @@ const Index = () => {
       setTimeout(() => {
         setSelectedOffer(offer);
         setSheetOpen(true);
-      }, 300); // Wait for the sheet to close before reopening
+      }, 300);
     } else {
       setSelectedOffer(offer);
       setSheetOpen(true);
@@ -325,167 +325,92 @@ const Index = () => {
   }
 
   return (
-    <GestureHandlerRootView
-      style={{
-        flex: 1,
-        backgroundColor: "#fff",
-      }}
-    >
-      <StatusBar barStyle={"dark-content"} />
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#fff" }}>
+      <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.container}>
-        <ScrollView>
-          <View
-            style={{
-              flexDirection: "row",
-              alignItems: "center",
-              justifyContent: "space-between",
-              marginBottom: 40,
-              padding: 10,
-            }}
-          >
-            <Image
-              source={require("@/assets/images/swapll_home.png")}
-              style={{
-                width: 120,
-                height: 50,
-                objectFit: "contain",
-                marginTop: 10,
-                marginLeft: 20,
-              }}
+        <FlatList
+          data={categoryId && offersByCategory ? offersByCategory : []}
+          renderItem={({ item }) => (
+            <OfferItem
+              item={item}
+              selectedOffer={selectedOffer || ({} as Offer)}
+              handleSelectOffer={handleSelectOffer}
+              offerImageMap={offerImageMap}
             />
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "center",
-                marginRight: 14,
-                marginTop: 10,
-                backgroundColor: "#008B8B",
-                paddingVertical: 5,
-                paddingHorizontal: 14,
-                borderRadius: 10,
-              }}
-            >
-              <Image
+          )}
+          keyExtractor={(item) => item.id}
+          showsVerticalScrollIndicator={false}
+          ListEmptyComponent={
+            categoryId && !offersByCategoryLoading ? (
+              <Text style={{ textAlign: "center", marginVertical: 20 }}>
+                No offers found in this category.
+              </Text>
+            ) : null
+          }
+          ListHeaderComponent={
+            <View>
+              <View
                 style={{
-                  width: 30,
-                  height: 30,
-                }}
-                source={require("@/assets/images/swapll_coin.png")}
-              />
-              <Text
-                style={{
-                  fontSize: 16,
-                  marginLeft: 5,
-                  color: "#fff",
-                  fontFamily: "Poppins_700Bold",
+                  flexDirection: "row",
+                  justifyContent: "space-between",
+                  padding: 10,
                 }}
               >
-                {user?.balance}
-              </Text>
-            </View>
-          </View>
-          <Divider />
-          <Text style={styles.header}>Popular Categories</Text>
-
-          <View
-            style={{
-              height: 70,
-            }}
-          >
-            <CategoryFlatlist
-              data={categories}
-              selectedCategoryId={categoryId}
-              setSelectedCategoryId={setCategoryId}
-              setCategory={setCategory}
-            />
-          </View>
-          <Divider />
-          <View
-            style={{
-              flex: 1,
-              marginVertical: 20,
-              paddingBottom: 40,
-            }}
-          >
-            {category ? (
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontFamily: "Poppins_700Bold",
-                  marginBottom: 10,
-                  color: "#008B8B",
-                  marginLeft: 20,
-                }}
-              >
-                Offers in {category}
-              </Text>
-            ) : (
-              <Text
-                style={{
-                  fontSize: 24,
-                  fontFamily: "Poppins_700Bold",
-                  marginBottom: 10,
-                  color: "#008B8B",
-                  marginLeft: 20,
-                  marginTop: 40,
-                }}
-              >
-                Our Community's Favorites
-              </Text>
-            )}
-            {topRatedOffersIsLoading || isLoading ? (
-              <>
-                <SkeletonOfferItem />
-                <SkeletonOfferItem />
-                <SkeletonOfferItem />
-              </>
-            ) : (
-              topRatedOffersError && (
-                <Text
+                <Image
+                  source={require("@/assets/images/swapll_home.png")}
                   style={{
-                    textAlign: "center",
-                    marginTop: 20,
-                    fontFamily: "Poppins_700Bold",
-                  }}
-                >
-                  No offers found in this category.
-                </Text>
-              )
-            )}
-            {!categoryId && (
-              <FlatList
-                data={topRatedOffers}
-                renderItem={({ item }) => (
-                  <OfferItem
-                    item={item}
-                    selectedOffer={selectedOffer || ({} as Offer)}
-                    handleSelectOffer={handleSelectOffer}
-                    offerImageMap={offerImageMap}
-                  />
-                )}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                horizontal={true}
-              />
-            )}
-
-            {!categoryId && (
-              <View>
-                <Text
-                  style={{
-                    fontSize: 24,
-                    fontFamily: "Poppins_700Bold",
-                    marginBottom: 10,
-                    color: "#008B8B",
+                    width: 120,
+                    height: 50,
+                    resizeMode: "contain",
                     marginLeft: 20,
-                    marginTop: 40,
+                  }}
+                />
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    backgroundColor: "#008B8B",
+                    padding: 5,
+                    borderRadius: 10,
                   }}
                 >
-                  Latest Deals for You
-                </Text>
+                  <Image
+                    style={{ width: 30, height: 30 }}
+                    source={require("@/assets/images/swapll_coin.png")}
+                  />
+                  <Text
+                    style={{
+                      color: "#fff",
+                      fontSize: 16,
+                      marginLeft: 5,
+                      fontFamily: "Poppins_700Bold",
+                      paddingHorizontal: 6,
+                    }}
+                  >
+                    {user?.balance}
+                  </Text>
+                </View>
+              </View>
+              <Divider />
+              <Text style={styles.header}>Popular Categories</Text>
+              <View style={{ height: 70 }}>
+                <CategoryFlatlist
+                  data={categories}
+                  selectedCategoryId={categoryId}
+                  setSelectedCategoryId={setCategoryId}
+                  setCategory={setCategory}
+                />
+              </View>
+              <Divider />
+              <Text style={styles.header}>
+                {category
+                  ? `Offers in ${category}`
+                  : "Our Community's Favorites"}
+              </Text>
+
+              {!categoryId && topRatedOffers && (
                 <FlatList
-                  data={recentOffers}
+                  data={topRatedOffers}
                   renderItem={({ item }) => (
                     <OfferItem
                       item={item}
@@ -495,37 +420,37 @@ const Index = () => {
                     />
                   )}
                   keyExtractor={(item) => item.id}
-                  showsVerticalScrollIndicator={false}
-                  horizontal={true}
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
                 />
-              </View>
-            )}
+              )}
+              <Divider />
 
-            {categoryId && (
-              <FlatList
-                data={offersByCategory}
-                renderItem={({ item }) => (
-                  <OfferItem
-                    item={item}
-                    selectedOffer={selectedOffer || ({} as Offer)}
-                    handleSelectOffer={handleSelectOffer}
-                    offerImageMap={offerImageMap}
+              {!categoryId && recentOffers && (
+                <>
+                  <Text style={styles.header}>Latest Deals for You</Text>
+                  <FlatList
+                    data={recentOffers}
+                    renderItem={({ item }) => (
+                      <OfferItem
+                        item={item}
+                        selectedOffer={selectedOffer || ({} as Offer)}
+                        handleSelectOffer={handleSelectOffer}
+                        offerImageMap={offerImageMap}
+                      />
+                    )}
+                    keyExtractor={(item) => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={{
+                      marginBottom: 60,
+                    }}
                   />
-                )}
-                keyExtractor={(item) => item.id}
-                showsVerticalScrollIndicator={false}
-                horizontal={false}
-              />
-            )}
-          </View>
-          {selectedOffer && (
-            <CustomBottomSheet
-              offer={selectedOffer}
-              open={sheetOpen}
-              onClose={() => setSheetOpen(false)}
-            />
-          )}
-        </ScrollView>
+                </>
+              )}
+            </View>
+          }
+        />
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -542,6 +467,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_700Bold",
     marginHorizontal: 16,
     color: "#008B8B",
+    marginVertical: 10,
   },
 
   offerItem: {

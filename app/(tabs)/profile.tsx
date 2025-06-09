@@ -285,8 +285,8 @@ const Profile = () => {
                 alignItems: "center",
               }}
             >
-              <Entypo
-                name="address"
+              <Feather
+                name="map-pin"
                 size={20}
                 color="#fff"
                 style={{ marginRight: 6 }}
