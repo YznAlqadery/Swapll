@@ -185,7 +185,20 @@ const OfferDetails = () => {
           }}
         >
           <Text style={styles.name}>{data.title}</Text>
-
+        </View>
+        <Text style={styles.subtext}>
+          {categories?.find((cat: any) => cat.id === data?.categoryId)?.title} •{" "}
+          {data?.paymentMethod == "BOTH" && "Allow Swap & Swapll Coin"}
+          {data?.paymentMethod == "COIN" && "Swapll Coin"}
+          {data?.paymentMethod == "SWAP" && "Allow Swap"}
+        </Text>
+        <Divider />
+        <View style={styles.row}>
+          <Ionicons name="star" size={16} color="#FFA500" />
+          <Text style={styles.rating}>
+            {data?.averageRating} ({data?.numberOfReviews})
+          </Text>
+          <Text style={styles.label}>{data?.type}</Text>
           <View style={styles.userInfo}>
             <Image
               source={
@@ -197,20 +210,6 @@ const OfferDetails = () => {
             />
             <Text style={styles.username}>{data.username}</Text>
           </View>
-        </View>
-        <Text style={styles.subtext}>
-          {categories?.find((cat: any) => cat.id === data?.categoryId)?.title} •{" "}
-          {data?.paymentMethod == "BOTH" && "Allow Swap & Swapll Coin"}
-          {data?.paymentMethod == "COIN" && "Swapll Coin"}
-          {data?.paymentMethod == "SWAP" && "Allow Swap"}
-        </Text>
-
-        <View style={styles.row}>
-          <Ionicons name="star" size={16} color="#FFA500" />
-          <Text style={styles.rating}>
-            {data?.averageRating} ({data?.numberOfReviews})
-          </Text>
-          <Text style={styles.label}>{data?.type}</Text>
         </View>
 
         <View style={[styles.row, { alignItems: "center", marginTop: 8 }]}>
@@ -435,6 +434,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
+    marginLeft: "auto",
   },
   username: {
     fontSize: 14,

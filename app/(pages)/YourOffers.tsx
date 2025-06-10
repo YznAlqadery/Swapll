@@ -136,7 +136,17 @@ const YourOffers = () => {
             </View>
 
             <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.editButton}>
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => {
+                  router.push({
+                    pathname: "/(pages)/EditOffer",
+                    params: {
+                      offerId: item.id,
+                    },
+                  });
+                }}
+              >
                 <Feather name="edit" size={18} color="#fff" />
                 <Text style={styles.buttonText}>Edit</Text>
               </TouchableOpacity>

@@ -12,6 +12,7 @@ const PagesLayout = () => {
         <Stack.Screen name="ChatPage" options={{ headerShown: false }} />
         <Stack.Screen name="YourOffers" options={{ headerShown: false }} />
         <Stack.Screen name="OfferDetails" options={{ headerShown: false }} />
+        <Stack.Screen name="EditOffer" options={{ headerShown: false }} />
       </Stack>
     </>
   );

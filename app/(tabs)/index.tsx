@@ -36,6 +36,7 @@ export interface Offer {
   status: string;
   offerType: string;
   paymentMethod: string;
+  categoryId: number;
 }
 type Category = {
   id: number;
