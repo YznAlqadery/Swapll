@@ -153,7 +153,7 @@ const Search = () => {
   function renderOffer({ item }: { item: Offer }): JSX.Element | null {
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={styles.offerItem}
         onPress={() => {
           router.push({
             pathname: "/(pages)/OfferDetails",
@@ -612,16 +612,20 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginVertical: 8,
   },
-  card: {
-    flexDirection: "column",
-    marginVertical: 20,
+  offerItem: {
+    width: 300,
     backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
     shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 24,
+    shadowRadius: 4,
     elevation: 2,
+    alignSelf: "center",
+    marginVertical: 10,
   },
   title: {
     color: "#008B8B",
@@ -658,43 +662,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_700Bold",
     fontSize: 15,
   },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    width: "100%",
-    marginTop: 10,
-    gap: 10,
-    marginLeft: 20,
-  },
-  editButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#20B2AA",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
 
-  deleteButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#B22222",
-    paddingVertical: 6,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontFamily: "Poppins_600SemiBold",
-    marginLeft: 6,
-  },
-  backButton: {
-    position: "absolute",
-    top: 8,
-    left: 10,
-    zIndex: 1,
-  },
   headerContainer: {
     backgroundColor: "#fff",
     borderBottomWidth: 1,

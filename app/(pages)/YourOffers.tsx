@@ -72,11 +72,19 @@ const YourOffers = () => {
   const navigation = useNavigation();
   const router = useRouter();
   const queryClient = useQueryClient();
-
+  const { userId } = useLocalSearchParams();
   const [isLoadingImages, setIsLoadingImages] = useState(false);
   const [offerImageMap, setOfferImageMap] = useState<Map<string, string>>(
     new Map()
   );
+
+  let MainId;
+
+  if (userId) {
+    MainId = userId;
+  } else {
+    MainId = user?.id;
+  }
 
   const {
     data: yourOffers,
@@ -84,7 +92,7 @@ const YourOffers = () => {
     error: yourOffersError,
   } = useQuery({
     queryKey: ["yourOffers"],
-    queryFn: () => fetchOffers(user?.id as number, token as string),
+    queryFn: () => fetchOffers(MainId as number, token as string),
     enabled: !!user,
   });
 
@@ -126,7 +134,7 @@ const YourOffers = () => {
   const renderOffer = ({ item }: { item: Offer }) => {
     return (
       <TouchableOpacity
-        style={styles.card}
+        style={styles.offerItem}
         onPress={() => {
           router.push({
             pathname: "/(pages)/OfferDetails",
@@ -138,7 +146,11 @@ const YourOffers = () => {
       >
         <View style={styles.offerImageContainer}>
           <Image
-            source={{ uri: offerImageMap.get(item.id) }}
+            source={
+              item.image
+                ? { uri: offerImageMap.get(item.id) }
+                : require("@/assets/images/no_image.jpeg")
+            }
             style={styles.offerImage}
             resizeMode="cover"
           />
@@ -158,32 +170,32 @@ const YourOffers = () => {
               <Text style={styles.price}>{item.price}</Text>
             </View>
 
-            <View style={styles.buttonRow}>
-              <TouchableOpacity
-                style={styles.editButton}
-                onPress={() => {
-                  router.push({
-                    pathname: "/(pages)/EditOffer",
-                    params: {
-                      offerId: item.id,
-                    },
-                  });
-                }}
-              >
-                <Feather name="edit" size={18} color="#fff" />
-                <Text style={styles.buttonText}>Edit</Text>
-              </TouchableOpacity>
+            {userId == null && (
+              <View style={styles.buttonRow}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  onPress={() => {
+                    router.push({
+                      pathname: "/(pages)/EditOffer",
+                      params: {
+                        offerId: item.id,
+                      },
+                    });
+                  }}
+                >
+                  <Feather name="edit" size={18} color="#fff" />
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.deleteButton}
-                onPress={() =>
-                  deleteOfferMutation.mutate(item.id as unknown as number)
-                }
-              >
-                <FontAwesome5 name="trash-alt" size={16} color="#fff" />
-                <Text style={styles.buttonText}>Delete</Text>
-              </TouchableOpacity>
-            </View>
+                <TouchableOpacity
+                  style={styles.deleteButton}
+                  onPress={() =>
+                    deleteOfferMutation.mutate(item.id as unknown as number)
+                  }
+                >
+                  <FontAwesome5 name="trash-alt" size={16} color="#fff" />
+                </TouchableOpacity>
+              </View>
+            )}
           </View>
         </View>
       </TouchableOpacity>
@@ -243,6 +255,12 @@ const styles = StyleSheet.create({
   listContainer: {
     padding: 10,
   },
+  offerImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
   offerImageContainer: {
     width: "100%",
     height: 200,
@@ -250,26 +268,25 @@ const styles = StyleSheet.create({
     marginVertical: 8,
     overflow: "hidden",
   },
-  offerImage: {
-    width: "100%",
-    height: 200,
-    borderRadius: 12,
-  },
   offerDetails: {
     justifyContent: "space-between",
     alignItems: "flex-start",
     marginVertical: 8,
   },
-  card: {
-    flexDirection: "column",
-    marginVertical: 20,
+  offerItem: {
+    width: 300,
     backgroundColor: "#fff",
-    borderRadius: 10,
-    padding: 10,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    marginHorizontal: 16,
     shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 24,
+    shadowRadius: 4,
     elevation: 2,
+    alignSelf: "center",
+    marginVertical: 10,
   },
   title: {
     color: "#008B8B",
@@ -312,7 +329,7 @@ const styles = StyleSheet.create({
     width: "100%",
     marginTop: 10,
     gap: 10,
-    marginLeft: 20,
+    marginLeft: 10,
   },
   editButton: {
     flexDirection: "row",

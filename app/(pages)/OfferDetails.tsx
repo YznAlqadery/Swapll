@@ -199,17 +199,35 @@ const OfferDetails = () => {
             {data?.averageRating} ({data?.numberOfReviews})
           </Text>
           <Text style={styles.label}>{data?.type}</Text>
-          <View style={styles.userInfo}>
-            <Image
-              source={
-                data.image
-                  ? { uri: imageUri }
-                  : require("@/assets/images/profile-pic-placeholder.png")
-              }
-              style={styles.profileImage}
-            />
-            <Text style={styles.username}>{data.username}</Text>
-          </View>
+          <TouchableOpacity
+            style={styles.userInfo}
+            onPress={() =>
+              router.push({
+                pathname: "/(pages)/UserProfile",
+                params: {
+                  userId: data?.ownerId,
+                },
+              })
+            }
+          >
+            <View
+              style={{
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 8,
+              }}
+            >
+              <Image
+                source={
+                  data.image
+                    ? { uri: imageUri }
+                    : require("@/assets/images/profile-pic-placeholder.png")
+                }
+                style={styles.profileImage}
+              />
+              <Text style={styles.username}>{data.username}</Text>
+            </View>
+          </TouchableOpacity>
         </View>
 
         <View style={[styles.row, { alignItems: "center", marginTop: 8 }]}>

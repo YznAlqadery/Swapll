@@ -242,8 +242,6 @@ const Index = () => {
 
   const categories = data as Category[];
 
-  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
-  const [sheetOpen, setSheetOpen] = useState<boolean>(false);
   const [offerImageMap, setOfferImageMap] = useState<Map<string, string>>(
     new Map()
   );
@@ -289,19 +287,6 @@ const Index = () => {
       fetchOfferImages(offersByCategory, token || "");
     }
   }, [offersByCategory, user]);
-
-  const handleSelectOffer = (offer: Offer) => {
-    if (selectedOffer?.id === offer.id && sheetOpen) {
-      setSheetOpen(false);
-      setTimeout(() => {
-        setSelectedOffer(offer);
-        setSheetOpen(true);
-      }, 300);
-    } else {
-      setSelectedOffer(offer);
-      setSheetOpen(true);
-    }
-  };
 
   useEffect(() => {
     async function fetchUser() {
@@ -353,6 +338,7 @@ const Index = () => {
           }
           ListHeaderComponent={
             <View>
+              {/* Header section with logo and balance */}
               <View
                 style={{
                   flexDirection: "row",
@@ -395,7 +381,10 @@ const Index = () => {
                   </Text>
                 </View>
               </View>
+
               <Divider />
+
+              {/* Category list */}
               <Text style={styles.header}>Popular Categories</Text>
               <View style={{ height: 70 }}>
                 <CategoryFlatlist
@@ -405,41 +394,66 @@ const Index = () => {
                   setCategory={setCategory}
                 />
               </View>
-              <Divider />
-              <Text style={styles.header}>
-                {category
-                  ? `Offers in ${category}`
-                  : "Our Community's Favorites"}
-              </Text>
 
-              {!categoryId && topRatedOffers && (
-                <FlatList
-                  data={topRatedOffers}
-                  renderItem={({ item }) => (
-                    <OfferItem item={item} offerImageMap={offerImageMap} />
-                  )}
-                  keyExtractor={(item) => item.id}
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                />
+              <Divider />
+
+              {/* Loading Spinner */}
+              {isLoading && (
+                <View
+                  style={{
+                    flex: 1,
+                    justifyContent: "center",
+                    alignItems: "center",
+                    marginVertical: 20,
+                  }}
+                >
+                  <ActivityIndicator size="large" color="#008B8B" />
+                </View>
               )}
-              <Divider />
 
-              {!categoryId && recentOffers && (
+              {/* Only show offers section if not loading */}
+              {!isLoading && (
                 <>
-                  <Text style={styles.header}>Latest Deals for You</Text>
-                  <FlatList
-                    data={recentOffers}
-                    renderItem={({ item }) => (
-                      <OfferItem item={item} offerImageMap={offerImageMap} />
-                    )}
-                    keyExtractor={(item) => item.id}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                    style={{
-                      marginBottom: 60,
-                    }}
-                  />
+                  <Text style={styles.header}>
+                    {category
+                      ? `Offers in ${category}`
+                      : "Our Community's Favorites"}
+                  </Text>
+
+                  {!categoryId && topRatedOffers?.length > 0 && (
+                    <FlatList
+                      data={topRatedOffers}
+                      renderItem={({ item }) => (
+                        <OfferItem item={item} offerImageMap={offerImageMap} />
+                      )}
+                      keyExtractor={(item) => item.id}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                    />
+                  )}
+
+                  <Divider />
+
+                  {!categoryId && recentOffers?.length > 0 && (
+                    <>
+                      <Text style={styles.header}>Latest Deals for You</Text>
+                      <FlatList
+                        data={recentOffers}
+                        renderItem={({ item }) => (
+                          <OfferItem
+                            item={item}
+                            offerImageMap={offerImageMap}
+                          />
+                        )}
+                        keyExtractor={(item) => item.id}
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        style={{
+                          marginBottom: 60,
+                        }}
+                      />
+                    </>
+                  )}
                 </>
               )}
             </View>

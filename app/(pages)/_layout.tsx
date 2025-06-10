@@ -13,6 +13,7 @@ const PagesLayout = () => {
         <Stack.Screen name="YourOffers" options={{ headerShown: false }} />
         <Stack.Screen name="OfferDetails" options={{ headerShown: false }} />
         <Stack.Screen name="EditOffer" options={{ headerShown: false }} />
+        <Stack.Screen name="UserProfile" options={{ headerShown: false }} />
       </Stack>
     </>
   );
