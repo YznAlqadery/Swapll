@@ -15,9 +15,32 @@ import { Offer } from "../(tabs)";
 import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
 import SkeletonOfferItem from "@/components/SkeletonItem";
 import { Feather, FontAwesome5 } from "@expo/vector-icons";
-import { useNavigation, useRouter } from "expo-router";
+import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
+import Toast, {
+  BaseToast,
+  BaseToastProps,
+  ErrorToast,
+} from "react-native-toast-message";
 
+// const toastConfig = {
+//   success: (props: React.JSX.IntrinsicAttributes & BaseToastProps) => (
+//     <BaseToast
+//       {...props}
+//       style={{ borderLeftColor: "#008B8B" }}
+//       text1Style={{ fontWeight: "bold", fontFamily: "Poppins_700Bold" }}
+//       text2Style={{ color: "#008B8B", fontFamily: "Poppins_500Medium" }}
+//     />
+//   ),
+//   error: (props: React.JSX.IntrinsicAttributes & BaseToastProps) => (
+//     <ErrorToast
+//       {...props}
+//       style={{ borderLeftColor: "red" }}
+//       text1Style={{ fontWeight: "bold" }}
+//       text2Style={{ color: "red" }}
+//     />
+//   ),
+// };
 async function fetchOffers(userId: number, token: string) {
   const url = `${process.env.EXPO_PUBLIC_API_URL}/api/offers/user/${userId}`;
   const response = await fetch(url, {
@@ -169,6 +192,7 @@ const YourOffers = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
+      {/* <Toast config={toastConfig} /> */}
       <SafeAreaView style={styles.container}>
         <View style={styles.headerContainer}>
           <TouchableOpacity

@@ -11,6 +11,7 @@ import {
   Keyboard,
   KeyboardAvoidingView,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 
 import { FontAwesome } from "@expo/vector-icons";
@@ -24,25 +25,6 @@ import Toast, {
   BaseToastProps,
   ErrorToast,
 } from "react-native-toast-message";
-
-const toastConfig = {
-  success: (props: React.JSX.IntrinsicAttributes & BaseToastProps) => (
-    <BaseToast
-      {...props}
-      style={{ borderLeftColor: "#008B8B" }}
-      text1Style={{ fontWeight: "bold", fontFamily: "Poppins_700Bold" }}
-      text2Style={{ color: "#008B8B", fontFamily: "Poppins_500Medium" }}
-    />
-  ),
-  error: (props: React.JSX.IntrinsicAttributes & BaseToastProps) => (
-    <ErrorToast
-      {...props}
-      style={{ borderLeftColor: "red" }}
-      text1Style={{ fontWeight: "bold" }}
-      text2Style={{ color: "red" }}
-    />
-  ),
-};
 
 const EditProfile = () => {
   const { user, setUser } = useLoggedInUser();
@@ -190,6 +172,13 @@ const EditProfile = () => {
       setIsLoading(false);
     }
   };
+
+  if (isLoading)
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#008B8B" />
+      </View>
+    );
 
   return (
     <SafeAreaView style={styles.container}>

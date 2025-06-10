@@ -11,12 +11,7 @@ import {
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { AuthContext } from "@/context/AuthContext";
-import {
-  MaterialIcons,
-  FontAwesome5,
-  Entypo,
-  FontAwesome,
-} from "@expo/vector-icons";
+import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { Feather } from "@expo/vector-icons";
@@ -111,30 +106,28 @@ const Profile = () => {
       visibilityTime: 2000, // duration in ms
     });
   };
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle={"dark-content"} />
+        <View style={styles.profileContainer}>
+          <ActivityIndicator
+            size="large"
+            color="#008B8B"
+            style={{ marginTop: 200 }}
+          />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle={"light-content"} />
-      <View style={styles.profileWrapper}>
-        <Image
-          source={require("@/assets/images/profile-page-bg.png")}
-          style={styles.wavyBackground}
-          resizeMode="cover"
-        />
-      </View>
-      {!isLoading && (
-        <View style={styles.profilePicWrapper}>
-          {localImageUri ? (
-            <Image source={{ uri: localImageUri }} style={styles.profilePic} />
-          ) : (
-            <Image
-              source={require("@/assets/images/profile-pic-placeholder.png")}
-              style={styles.profilePic}
-            />
-          )}
-        </View>
-      )}
-
-      <ScrollView style={{ flex: 1 }}>
+      <StatusBar barStyle={"dark-content"} />
+      <ScrollView
+        contentContainerStyle={{ paddingHorizontal: 6, paddingTop: 0 }}
+      >
         <View style={styles.profileContainer}>
           {isLoading && (
             <ActivityIndicator
@@ -144,7 +137,34 @@ const Profile = () => {
             />
           )}
 
-          <View>
+          <View style={styles.profileWrapper}>
+            <Image
+              source={require("@/assets/images/profile-page-bg.png")}
+              style={styles.wavyBackground}
+              resizeMode="cover"
+            />
+          </View>
+          {!isLoading && (
+            <View style={styles.profilePicWrapper}>
+              {localImageUri ? (
+                <Image
+                  source={{ uri: localImageUri }}
+                  style={styles.profilePic}
+                />
+              ) : (
+                <Image
+                  source={require("@/assets/images/profile-pic-placeholder.png")}
+                  style={styles.profilePic}
+                />
+              )}
+            </View>
+          )}
+
+          <View
+            style={{
+              marginTop: 24,
+            }}
+          >
             <Text style={styles.username}>
               {user?.firstName.substring(0, 1).toLocaleUpperCase()! +
                 user?.firstName.substring(1)}{" "}
@@ -381,8 +401,8 @@ const Profile = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 16, backgroundColor: "#F0F7F7" },
-  profileContainer: { alignItems: "center" },
+  container: { flex: 1, paddingHorizontal: 16, backgroundColor: "#F0F7F7" },
+  profileContainer: { alignItems: "center", justifyContent: "center" },
   profileWrapper: {
     width: "100%",
     alignItems: "center",
@@ -398,7 +418,7 @@ const styles = StyleSheet.create({
     height: 120,
     borderRadius: 60,
     overflow: "hidden",
-    marginBottom: 12,
+    marginTop: 24,
     backgroundColor: "#fff",
     justifyContent: "center",
     alignItems: "center",
@@ -411,14 +431,14 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 180,
     zIndex: -1,
-    borderBottomRightRadius: 5,
-    borderBottomLeftRadius: 5,
+    borderRadius: 10,
   },
   profilePic: {
     width: 100,
     height: 100,
     borderRadius: 50,
     zIndex: 1,
+    alignSelf: "center",
   },
   username: {
     fontSize: 22,

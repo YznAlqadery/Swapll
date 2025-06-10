@@ -19,8 +19,7 @@ import * as FileSystem from "expo-file-system";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import CategoryFlatlist from "@/components/CategoryFlatlist";
 import { useAuth } from "@/context/AuthContext";
-import { useLocalSearchParams } from "expo-router";
-import { Offer } from "../(tabs)";
+import { useLocalSearchParams, useRouter } from "expo-router";
 
 type Category = {
   id: number;
@@ -31,6 +30,7 @@ const EditOffer = () => {
   const { offerId } = useLocalSearchParams();
 
   const { user: token } = useAuth();
+  const router = useRouter();
 
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
@@ -90,7 +90,7 @@ const EditOffer = () => {
   const removeImage = () => setImage("");
 
   const handleEditOffer = async () => {
-    const offer = {
+    const currentOffer = {
       id: offerId,
       title,
       description,
@@ -101,11 +101,18 @@ const EditOffer = () => {
       categoryId,
     };
 
+    // 🔁 Replace this with your actual original data source
+    const isUnchanged =
+      JSON.stringify(currentOffer) === JSON.stringify(offer) &&
+      image === localImageUri;
+
+    if (isUnchanged) {
+      console.log("No changes detected. Skipping update.");
+      return;
+    }
+
     const formData = new FormData();
-
-    formData.append("offer", JSON.stringify(offer));
-
-    console.log(paymentMethod);
+    formData.append("offer", JSON.stringify(currentOffer));
 
     if (image) {
       const fileInfo = await FileSystem.getInfoAsync(image);
@@ -131,9 +138,9 @@ const EditOffer = () => {
       setIsLoading(true);
 
       const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/offer/update`, // 👈 edit endpoint
+        `${process.env.EXPO_PUBLIC_API_URL}/api/offer/update`,
         {
-          method: "PUT", // or "PATCH" depending on your backend
+          method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -151,13 +158,10 @@ const EditOffer = () => {
         throw new Error(errorData?.error || "Failed to edit offer");
       }
 
-      const data = await response.json();
-
-      Alert.alert("Success", "Offer updated successfully!");
-
       queryClient.invalidateQueries({ queryKey: ["yourOffers"] });
       queryClient.invalidateQueries({ queryKey: ["offer", offerId] });
-      // Optionally navigate or refresh data here
+
+      router.back();
     } catch (error: any) {
       console.error("Error:", error.message);
       Alert.alert("Error", error.message || "Could not edit offer.");
@@ -170,7 +174,7 @@ const EditOffer = () => {
     if (offer) {
       setTitle(offer.title ?? "");
       setDescription(offer.description ?? "");
-      setPrice(offer.price ?? 0);
+      setPrice(offer?.price ? offer.price / 3 : 0);
       setImage(offer.image ?? "");
       setOfferType(offer.type ?? "");
       setPaymentMethod(offer.paymentMethod ?? "");
