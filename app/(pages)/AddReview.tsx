@@ -51,10 +51,10 @@ const AddReview = () => {
         throw new Error("Failed to submit review");
       }
 
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: ["reviews", offerId] as const,
       });
-      queryClient.invalidateQueries({
+      await queryClient.invalidateQueries({
         queryKey: ["offer", offerId] as const,
       });
       router.back();

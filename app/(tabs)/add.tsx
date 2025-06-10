@@ -19,6 +19,8 @@ import * as FileSystem from "expo-file-system";
 import { useQueryClient } from "@tanstack/react-query";
 import CategoryFlatlist from "@/components/CategoryFlatlist";
 import { useAuth } from "@/context/AuthContext";
+import { useRevalidateQueries } from "@/hooks/useRevalidate";
+import { useRouter } from "expo-router";
 
 type Category = {
   id: number;
@@ -36,8 +38,10 @@ const AddPost = () => {
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [deliveryTime, setDeliveryTime] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { revalidate } = useRevalidateQueries();
 
   const queryClient = useQueryClient();
+  const router = useRouter();
 
   const categories = queryClient.getQueryData(["categories"]) as Category[];
 
@@ -126,7 +130,18 @@ const AddPost = () => {
       const data = await response.json();
       console.log("Offer added:", data);
       Alert.alert("Success", "Offer added successfully!");
-      // Do something like reset form or navigate
+
+      revalidate(categoryId ?? 0);
+      router.replace("/(tabs)");
+
+      setTitle("");
+      setDescription("");
+      setPrice(0);
+      setCategoryId(0);
+      setImage(undefined);
+      setOfferType("");
+      setPaymentMethod("");
+      setDeliveryTime("");
     } catch (error: any) {
       console.error("Error:", error.message);
       Alert.alert("Error", error.message || "Could not add offer.");
