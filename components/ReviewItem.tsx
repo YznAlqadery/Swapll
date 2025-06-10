@@ -2,15 +2,23 @@ import React, { useEffect, useState } from "react";
 import { View, Text, StyleSheet, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import * as FileSystem from "expo-file-system";
+import { v4 as uuidv4 } from "uuid";
+import "react-native-get-random-values";
 
-type ReviewItemProps = {
-  username: string;
-  comment: string;
-  rating: number;
-  image: string; // base64 string
-  userId: number;
-};
-
+interface ReviewItemProps {
+  review: {
+    id: number;
+    rating: number;
+    comment: string;
+    createdAt: string; // ISO string from backend
+    offerId: number;
+    firstName: string;
+    lastName: string;
+    userName: string;
+    profilePicture?: string | null; // base64 or URI string
+    userId: number;
+  };
+}
 const saveBase64ToFile = async (base64String: string, filename: string) => {
   const fileUri = FileSystem.cacheDirectory + filename;
   await FileSystem.writeAsStringAsync(fileUri, base64String, {
@@ -19,24 +27,22 @@ const saveBase64ToFile = async (base64String: string, filename: string) => {
   return fileUri;
 };
 
-const ReviewItem: React.FC<ReviewItemProps> = ({
-  username,
-  comment,
-  rating,
-  image,
-  userId,
-}) => {
+const ReviewItem: React.FC<ReviewItemProps> = ({ review }) => {
   const [imageUri, setImageUri] = useState<string | null>(null);
 
   useEffect(() => {
     const convertAndSave = async () => {
-      if (image) {
-        const uri = await saveBase64ToFile(image, `user-${userId}.jpg`);
+      if (review.profilePicture) {
+        const uri = await saveBase64ToFile(
+          review.profilePicture,
+          `user-${review.userId}.jpg`
+        );
         setImageUri(uri);
       }
     };
     convertAndSave();
-  }, [image]);
+  }, [review.profilePicture]);
+
   return (
     <View style={styles.reviewItem}>
       <View style={styles.header}>
@@ -46,28 +52,36 @@ const ReviewItem: React.FC<ReviewItemProps> = ({
           <Ionicons name="person-circle-outline" size={40} color="#ccc" />
         )}
         <View style={styles.userInfo}>
-          <Text style={styles.username}>@{username}</Text>
+          <Text style={styles.username}>@{review.userName}</Text>
           <View style={styles.ratingContainer}>
             {[1, 2, 3, 4, 5].map((star) => (
               <Ionicons
-                key={star}
-                name={star <= rating ? "star" : "star-outline"}
+                key={uuidv4()}
+                name={star <= review.rating ? "star" : "star-outline"}
                 size={16}
-                color={star <= rating ? "#FFA500" : "#CCC"}
+                color={star <= review.rating ? "#FFA500" : "#CCC"}
               />
             ))}
+
             <Text
               style={{
                 marginLeft: 4,
               }}
             >
-              ({rating})
+              ({review.rating})
             </Text>
           </View>
         </View>
       </View>
 
-      <Text style={styles.comment}>{comment}</Text>
+      <Text style={styles.comment}>{review.comment}</Text>
+      <Text style={styles.date}>
+        {new Date(review.createdAt).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+        })}
+      </Text>
     </View>
   );
 };
@@ -113,6 +127,11 @@ const styles = StyleSheet.create({
     color: "#333",
     marginTop: 4,
     marginLeft: 50,
+  },
+  date: {
+    marginTop: 8,
+    fontSize: 12,
+    color: "#888",
   },
 });
 

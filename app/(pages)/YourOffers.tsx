@@ -131,7 +131,7 @@ const YourOffers = () => {
     }
   }, [yourOffers, token]);
 
-  const renderOffer = ({ item }: { item: Offer }) => {
+  const RenderOffer = ({ item }: { item: Offer }) => {
     return (
       <TouchableOpacity
         style={styles.offerItem}
@@ -213,7 +213,9 @@ const YourOffers = () => {
           >
             <Feather name="arrow-left" size={24} color="#008B8B" />
           </TouchableOpacity>
-          <Text style={styles.header}>Your Offers</Text>
+          <Text style={styles.header}>
+            {userId == null ? "Your Offers" : "His Offers"}
+          </Text>
         </View>
         {(yourOffersLoading || isLoadingImages) && (
           <>
@@ -232,7 +234,7 @@ const YourOffers = () => {
         <FlatList
           data={yourOffers}
           keyExtractor={(item) => item.id}
-          renderItem={renderOffer}
+          renderItem={RenderOffer}
           contentContainerStyle={styles.listContainer}
         />
       </SafeAreaView>
@@ -251,6 +253,7 @@ const styles = StyleSheet.create({
     color: "#008B8B",
     textAlign: "center",
     marginBottom: 24,
+    marginTop: 10,
   },
   listContainer: {
     padding: 10,
@@ -356,7 +359,7 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: "absolute",
-    top: 8,
+    top: 16,
     left: 10,
     zIndex: 1,
   },

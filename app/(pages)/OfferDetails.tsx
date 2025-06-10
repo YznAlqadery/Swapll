@@ -18,6 +18,8 @@ import { fetchCategories, fetchOffersByCategory } from "../(tabs)";
 import OfferCard from "@/components/OfferCard";
 import ReviewItem from "@/components/ReviewItem";
 import Divider from "@/components/Divider";
+import { useLoggedInUser } from "@/context/LoggedInUserContext";
+import { v4 as uuidv4 } from "uuid";
 
 const saveBase64ToFile = async (base64String: string, filename: string) => {
   const fileUri = FileSystem.cacheDirectory + filename;
@@ -40,6 +42,7 @@ async function fetchReviews(offerId: number, token: string) {
 
 const OfferDetails = () => {
   const { offerId } = useLocalSearchParams();
+  const { user } = useLoggedInUser();
   const { user: token } = useAuth();
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -141,204 +144,248 @@ const OfferDetails = () => {
     );
   }
 
-  const renderHeader = () => (
-    <>
-      <View style={styles.imageWrapper}>
-        {localImageUri && imageAspectRatio ? (
-          <Image
-            source={{ uri: localImageUri }}
-            style={{
-              width: "100%",
-              aspectRatio: imageAspectRatio,
-              borderBottomLeftRadius: 12,
-              borderBottomRightRadius: 12,
-            }}
-          />
-        ) : (
-          <Image
-            source={require("@/assets/images/no_image.jpeg")}
-            style={{
-              width: "100%",
-              height: 350,
-              borderBottomLeftRadius: 12,
-              borderBottomRightRadius: 12,
-            }}
-            resizeMode="cover"
-          />
-        )}
-
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-          activeOpacity={0.7}
-        >
-          <Ionicons name="chevron-back" size={20} color="#008B8B" />
-        </TouchableOpacity>
-      </View>
-
-      <View style={styles.infoContainer}>
-        <View
-          style={{
-            flexDirection: "row",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
-        >
-          <Text style={styles.name}>{data.title}</Text>
-        </View>
-        <Text style={styles.subtext}>
-          {categories?.find((cat: any) => cat.id === data?.categoryId)?.title} •{" "}
-          {data?.paymentMethod == "BOTH" && "Allow Swap & Swapll Coin"}
-          {data?.paymentMethod == "COIN" && "Swapll Coin"}
-          {data?.paymentMethod == "SWAP" && "Allow Swap"}
-        </Text>
-        <Divider />
-        <View style={styles.row}>
-          <Ionicons name="star" size={16} color="#FFA500" />
-          <Text style={styles.rating}>
-            {data?.averageRating} ({data?.numberOfReviews})
-          </Text>
-          <Text style={styles.label}>{data?.type}</Text>
-          <TouchableOpacity
-            style={styles.userInfo}
-            onPress={() =>
-              router.push({
-                pathname: "/(pages)/UserProfile",
-                params: {
-                  userId: data?.ownerId,
-                },
-              })
-            }
-          >
-            <View
+  const RenderHeader = () => {
+    return (
+      <>
+        <View style={styles.imageWrapper}>
+          {localImageUri && imageAspectRatio ? (
+            <Image
+              source={{ uri: localImageUri }}
               style={{
-                flexDirection: "row",
-                alignItems: "center",
-                gap: 8,
+                width: "100%",
+                aspectRatio: imageAspectRatio,
+                borderBottomLeftRadius: 12,
+                borderBottomRightRadius: 12,
               }}
-            >
-              <Image
-                source={
-                  data.image
-                    ? { uri: imageUri }
-                    : require("@/assets/images/profile-pic-placeholder.png")
-                }
-                style={styles.profileImage}
-              />
-              <Text style={styles.username}>{data.username}</Text>
-            </View>
+            />
+          ) : (
+            <Image
+              source={require("@/assets/images/no_image.jpeg")}
+              style={{
+                width: "100%",
+                height: 350,
+                borderBottomLeftRadius: 12,
+                borderBottomRightRadius: 12,
+              }}
+              resizeMode="cover"
+            />
+          )}
+
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => router.back()}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="chevron-back" size={20} color="#008B8B" />
           </TouchableOpacity>
         </View>
 
-        <View style={[styles.row, { alignItems: "center", marginTop: 8 }]}>
-          <FontAwesome
-            name="truck"
-            size={16}
-            color="#008b8b"
-            style={{ marginRight: 6 }}
-          />
-          {data?.deliveryTime > 2 ? (
-            <Text
-              style={[
-                styles.meta,
-                { fontSize: 14, color: "#333", fontWeight: "500" },
-              ]}
-            >
-              {data.deliveryTime - 2}–{data.deliveryTime + 2} days •
-            </Text>
-          ) : (
-            <Text
-              style={[
-                styles.meta,
-                { fontSize: 14, color: "#008b8b", fontWeight: "500" },
-              ]}
-            >
-              Very fast delivery •
-            </Text>
-          )}
-
-          <View style={{ flexDirection: "row", alignItems: "center" }}>
-            <Image
-              source={require("@/assets/images/swapll_coin.png")}
-              style={{ width: 24, height: 24, marginLeft: 4 }}
-            />
-            <Text style={styles.meta}>{data?.price}</Text>
-          </View>
-        </View>
-        <View
-          style={{ marginTop: 12, flexDirection: "row", alignItems: "center" }}
-        >
-          <FontAwesome
-            name="calendar"
-            size={16}
-            color="#555"
-            style={{ marginRight: 6 }}
-          />
-          <Text
-            style={[
-              styles.meta,
-              { fontSize: 14, color: "#555", fontWeight: "500" },
-            ]}
-          >
-            {data?.createdAt &&
-              new Date(data.createdAt).toLocaleDateString("en-CA")}
-          </Text>
-        </View>
-        <View style={styles.descriptionBox}>
-          <Text
+        <View style={styles.infoContainer}>
+          <View
             style={{
-              fontSize: 16,
-              fontFamily: "Poppins_400Regular",
-              color: "#008B8B",
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
             }}
           >
-            {data?.description}
+            <Text style={styles.name}>{data.title}</Text>
+          </View>
+          <Text style={styles.subtext}>
+            {categories?.find((cat: any) => cat.id === data?.categoryId)?.title}{" "}
+            • {data?.paymentMethod == "BOTH" && "Allow Swap & Swapll Coin"}
+            {data?.paymentMethod == "COIN" && "Swapll Coin"}
+            {data?.paymentMethod == "SWAP" && "Allow Swap"}
           </Text>
+          <Divider />
+          <View style={styles.row}>
+            <Ionicons name="star" size={16} color="#FFA500" />
+            <Text style={styles.rating}>
+              {data?.averageRating?.toFixed(1)} ({data?.numberOfReviews})
+            </Text>
+            <Text style={styles.label}>{data?.type}</Text>
+            <TouchableOpacity
+              style={styles.userInfo}
+              onPress={() =>
+                router.push({
+                  pathname: "/(pages)/UserProfile",
+                  params: {
+                    userId: data?.ownerId,
+                  },
+                })
+              }
+            >
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  gap: 8,
+                }}
+              >
+                <Image
+                  source={
+                    data.image
+                      ? { uri: imageUri }
+                      : require("@/assets/images/profile-pic-placeholder.png")
+                  }
+                  style={styles.profileImage}
+                />
+                <Text style={styles.username}>{data.username}</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+
+          <View style={[styles.row, { alignItems: "center", marginTop: 8 }]}>
+            <FontAwesome
+              name="truck"
+              size={16}
+              color="#008b8b"
+              style={{ marginRight: 6 }}
+            />
+            {data?.deliveryTime > 2 ? (
+              <Text
+                style={[
+                  styles.meta,
+                  { fontSize: 14, color: "#333", fontWeight: "500" },
+                ]}
+              >
+                {data.deliveryTime - 2}–{data.deliveryTime + 2} days •
+              </Text>
+            ) : (
+              <Text
+                style={[
+                  styles.meta,
+                  { fontSize: 14, color: "#008b8b", fontWeight: "500" },
+                ]}
+              >
+                Very fast delivery •
+              </Text>
+            )}
+
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Image
+                source={require("@/assets/images/swapll_coin.png")}
+                style={{ width: 24, height: 24, marginLeft: 4 }}
+              />
+              <Text style={styles.meta}>{data?.price}</Text>
+            </View>
+          </View>
+
+          {data?.createdAt && (
+            <View
+              style={{
+                marginTop: 12,
+                flexDirection: "row",
+                alignItems: "center",
+              }}
+            >
+              <FontAwesome
+                name="calendar"
+                size={16}
+                color="#008b8b"
+                style={{ marginRight: 6 }}
+              />
+              <Text style={styles.meta}>
+                {new Date(data.createdAt).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                })}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.descriptionBox}>
+            <Text
+              style={{
+                fontSize: 16,
+                fontFamily: "Poppins_400Regular",
+                color: "#008B8B",
+              }}
+            >
+              {data?.description}
+            </Text>
+          </View>
         </View>
-      </View>
 
-      <Divider />
+        <Divider />
 
-      <Text style={styles.sectionTitle}>Picks for you 🔥</Text>
-      <FlatList
-        data={offersByCategory?.filter((item: any) => item.id !== data?.id)}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item }) => (
-          <OfferCard
-            id={item.id}
-            title={item.title}
-            price={item.price}
-            image={item.image}
-          />
+        <Text style={styles.sectionTitle}>Picks for you 🔥</Text>
+        <FlatList
+          data={offersByCategory?.filter((item: any) => item.id !== data?.id)}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item }) => (
+            <OfferCard
+              id={item.id}
+              title={item.title}
+              price={item.price}
+              image={item.image}
+            />
+          )}
+          horizontal
+        />
+        {offersByCategory?.filter((item: any) => item.id !== data?.id)
+          .length === 0 && (
+          <View
+            style={{
+              paddingHorizontal: 16,
+            }}
+          >
+            <Text
+              style={{
+                marginTop: 10,
+                backgroundColor: "#F0FDFD",
+                padding: 10,
+                fontSize: 14,
+                fontFamily: "Poppins_400Regular",
+                color: "#008B8B",
+              }}
+            >
+              No offers yet
+            </Text>
+          </View>
         )}
-        horizontal
-      />
-      {offersByCategory?.filter((item: any) => item.id !== data?.id).length ===
-        0 && (
+        <Divider />
+
         <View
           style={{
+            flexDirection: "row",
+            justifyContent: "space-between",
+            alignItems: "center",
             paddingHorizontal: 16,
+            paddingVertical: 12,
           }}
         >
           <Text
-            style={{
-              marginTop: 10,
-              backgroundColor: "#F0FDFD",
-              padding: 10,
-              fontSize: 14,
-              fontFamily: "Poppins_400Regular",
-              color: "#008B8B",
-            }}
+            style={[
+              styles.sectionTitle,
+              {
+                marginLeft: 0,
+              },
+            ]}
           >
-            No offers yet
+            Reviews ({reviews?.length})
           </Text>
-        </View>
-      )}
-      <Divider />
 
-      <Text style={styles.sectionTitle}>Reviews ({reviews?.length})</Text>
-    </>
-  );
+          {user?.id !== data?.ownerId &&
+            !reviews?.some(
+              (r: { userId: number | undefined }) => r.userId === user?.id
+            ) && (
+              <TouchableOpacity
+                style={styles.addReviewButton}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(pages)/AddReview",
+                    params: { offerId: data?.id },
+                  })
+                }
+              >
+                <Text style={styles.addReviewButtonText}>Add Review</Text>
+              </TouchableOpacity>
+            )}
+        </View>
+      </>
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -346,24 +393,12 @@ const OfferDetails = () => {
         <ActivityIndicator size="large" />
       ) : (
         <FlatList
-          data={reviews || []}
-          keyExtractor={(item) => item.userId.toString()}
-          ListHeaderComponent={renderHeader}
-          renderItem={({ item }) => (
-            <ReviewItem
-              username={item.userName}
-              comment={item.comment}
-              rating={item.rating}
-              image={item.profilePicture}
-              userId={item.userId}
-            />
-          )}
+          data={reviews}
+          keyExtractor={(item) => uuidv4()}
+          renderItem={({ item }) => <ReviewItem review={item} />}
+          ListHeaderComponent={RenderHeader}
           ListEmptyComponent={
-            <View
-              style={{
-                paddingHorizontal: 16,
-              }}
-            >
+            <View style={{ paddingHorizontal: 16 }}>
               <Text
                 style={{
                   marginTop: 10,
@@ -378,6 +413,7 @@ const OfferDetails = () => {
               </Text>
             </View>
           }
+          contentContainerStyle={{ paddingBottom: 80 }}
         />
       )}
     </SafeAreaView>
@@ -466,6 +502,21 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     borderWidth: 2,
     borderColor: "#008B8B",
+  },
+
+  addReviewButton: {
+    borderWidth: 1,
+    borderColor: "#008B8B",
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 4,
+  },
+
+  addReviewButtonText: {
+    color: "#008b8b",
+    fontSize: 16,
+    fontWeight: "600",
+    fontFamily: "Poppins_500Medium",
   },
 });
 
