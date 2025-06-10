@@ -287,7 +287,7 @@ const EditProfile = () => {
               placeholder="Enter your address"
               placeholderTextColor="#888"
             />
-            <Text style={styles.label}>Bio</Text>
+            <Text style={styles.label}>Your needs</Text>
             <TextInput
               style={[styles.input, styles.bioInput]}
               value={bio}

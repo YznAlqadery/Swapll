@@ -13,7 +13,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import * as FileSystem from "expo-file-system";
-import { Ionicons } from "@expo/vector-icons";
+import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { fetchCategories, fetchOffersByCategory } from "../(tabs)";
 import OfferCard from "@/components/OfferCard";
 import ReviewItem from "@/components/ReviewItem";
@@ -213,14 +213,33 @@ const OfferDetails = () => {
           <Text style={styles.label}>{data?.type}</Text>
         </View>
 
-        <View style={styles.row}>
+        <View style={[styles.row, { alignItems: "center", marginTop: 8 }]}>
+          <FontAwesome
+            name="truck"
+            size={16}
+            color="#008b8b"
+            style={{ marginRight: 6 }}
+          />
           {data?.deliveryTime > 2 ? (
-            <Text style={styles.meta}>
-              {data.deliveryTime - 2} - {data.deliveryTime + 2} days •
+            <Text
+              style={[
+                styles.meta,
+                { fontSize: 14, color: "#333", fontWeight: "500" },
+              ]}
+            >
+              {data.deliveryTime - 2}–{data.deliveryTime + 2} days •
             </Text>
           ) : (
-            <Text>Very fast delivery •</Text>
+            <Text
+              style={[
+                styles.meta,
+                { fontSize: 14, color: "#008b8b", fontWeight: "500" },
+              ]}
+            >
+              Very fast delivery •
+            </Text>
           )}
+
           <View style={{ flexDirection: "row", alignItems: "center" }}>
             <Image
               source={require("@/assets/images/swapll_coin.png")}
@@ -229,7 +248,25 @@ const OfferDetails = () => {
             <Text style={styles.meta}>{data?.price}</Text>
           </View>
         </View>
-
+        <View
+          style={{ marginTop: 12, flexDirection: "row", alignItems: "center" }}
+        >
+          <FontAwesome
+            name="calendar"
+            size={16}
+            color="#555"
+            style={{ marginRight: 6 }}
+          />
+          <Text
+            style={[
+              styles.meta,
+              { fontSize: 14, color: "#555", fontWeight: "500" },
+            ]}
+          >
+            {data?.createdAt &&
+              new Date(data.createdAt).toLocaleDateString("en-CA")}
+          </Text>
+        </View>
         <View style={styles.descriptionBox}>
           <Text
             style={{
@@ -403,7 +440,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginRight: 8,
     color: "#008B8B",
-    fontFamily: "Poppins_500Medium",
+    fontFamily: "Poppins_600SemiBold",
   },
   profileImage: {
     width: 30,

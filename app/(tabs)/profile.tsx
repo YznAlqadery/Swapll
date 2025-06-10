@@ -314,11 +314,22 @@ const Profile = () => {
               <Text style={styles.infoText}>{user?.referralCode ?? "N/A"}</Text>
             </View>
           )}
+          {user?.bio && (
+            <View style={styles.bioBox}>
+              <Text style={styles.bioTitle}>Needs</Text>
+              <Text style={styles.bioText}>{user.bio}</Text>
+            </View>
+          )}
         </View>
 
         <TouchableOpacity
           onPress={() => router.push("/(pages)/YourOffers")}
-          style={styles.personalInfo}
+          style={[
+            styles.personalInfo,
+            {
+              marginBottom: 50,
+            },
+          ]}
         >
           <View
             style={{
@@ -473,6 +484,29 @@ const styles = StyleSheet.create({
     fontSize: 16,
     marginLeft: 10,
     fontFamily: "Poppins_700Bold",
+  },
+  bioBox: {
+    backgroundColor: "#f9f9f9",
+    padding: 16,
+    marginTop: 16,
+    borderRadius: 12,
+    borderColor: "#ddd",
+    borderWidth: 1,
+    width: "100%",
+  },
+
+  bioTitle: {
+    fontSize: 16,
+    fontFamily: "Poppins_600SemiBold",
+    color: "#333",
+    marginBottom: 6,
+  },
+
+  bioText: {
+    fontSize: 14,
+    fontFamily: "Poppins_400Regular",
+    color: "#555",
+    lineHeight: 20,
   },
 });
 
