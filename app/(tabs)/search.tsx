@@ -6,8 +6,15 @@ import {
   TextInput,
   TouchableOpacity,
   FlatList,
+  Image,
 } from "react-native";
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { FontAwesome } from "@expo/vector-icons";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import BottomSheet, {
@@ -16,51 +23,43 @@ import BottomSheet, {
 } from "@gorhom/bottom-sheet";
 import { SelectList } from "react-native-dropdown-select-list";
 import Slider from "@react-native-community/slider";
-
-const CategoryItem = ({ item, isActive, onPress }: any) => {
-  return (
-    <View>
-      <TouchableOpacity
-        onPress={onPress}
-        style={[
-          styles.categoryContainer,
-          isActive && styles.activeCategoryContainer,
-        ]}
-      >
-        <FontAwesome name={item.icon} size={24} color="#008B8B" />
-        <Text style={styles.categoryText}>{item.value}</Text>
-      </TouchableOpacity>
-    </View>
-  );
-};
+import { useQuery } from "@tanstack/react-query";
+import { fetchCategories, Offer } from ".";
+import { useAuth } from "@/context/AuthContext";
+import CategoryFlatlist from "@/components/CategoryFlatlist";
+import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
+import { useRouter } from "expo-router";
 
 const Search = () => {
-  const [activeCategory, setActiveCategory] = useState<number | null>(null);
+  const { user: token } = useAuth();
+
+  const [searchText, setSearchText] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [minPrice, setMinPrice] = useState<number>(0);
   const [maxPrice, setMaxPrice] = useState<number>(1000);
-  // dummy data
-  const categories = [
-    { key: "1", value: "Electronics", icon: "laptop" },
-    { key: "2", value: "Furniture", icon: "bed" },
-    { key: "3", value: "Clothing", icon: "shopping-bag" },
-    { key: "4", value: "Home Services", icon: "home" },
-    { key: "5", value: "Professional Services", icon: "briefcase" },
-    { key: "6", value: "Technical Skills", icon: "cogs" },
-    { key: "7", value: "Creative Skills", icon: "paint-brush" },
-    { key: "8", value: "Language Skills", icon: "language" },
-  ];
+  const [categoryId, setCategoryId] = useState<number | null>(null);
+
+  const [searchedOffers, setSearchedOffers] = useState<Offer[]>([]);
+
+  const [isLoadingImages, setIsLoadingImages] = useState(false);
+  const [offerImageMap, setOfferImageMap] = useState<Map<string, string>>(
+    new Map()
+  );
+
+  const router = useRouter();
+
+  const { data: categories, isLoading: categoriesIsLoading } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => fetchCategories(token as string),
+    staleTime: 1000 * 60 * 5,
+  });
 
   const paymentMethods = [
-    { key: "1", value: "Skill" },
-    { key: "2", value: "Service" },
-    { key: "3", value: "Item" },
-    { key: "4", value: "Swapll Coin" },
+    { key: "1", value: "SWAP" },
+    { key: "2", value: "COIN" },
+    { key: "3", value: "BOTH" },
   ];
 
-  const handleActiveCategory = (index: number) => {
-    setActiveCategory(index === activeCategory ? null : index);
-  };
   // ref
   const bottomSheetRef = useRef<BottomSheet>(null);
 
@@ -82,6 +81,108 @@ const Search = () => {
     );
   }, []);
 
+  type SearchParams = {
+    keyword?: string;
+    categoryId?: number;
+    minPrice?: number;
+    maxPrice?: number;
+    paymentMethod?: string; // or your PaymentMethod type
+  };
+
+  async function handleSearch(params: SearchParams) {
+    try {
+      const response = await fetch(
+        `${process.env.EXPO_PUBLIC_API_URL}/api/offers/search`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json", // <-- important for JSON payload
+          },
+          body: JSON.stringify(params),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Server error: ${response.status}`);
+      }
+
+      const results = await response.json();
+      setSearchedOffers(results);
+    } catch (error) {
+      console.error("Search failed:", error);
+    }
+  }
+
+  const fetchOfferImages = async (offers: Offer[], token: string) => {
+    setIsLoadingImages(true);
+    try {
+      const imageMap = new Map<string, string>();
+      await Promise.all(
+        offers.map(async (offer) => {
+          const uri = await downloadImageWithAuth(
+            offer.image,
+            token,
+            `offer-${offer.id}.jpg`
+          );
+          if (uri) imageMap.set(offer.id, uri);
+        })
+      );
+      setOfferImageMap(imageMap);
+    } catch (error) {
+      console.error("Error fetching images", error);
+    } finally {
+      setIsLoadingImages(false);
+    }
+  };
+
+  useEffect(() => {
+    if (searchedOffers && token) {
+      fetchOfferImages(searchedOffers, token);
+    }
+  }, [searchedOffers, token]);
+
+  function renderOffer({ item }: { item: Offer }): JSX.Element | null {
+    return (
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => {
+          router.push({
+            pathname: "/(pages)/OfferDetails",
+            params: {
+              offerId: item.id,
+            },
+          });
+        }}
+      >
+        <View style={styles.offerImageContainer}>
+          <Image
+            source={{ uri: offerImageMap.get(item.id) }}
+            style={styles.offerImage}
+            resizeMode="cover"
+          />
+        </View>
+
+        <View style={styles.offerDetails}>
+          <Text style={styles.title}>{item.title}</Text>
+          <Text style={styles.username}>by {item.username}</Text>
+          <Text style={styles.description}>{item.description}</Text>
+
+          <View style={styles.priceButtonsRow}>
+            <View style={styles.priceContainer}>
+              <Image
+                style={styles.coin}
+                source={require("@/assets/images/swapll_coin.png")}
+              />
+              <Text style={styles.price}>{item.price}</Text>
+            </View>
+            {/* Removed the buttonRow with Edit and Delete */}
+          </View>
+        </View>
+      </TouchableOpacity>
+    );
+  }
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
@@ -96,12 +197,24 @@ const Search = () => {
           }}
         >
           <View style={styles.searchContainer}>
-            <FontAwesome
-              name="search"
-              size={20}
-              color="#008B8B"
-              style={{ margin: 10 }}
-            />
+            <TouchableOpacity
+              onPress={() =>
+                handleSearch({
+                  keyword: searchText || undefined,
+                  categoryId: categoryId ?? undefined, // safely handle null/undefined
+                  minPrice: minPrice ?? undefined,
+                  maxPrice: maxPrice ?? undefined,
+                  paymentMethod: paymentMethod || undefined,
+                })
+              }
+            >
+              <FontAwesome
+                name="search"
+                size={20}
+                color="#008B8B"
+                style={{ margin: 10 }}
+              />
+            </TouchableOpacity>
             <TextInput
               placeholder="Search"
               style={{
@@ -109,6 +222,7 @@ const Search = () => {
                 fontFamily: "Poppins_400Regular",
               }}
               placeholderTextColor="#008B8B"
+              onChangeText={(text) => setSearchText(text)}
             />
           </View>
           <View>
@@ -119,6 +233,14 @@ const Search = () => {
               <FontAwesome name="sliders" size={20} color="#008B8B" />
             </TouchableOpacity>
           </View>
+        </View>
+        <View>
+          <FlatList
+            data={searchedOffers}
+            keyExtractor={(item) => item.id.toString()}
+            renderItem={renderOffer} // pass the function directly since it expects { item }
+            contentContainerStyle={styles.listContainer}
+          />
         </View>
         <BottomSheet
           ref={bottomSheetRef}
@@ -157,8 +279,8 @@ const Search = () => {
               <Text style={{ ...styles.bottomSheetHeader, fontSize: 16 }}>
                 Search Category
               </Text>
-              {activeCategory !== null && (
-                <TouchableOpacity onPress={() => setActiveCategory(null)}>
+              {categoryId && (
+                <TouchableOpacity onPress={() => setCategoryId(null)}>
                   <Text
                     style={{
                       color: "#66B2B2",
@@ -172,19 +294,17 @@ const Search = () => {
                 </TouchableOpacity>
               )}
             </View>
-            <FlatList
-              horizontal={true}
-              data={categories}
-              renderItem={({ item, index }) => (
-                <CategoryItem
-                  item={item}
-                  isActive={activeCategory === index}
-                  onPress={() => handleActiveCategory(index)}
-                />
-              )}
-              keyExtractor={(item) => item.key}
-              style={{ maxHeight: 80 }}
-            />
+            <View
+              style={{
+                height: 70,
+              }}
+            >
+              <CategoryFlatlist
+                data={categories}
+                setSelectedCategoryId={setCategoryId}
+                selectedCategoryId={categoryId}
+              />
+            </View>
             <View
               style={{
                 flexDirection: "row",
@@ -438,6 +558,122 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+  },
+
+  listContainer: {
+    padding: 10,
+  },
+  offerImageContainer: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+    marginVertical: 8,
+    overflow: "hidden",
+  },
+  offerImage: {
+    width: "100%",
+    height: 200,
+    borderRadius: 12,
+  },
+  offerDetails: {
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginVertical: 8,
+  },
+  card: {
+    flexDirection: "column",
+    marginVertical: 20,
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 10,
+    shadowColor: "#000",
+    shadowOpacity: 0.1,
+    shadowRadius: 24,
+    elevation: 2,
+  },
+  title: {
+    color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
+    fontSize: 16,
+  },
+  username: {
+    color: "#666",
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  description: {
+    color: "#008B8B",
+    fontFamily: "Poppins_400Regular",
+    fontSize: 14,
+  },
+  priceContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 6,
+    backgroundColor: "#E0FFFF",
+    padding: 6,
+    borderRadius: 8,
+  },
+  coin: {
+    width: 25,
+    height: 25,
+    marginRight: 4,
+    borderRadius: 50,
+  },
+  price: {
+    color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
+    fontSize: 15,
+  },
+  buttonRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    width: "100%",
+    marginTop: 10,
+    gap: 10,
+    marginLeft: 20,
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#20B2AA",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+
+  deleteButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#B22222",
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 8,
+  },
+  buttonText: {
+    color: "#fff",
+    fontSize: 14,
+    fontFamily: "Poppins_600SemiBold",
+    marginLeft: 6,
+  },
+  backButton: {
+    position: "absolute",
+    top: 8,
+    left: 10,
+    zIndex: 1,
+  },
+  headerContainer: {
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#ddd",
+  },
+  priceButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginTop: 6,
   },
 });
 export default Search;

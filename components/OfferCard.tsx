@@ -62,7 +62,6 @@ const OfferCard = ({
           pathname: "/(pages)/OfferDetails",
           params: {
             offerId: id,
-            // you can pass other fields or just an ID and fetch details on the detail page
           },
         });
       }}
