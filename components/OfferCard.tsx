@@ -1,7 +1,15 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Image, ActivityIndicator, StyleSheet } from "react-native";
+import {
+  View,
+  Text,
+  Image,
+  ActivityIndicator,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
 import { useAuth } from "@/context/AuthContext";
 import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
+import { useRouter } from "expo-router";
 
 const OfferCard = ({
   title,
@@ -18,6 +26,8 @@ const OfferCard = ({
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const router = useRouter();
 
   useEffect(() => {
     const loadImage = async () => {
@@ -37,16 +47,41 @@ const OfferCard = ({
     loadImage();
   }, [image, token]);
 
+  if (isLoading)
+    return (
+      <View style={styles.card}>
+        <ActivityIndicator size="small" color="#008B8B" />
+      </View>
+    );
+
   return (
-    <View style={styles.card}>
-      {isLoading || !localImageUri ? (
-        <ActivityIndicator size="small" />
-      ) : (
+    <TouchableOpacity
+      style={styles.card}
+      onPress={() => {
+        router.push({
+          pathname: "/(pages)/OfferDetails",
+          params: {
+            offerId: id,
+            // you can pass other fields or just an ID and fetch details on the detail page
+          },
+        });
+      }}
+    >
+      {localImageUri && (
         <Image
           source={{ uri: localImageUri }}
           style={[
             styles.image,
             aspectRatio !== null ? { aspectRatio } : { height: 100 }, // fallback height while loading aspectRatio
+          ]}
+        />
+      )}
+      {!localImageUri && (
+        <Image
+          source={require("@/assets/images/no_image.jpeg")}
+          style={[
+            styles.image,
+            aspectRatio !== null ? { aspectRatio } : { height: 120 }, // fallback height while loading aspectRatio
           ]}
         />
       )}
@@ -70,7 +105,7 @@ const OfferCard = ({
         />
         <Text style={styles.price}>{price} </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 };
 

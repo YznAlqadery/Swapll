@@ -1,10 +1,8 @@
-// Same imports
 import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   Text,
   ActivityIndicator,
-  ScrollView,
   StyleSheet,
   View,
   Image,
@@ -20,6 +18,14 @@ import { fetchCategories, fetchOffersByCategory } from "../(tabs)";
 import OfferCard from "@/components/OfferCard";
 import ReviewItem from "@/components/ReviewItem";
 import Divider from "@/components/Divider";
+
+const saveBase64ToFile = async (base64String: string, filename: string) => {
+  const fileUri = FileSystem.cacheDirectory + filename;
+  await FileSystem.writeAsStringAsync(fileUri, base64String, {
+    encoding: FileSystem.EncodingType.Base64,
+  });
+  return fileUri;
+};
 
 async function fetchReviews(offerId: number, token: string) {
   const response = await fetch(
@@ -38,7 +44,10 @@ const OfferDetails = () => {
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
+  const [imageUri, setImageUri] = useState<string | null>(null);
+
   const router = useRouter();
+
   const {
     data,
     error,
@@ -92,7 +101,6 @@ const OfferDetails = () => {
         });
 
         setLocalImageUri(result.uri);
-
         Image.getSize(result.uri, (w, h) => setImageAspectRatio(w / h));
       } catch (e) {
         console.log("Image loading error:", e);
@@ -103,6 +111,19 @@ const OfferDetails = () => {
 
     loadImage();
   }, [data, token]);
+
+  useEffect(() => {
+    const convertAndSave = async () => {
+      if (data?.profilePic) {
+        const uri = await saveBase64ToFile(
+          data?.profilePic,
+          `user-${data?.ownerId}.jpg`
+        );
+        setImageUri(uri);
+      }
+    };
+    convertAndSave();
+  }, [data?.profilePic]);
 
   if (isLoading || dataIsLoading || categoriesIsLoading) {
     return (
@@ -120,132 +141,191 @@ const OfferDetails = () => {
     );
   }
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView>
-        {localImageUri && imageAspectRatio && (
-          <View style={styles.imageWrapper}>
-            <Image
-              source={{ uri: localImageUri }}
-              style={{
-                width: "100%",
-                aspectRatio: imageAspectRatio,
-                borderBottomLeftRadius: 12,
-                borderBottomRightRadius: 12,
-              }}
-            />
-            <TouchableOpacity
-              style={styles.backButton}
-              onPress={() => router.back()}
-              activeOpacity={0.7}
-            >
-              <Ionicons name="chevron-back" size={20} color="#008B8B" />
-            </TouchableOpacity>
-          </View>
+  const renderHeader = () => (
+    <>
+      <View style={styles.imageWrapper}>
+        {localImageUri && imageAspectRatio ? (
+          <Image
+            source={{ uri: localImageUri }}
+            style={{
+              width: "100%",
+              aspectRatio: imageAspectRatio,
+              borderBottomLeftRadius: 12,
+              borderBottomRightRadius: 12,
+            }}
+          />
+        ) : (
+          <Image
+            source={require("@/assets/images/no_image.jpeg")}
+            style={{
+              width: "100%",
+              height: 350,
+              borderBottomLeftRadius: 12,
+              borderBottomRightRadius: 12,
+            }}
+            resizeMode="cover"
+          />
         )}
 
-        <View style={styles.infoContainer}>
-          <Text style={styles.name}>{data?.title}</Text>
-          <Text style={styles.subtext}>
-            {categories?.find((cat: any) => cat.id === data?.categoryId)?.title}{" "}
-            • {data?.paymentMethod == "BOTH" && "Allow Swap & Swapll Coin"}
-            {data?.paymentMethod == "COIN" && "Swapll Coin"}
-            {data?.paymentMethod == "SWAP" && "Allow Swap"}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={20} color="#008B8B" />
+        </TouchableOpacity>
+      </View>
+
+      <View style={styles.infoContainer}>
+        <View
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <Text style={styles.name}>{data.title}</Text>
+
+          <View style={styles.userInfo}>
+            <Image
+              source={
+                data.image
+                  ? { uri: imageUri }
+                  : require("@/assets/images/profile-pic-placeholder.png")
+              }
+              style={styles.profileImage}
+            />
+            <Text style={styles.username}>{data.username}</Text>
+          </View>
+        </View>
+        <Text style={styles.subtext}>
+          {categories?.find((cat: any) => cat.id === data?.categoryId)?.title} •{" "}
+          {data?.paymentMethod == "BOTH" && "Allow Swap & Swapll Coin"}
+          {data?.paymentMethod == "COIN" && "Swapll Coin"}
+          {data?.paymentMethod == "SWAP" && "Allow Swap"}
+        </Text>
+
+        <View style={styles.row}>
+          <Ionicons name="star" size={16} color="#FFA500" />
+          <Text style={styles.rating}>
+            {data?.averageRating} ({data?.numberOfReviews})
           </Text>
+          <Text style={styles.label}>{data?.type}</Text>
+        </View>
 
-          <View style={styles.row}>
-            <Ionicons name="star" size={16} color="#FFA500" />
-            <Text style={styles.rating}>
-              {data?.averageRating} ({data?.numberOfReviews})
+        <View style={styles.row}>
+          {data?.deliveryTime > 2 ? (
+            <Text style={styles.meta}>
+              {data.deliveryTime - 2} - {data.deliveryTime + 2} days •
             </Text>
-
-            <Text style={styles.label}>{data?.type}</Text>
-          </View>
-
-          <View style={styles.row}>
-            {data?.deliveryTime > 2 ? (
-              <Text style={styles.meta}>
-                {data.deliveryTime - 2} - {data.deliveryTime + 2} days •
-              </Text>
-            ) : (
-              <Text>Very fast delivery •</Text>
-            )}
-            <View
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-              }}
-            >
-              <Image
-                source={require("@/assets/images/swapll_coin.png")}
-                style={{
-                  width: 24,
-                  height: 24,
-                  marginLeft: 4,
-                }}
-              />
-              <Text style={styles.meta}>{data?.price}</Text>
-            </View>
-          </View>
-          <View style={styles.descriptionBox}>
-            <Text
-              style={[
-                styles.meta,
-                {
-                  fontSize: 16,
-                  fontFamily: "Poppins_400Regular",
-                  color: "#008B8B",
-                },
-              ]}
-            >
-              {data?.description}
-            </Text>
+          ) : (
+            <Text>Very fast delivery •</Text>
+          )}
+          <View style={{ flexDirection: "row", alignItems: "center" }}>
+            <Image
+              source={require("@/assets/images/swapll_coin.png")}
+              style={{ width: 24, height: 24, marginLeft: 4 }}
+            />
+            <Text style={styles.meta}>{data?.price}</Text>
           </View>
         </View>
 
-        {/* Divider */}
-        <Divider />
+        <View style={styles.descriptionBox}>
+          <Text
+            style={{
+              fontSize: 16,
+              fontFamily: "Poppins_400Regular",
+              color: "#008B8B",
+            }}
+          >
+            {data?.description}
+          </Text>
+        </View>
+      </View>
 
-        <Text style={styles.sectionTitle}>Picks for you 🔥</Text>
-        <FlatList
-          data={offersByCategory}
-          keyExtractor={(item) => item.id.toString()}
-          renderItem={({ item }) => (
-            <OfferCard
-              id={item.id}
-              title={item.title}
-              price={item.price}
-              image={item.image}
-            />
-          )}
-          horizontal={true}
-          contentContainerStyle={{
-            justifyContent: "center",
-          }}
-        />
-        <Divider />
-        {/* Reviews Section */}
-        <Text style={styles.sectionTitle}>Reviews ({reviews?.length})</Text>
-        {reviewsIsLoading ? (
-          <ActivityIndicator size="large" />
-        ) : reviews?.length === 0 ? (
-          <Text style={styles.sectionTitle}>No reviews yet</Text>
-        ) : (
-          <FlatList
-            data={reviews}
-            keyExtractor={(item) => item.userId.toString()}
-            renderItem={({ item }) => (
-              <ReviewItem
-                username={item.userName}
-                comment={item.comment}
-                rating={item.rating}
-                image={item.profilePicture}
-                userId={item.userId}
-              />
-            )}
+      <Divider />
+
+      <Text style={styles.sectionTitle}>Picks for you 🔥</Text>
+      <FlatList
+        data={offersByCategory?.filter((item: any) => item.id !== data?.id)}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={({ item }) => (
+          <OfferCard
+            id={item.id}
+            title={item.title}
+            price={item.price}
+            image={item.image}
           />
         )}
-      </ScrollView>
+        horizontal
+      />
+      {offersByCategory?.filter((item: any) => item.id !== data?.id).length ===
+        0 && (
+        <View
+          style={{
+            paddingHorizontal: 16,
+          }}
+        >
+          <Text
+            style={{
+              marginTop: 10,
+              backgroundColor: "#F0FDFD",
+              padding: 10,
+              fontSize: 14,
+              fontFamily: "Poppins_400Regular",
+              color: "#008B8B",
+            }}
+          >
+            No offers yet
+          </Text>
+        </View>
+      )}
+      <Divider />
+
+      <Text style={styles.sectionTitle}>Reviews ({reviews?.length})</Text>
+    </>
+  );
+
+  return (
+    <SafeAreaView style={styles.container}>
+      {reviewsIsLoading ? (
+        <ActivityIndicator size="large" />
+      ) : (
+        <FlatList
+          data={reviews || []}
+          keyExtractor={(item) => item.userId.toString()}
+          ListHeaderComponent={renderHeader}
+          renderItem={({ item }) => (
+            <ReviewItem
+              username={item.userName}
+              comment={item.comment}
+              rating={item.rating}
+              image={item.profilePicture}
+              userId={item.userId}
+            />
+          )}
+          ListEmptyComponent={
+            <View
+              style={{
+                paddingHorizontal: 16,
+              }}
+            >
+              <Text
+                style={{
+                  marginTop: 10,
+                  backgroundColor: "#F0FDFD",
+                  padding: 10,
+                  fontSize: 14,
+                  fontFamily: "Poppins_400Regular",
+                  color: "#008B8B",
+                }}
+              >
+                No reviews yet
+              </Text>
+            </View>
+          }
+        />
+      )}
     </SafeAreaView>
   );
 };
@@ -274,7 +354,6 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
   },
   meta: { color: "#666", fontSize: 14, fontFamily: "Poppins_400Regular" },
-
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
@@ -282,9 +361,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: "#008B8B",
     fontFamily: "Poppins_700Bold",
-  },
-  flatList: {
-    paddingHorizontal: 16,
   },
   errorText: { color: "red", fontSize: 16, fontFamily: "Poppins_400Regular" },
   backButton: {
@@ -296,29 +372,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 20, // pill shape
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 2,
-    elevation: 2, // Android shadow
-    zIndex: 10,
-  },
-
-  imageWrapper: {
-    position: "relative",
-    width: "100%",
-  },
-
-  backButtonOverlay: {
-    position: "absolute",
-    top: 16,
-    left: 16,
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 139, 139, 0.15)", // translucent teal
-    paddingHorizontal: 12,
-    paddingVertical: 6,
     borderRadius: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 1 },
@@ -327,15 +380,37 @@ const styles = StyleSheet.create({
     elevation: 2,
     zIndex: 10,
   },
-  ratingContainer: {
-    flexDirection: "row",
-    alignItems: "center",
+  imageWrapper: {
+    position: "relative",
+    width: "100%",
   },
   descriptionBox: {
     backgroundColor: "#F0FDFD",
     padding: 10,
     borderRadius: 8,
     marginTop: 10,
+  },
+  userInfo: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#E0F0F0",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+  },
+  username: {
+    fontSize: 14,
+    marginRight: 8,
+    color: "#008B8B",
+    fontFamily: "Poppins_500Medium",
+  },
+  profileImage: {
+    width: 30,
+    height: 30,
+    borderRadius: 18,
+    borderWidth: 2,
+    borderColor: "#008B8B",
   },
 });
 

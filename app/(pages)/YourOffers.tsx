@@ -109,7 +109,6 @@ const YourOffers = () => {
             pathname: "/(pages)/OfferDetails",
             params: {
               offerId: item.id,
-              // you can pass other fields or just an ID and fetch details on the detail page
             },
           });
         }}
@@ -127,29 +126,31 @@ const YourOffers = () => {
           <Text style={styles.username}>by {item.username}</Text>
           <Text style={styles.description}>{item.description}</Text>
 
-          <View style={styles.priceContainer}>
-            <Image
-              style={styles.coin}
-              source={require("@/assets/images/swapll_coin.png")}
-            />
-            <Text style={styles.price}>{item.price}</Text>
-          </View>
+          <View style={styles.priceButtonsRow}>
+            <View style={styles.priceContainer}>
+              <Image
+                style={styles.coin}
+                source={require("@/assets/images/swapll_coin.png")}
+              />
+              <Text style={styles.price}>{item.price}</Text>
+            </View>
 
-          <View style={styles.buttonRow}>
-            <TouchableOpacity style={styles.editButton}>
-              <Feather name="edit" size={18} color="#fff" />
-              <Text style={styles.buttonText}>Edit</Text>
-            </TouchableOpacity>
+            <View style={styles.buttonRow}>
+              <TouchableOpacity style={styles.editButton}>
+                <Feather name="edit" size={18} color="#fff" />
+                <Text style={styles.buttonText}>Edit</Text>
+              </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.deleteButton}
-              onPress={() =>
-                deleteOfferMutation.mutate(item.id as unknown as number)
-              }
-            >
-              <FontAwesome5 name="trash-alt" size={16} color="#fff" />
-              <Text style={styles.buttonText}>Delete</Text>
-            </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() =>
+                  deleteOfferMutation.mutate(item.id as unknown as number)
+                }
+              >
+                <FontAwesome5 name="trash-alt" size={16} color="#fff" />
+                <Text style={styles.buttonText}>Delete</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </TouchableOpacity>
@@ -256,6 +257,9 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 6,
+    backgroundColor: "#E0FFFF",
+    padding: 6,
+    borderRadius: 8,
   },
   coin: {
     width: 25,
@@ -270,23 +274,25 @@ const styles = StyleSheet.create({
   },
   buttonRow: {
     flexDirection: "row",
-    justifyContent: "flex-end",
+    justifyContent: "center",
     width: "100%",
     marginTop: 10,
     gap: 10,
+    marginLeft: 20,
   },
   editButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#20B2AA",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
   },
+
   deleteButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#f44336",
+    backgroundColor: "#B22222",
     paddingVertical: 6,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -307,6 +313,13 @@ const styles = StyleSheet.create({
     backgroundColor: "#fff",
     borderBottomWidth: 1,
     borderBottomColor: "#ddd",
+  },
+  priceButtonsRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    width: "100%",
+    marginTop: 6,
   },
 });
 

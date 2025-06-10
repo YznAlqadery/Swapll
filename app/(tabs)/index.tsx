@@ -10,18 +10,17 @@ import {
   StatusBar,
 } from "react-native";
 import React, { useEffect, useState } from "react";
-import CustomBottomSheet from "@/components/BottomSheet";
-import {
-  GestureHandlerRootView,
-  ScrollView,
-} from "react-native-gesture-handler";
+
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
 import CategoryFlatlist from "@/components/CategoryFlatlist";
 import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
-import SkeletonOfferItem from "@/components/SkeletonItem";
+
 import Divider from "@/components/Divider";
+
+import { useRouter } from "expo-router";
 
 export interface Offer {
   username: string;
@@ -45,19 +44,24 @@ type Category = {
 
 const OfferItem = ({
   item,
-  selectedOffer,
-  handleSelectOffer,
   offerImageMap,
 }: {
   item: Offer;
-  selectedOffer: Offer;
-  handleSelectOffer: (item: Offer) => void;
   offerImageMap: Map<string, string>;
 }) => {
+  const router = useRouter();
   return (
     <TouchableOpacity
       style={styles.offerItem}
-      onPress={() => handleSelectOffer(item)}
+      onPress={() => {
+        router.push({
+          pathname: "/(pages)/OfferDetails",
+          params: {
+            offerId: item.id,
+            // you can pass other fields or just an ID and fetch details on the detail page
+          },
+        });
+      }}
     >
       <View style={styles.offerImageContainer}>
         <Image
@@ -335,12 +339,7 @@ const Index = () => {
         <FlatList
           data={categoryId && offersByCategory ? offersByCategory : []}
           renderItem={({ item }) => (
-            <OfferItem
-              item={item}
-              selectedOffer={selectedOffer || ({} as Offer)}
-              handleSelectOffer={handleSelectOffer}
-              offerImageMap={offerImageMap}
-            />
+            <OfferItem item={item} offerImageMap={offerImageMap} />
           )}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
@@ -416,12 +415,7 @@ const Index = () => {
                 <FlatList
                   data={topRatedOffers}
                   renderItem={({ item }) => (
-                    <OfferItem
-                      item={item}
-                      selectedOffer={selectedOffer || ({} as Offer)}
-                      handleSelectOffer={handleSelectOffer}
-                      offerImageMap={offerImageMap}
-                    />
+                    <OfferItem item={item} offerImageMap={offerImageMap} />
                   )}
                   keyExtractor={(item) => item.id}
                   horizontal
@@ -436,12 +430,7 @@ const Index = () => {
                   <FlatList
                     data={recentOffers}
                     renderItem={({ item }) => (
-                      <OfferItem
-                        item={item}
-                        selectedOffer={selectedOffer || ({} as Offer)}
-                        handleSelectOffer={handleSelectOffer}
-                        offerImageMap={offerImageMap}
-                      />
+                      <OfferItem item={item} offerImageMap={offerImageMap} />
                     )}
                     keyExtractor={(item) => item.id}
                     horizontal
