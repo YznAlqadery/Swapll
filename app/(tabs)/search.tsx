@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import React, {
   useCallback,
@@ -109,6 +110,13 @@ const Search = () => {
 
       const results = await response.json();
       setSearchedOffers(results);
+      setSearchText("");
+      setCategoryId(null);
+      setMinPrice(0);
+      setMaxPrice(1000);
+      setPaymentMethod("");
+
+      setCategoryId(null);
     } catch (error) {
       console.error("Search failed:", error);
     }
@@ -157,7 +165,11 @@ const Search = () => {
       >
         <View style={styles.offerImageContainer}>
           <Image
-            source={{ uri: offerImageMap.get(item.id) }}
+            source={
+              offerImageMap.get(item.id)
+                ? { uri: offerImageMap.get(item.id) }
+                : require("@/assets/images/no_image.jpeg")
+            }
             style={styles.offerImage}
             resizeMode="cover"
           />
@@ -176,7 +188,6 @@ const Search = () => {
               />
               <Text style={styles.price}>{item.price}</Text>
             </View>
-            {/* Removed the buttonRow with Edit and Delete */}
           </View>
         </View>
       </TouchableOpacity>
@@ -225,6 +236,7 @@ const Search = () => {
               onChangeText={(text) => setSearchText(text)}
             />
           </View>
+
           <View>
             <TouchableOpacity
               onPress={openBottomSheet}
@@ -234,222 +246,274 @@ const Search = () => {
             </TouchableOpacity>
           </View>
         </View>
-        <View>
-          <FlatList
-            data={searchedOffers}
-            keyExtractor={(item) => item.id.toString()}
-            renderItem={renderOffer} // pass the function directly since it expects { item }
-            contentContainerStyle={styles.listContainer}
-          />
-        </View>
-        <BottomSheet
-          ref={bottomSheetRef}
-          index={-1}
-          snapPoints={snapPoints}
-          enableDynamicSizing={true}
-          enablePanDownToClose={true}
-          backdropComponent={renderBackdrop}
-          style={{
-            shadowColor: "#000",
-            shadowOffset: {
-              width: 0,
-              height: 2,
-            },
-            shadowOpacity: 0.25,
-            shadowRadius: 3.84,
-            elevation: 5,
-          }}
-        >
-          <BottomSheetView style={styles.bottomSheetContainer}>
-            <View style={styles.BottomHeaderContainer}>
-              <Text style={styles.bottomSheetHeader}>Filter Search</Text>
-              <Text style={styles.bottomSheetSubheader}>
-                Filter by category, payment method, and more to find exactly
-                what you're looking for.
-              </Text>
-            </View>
+        {isLoadingImages && (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#008B8B" />
+          </View>
+        )}
+        {searchedOffers.length === 0 && (
+          <View style={styles.noResultsContainer}>
+            <Text style={styles.noResultsText}>No results found</Text>
+          </View>
+        )}
+        {!isLoadingImages && (
+          <>
             <View
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginBottom: 5,
+                marginBottom: 150,
               }}
             >
-              <Text style={{ ...styles.bottomSheetHeader, fontSize: 16 }}>
-                Search Category
-              </Text>
-              {categoryId && (
-                <TouchableOpacity onPress={() => setCategoryId(null)}>
-                  <Text
-                    style={{
-                      color: "#66B2B2",
-                      fontSize: 14,
-                      fontFamily: "Poppins_400Regular",
-                      marginRight: 8,
-                    }}
-                  >
-                    {`Clear All`}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <View
-              style={{
-                height: 70,
-              }}
-            >
-              <CategoryFlatlist
-                data={categories}
-                setSelectedCategoryId={setCategoryId}
-                selectedCategoryId={categoryId}
+              <FlatList
+                data={searchedOffers}
+                keyExtractor={(item) => item.id.toString()}
+                renderItem={renderOffer}
+                contentContainerStyle={styles.listContainer}
               />
             </View>
-            <View
+            <BottomSheet
+              ref={bottomSheetRef}
+              index={-1}
+              snapPoints={snapPoints}
+              enableDynamicSizing={true}
+              enablePanDownToClose={true}
+              backdropComponent={renderBackdrop}
               style={{
-                flexDirection: "row",
-                justifyContent: "space-between",
-                alignItems: "center",
-                marginTop: 20,
-                marginBottom: 5,
-              }}
-            >
-              <Text style={{ ...styles.bottomSheetHeader, fontSize: 16 }}>
-                Payment Method
-              </Text>
-              {paymentMethod !== "" && (
-                <TouchableOpacity onPress={() => setPaymentMethod("")}>
-                  <Text
-                    style={{
-                      color: "#66B2B2",
-                      fontSize: 14,
-                      fontFamily: "Poppins_400Regular",
-                      marginRight: 8,
-                    }}
-                  >
-                    {`Clear All`}
-                  </Text>
-                </TouchableOpacity>
-              )}
-            </View>
-
-            <SelectList
-              setSelected={(val: any) => setPaymentMethod(val)}
-              data={paymentMethods}
-              save="value"
-              placeholder="Select payment method"
-              boxStyles={{
-                width: "100%",
-
-                marginBottom: 5,
-                borderWidth: 2,
-                borderColor: "#B0C4C4",
-                padding: 16,
-                borderRadius: 10,
-                backgroundColor: "#FFFFFF",
                 shadowColor: "#000",
-                shadowOffset: { width: 0, height: 1 },
-                shadowOpacity: 0.1,
-                shadowRadius: 4,
-                elevation: 2,
-                transitionDuration: "200ms",
-              }}
-              fontFamily="Poppins_400Regular"
-              dropdownStyles={{
-                borderRadius: 10,
-                borderColor: "#008B8B",
-                borderWidth: 1,
-                backgroundColor: "#fff",
-              }}
-              arrowicon={
-                <FontAwesome
-                  name="angle-down"
-                  size={20}
-                  color="#008B8B"
-                  style={{ marginRight: 5 }}
-                />
-              }
-              search={false}
-            />
-            <View style={{ marginTop: 20, marginBottom: 10 }}>
-              <Text
-                style={{
-                  ...styles.bottomSheetHeader,
-                  fontSize: 16,
-                  marginBottom: 8,
-                }}
-              >
-                Price Range
-              </Text>
-              <View
-                style={{
-                  flexDirection: "row",
-                  justifyContent: "space-between",
-                }}
-              >
-                <Text
-                  style={{ color: "#008B8B", fontFamily: "Poppins_400Regular" }}
-                >
-                  Min: {minPrice} JD
-                </Text>
-                <Text
-                  style={{ color: "#008B8B", fontFamily: "Poppins_400Regular" }}
-                >
-                  Max: {maxPrice} JD
-                </Text>
-              </View>
-              <Slider
-                style={{ width: "100%", height: 40 }}
-                minimumValue={0}
-                maximumValue={maxPrice}
-                value={minPrice}
-                onValueChange={setMinPrice}
-                minimumTrackTintColor="#008B8B"
-                maximumTrackTintColor="#B0C4C4"
-                thumbTintColor="#008B8B"
-                step={1}
-              />
-              <Slider
-                style={{ width: "100%", height: 40 }}
-                minimumValue={minPrice}
-                maximumValue={1000}
-                value={maxPrice}
-                onValueChange={setMaxPrice}
-                minimumTrackTintColor="#008B8B"
-                maximumTrackTintColor="#B0C4C4"
-                thumbTintColor="#008B8B"
-                step={1}
-              />
-            </View>
-
-            <TouchableOpacity
-              onPress={() => {
-                bottomSheetRef.current?.close();
-              }}
-              style={{
-                width: "92%",
-                justifyContent: "center",
-                alignItems: "center",
-                alignSelf: "center",
-                padding: 10,
-                borderRadius: 10,
-                backgroundColor: "#008B8B",
-                marginTop: "auto",
-                marginBottom: 95,
+                shadowOffset: {
+                  width: 0,
+                  height: 2,
+                },
+                shadowOpacity: 0.25,
+                shadowRadius: 3.84,
+                elevation: 5,
               }}
             >
-              <Text
-                style={{
-                  color: "#fff",
-                  fontSize: 16,
-                  fontFamily: "Poppins_500Medium",
-                }}
-              >
-                Apply
-              </Text>
-            </TouchableOpacity>
-          </BottomSheetView>
-        </BottomSheet>
+              <BottomSheetView style={styles.bottomSheetContainer}>
+                <View style={styles.BottomHeaderContainer}>
+                  <Text style={styles.bottomSheetHeader}>Filter Search</Text>
+                  <Text style={styles.bottomSheetSubheader}>
+                    Filter by category, payment method, and more to find exactly
+                    what you're looking for.
+                  </Text>
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: 5,
+                  }}
+                >
+                  <Text style={{ ...styles.bottomSheetHeader, fontSize: 16 }}>
+                    Search Category
+                  </Text>
+                  {categoryId && (
+                    <TouchableOpacity onPress={() => setCategoryId(null)}>
+                      <Text
+                        style={{
+                          color: "#66B2B2",
+                          fontSize: 14,
+                          fontFamily: "Poppins_400Regular",
+                          marginRight: 8,
+                        }}
+                      >
+                        {`Clear All`}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+                <View
+                  style={{
+                    height: 70,
+                  }}
+                >
+                  <CategoryFlatlist
+                    data={categories}
+                    setSelectedCategoryId={setCategoryId}
+                    selectedCategoryId={categoryId}
+                  />
+                </View>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginTop: 20,
+                    marginBottom: 5,
+                  }}
+                >
+                  <Text style={{ ...styles.bottomSheetHeader, fontSize: 16 }}>
+                    Payment Method
+                  </Text>
+                  {paymentMethod !== "" && (
+                    <TouchableOpacity onPress={() => setPaymentMethod("")}>
+                      <Text
+                        style={{
+                          color: "#66B2B2",
+                          fontSize: 14,
+                          fontFamily: "Poppins_400Regular",
+                          marginRight: 8,
+                        }}
+                      >
+                        {`Clear All`}
+                      </Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+
+                <SelectList
+                  setSelected={(val: any) => setPaymentMethod(val)}
+                  data={paymentMethods}
+                  save="value"
+                  placeholder="Select payment method"
+                  boxStyles={{
+                    width: "100%",
+
+                    marginBottom: 5,
+                    borderWidth: 2,
+                    borderColor: "#B0C4C4",
+                    padding: 16,
+                    borderRadius: 10,
+                    backgroundColor: "#FFFFFF",
+                    shadowColor: "#000",
+                    shadowOffset: { width: 0, height: 1 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 2,
+                    transitionDuration: "200ms",
+                  }}
+                  fontFamily="Poppins_400Regular"
+                  dropdownStyles={{
+                    borderRadius: 10,
+                    borderColor: "#008B8B",
+                    borderWidth: 1,
+                    backgroundColor: "#fff",
+                  }}
+                  arrowicon={
+                    <FontAwesome
+                      name="angle-down"
+                      size={20}
+                      color="#008B8B"
+                      style={{ marginRight: 5 }}
+                    />
+                  }
+                  search={false}
+                />
+                <View style={{ marginTop: 20, marginBottom: 10 }}>
+                  <Text
+                    style={{
+                      ...styles.bottomSheetHeader,
+                      fontSize: 16,
+                      marginBottom: 8,
+                    }}
+                  >
+                    Price Range
+                  </Text>
+                  <View
+                    style={{
+                      flexDirection: "row",
+                      justifyContent: "space-between",
+                    }}
+                  >
+                    <View
+                      style={{ flexDirection: "row", alignItems: "center" }}
+                    >
+                      <Image
+                        source={require("@/assets/images/swapll_coin.png")}
+                        style={{ width: 16, height: 16, marginRight: 4 }}
+                      />
+                      <Text
+                        style={{
+                          color: "#008B8B",
+                          fontFamily: "Poppins_400Regular",
+                        }}
+                      >
+                        Min: {minPrice}
+                      </Text>
+                    </View>
+
+                    <View
+                      style={{
+                        flexDirection: "row",
+                        alignItems: "center",
+                        marginTop: 4,
+                      }}
+                    >
+                      <Image
+                        source={require("@/assets/images/swapll_coin.png")}
+                        style={{ width: 16, height: 16, marginRight: 4 }}
+                      />
+                      <Text
+                        style={{
+                          color: "#008B8B",
+                          fontFamily: "Poppins_400Regular",
+                        }}
+                      >
+                        Max: {maxPrice}
+                      </Text>
+                    </View>
+                  </View>
+                  <Slider
+                    style={{ width: "100%", height: 40 }}
+                    minimumValue={0}
+                    maximumValue={maxPrice}
+                    value={minPrice}
+                    onValueChange={setMinPrice}
+                    minimumTrackTintColor="#008B8B"
+                    maximumTrackTintColor="#B0C4C4"
+                    thumbTintColor="#008B8B"
+                    step={1}
+                  />
+                  <Slider
+                    style={{ width: "100%", height: 40 }}
+                    minimumValue={minPrice}
+                    maximumValue={1000}
+                    value={maxPrice}
+                    onValueChange={setMaxPrice}
+                    minimumTrackTintColor="#008B8B"
+                    maximumTrackTintColor="#B0C4C4"
+                    thumbTintColor="#008B8B"
+                    step={1}
+                  />
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => {
+                    bottomSheetRef.current?.close();
+                    handleSearch({
+                      keyword: searchText || undefined,
+                      categoryId: categoryId ?? undefined,
+                      minPrice,
+                      maxPrice,
+                      paymentMethod: paymentMethod || undefined,
+                    });
+                  }}
+                  style={{
+                    width: "92%",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    alignSelf: "center",
+                    padding: 10,
+                    borderRadius: 10,
+                    backgroundColor: "#008B8B",
+                    marginTop: "auto",
+                    marginBottom: 95,
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: "#fff",
+                      fontSize: 16,
+                      fontFamily: "Poppins_500Medium",
+                    }}
+                  >
+                    Apply
+                  </Text>
+                </TouchableOpacity>
+              </BottomSheetView>
+            </BottomSheet>
+          </>
+        )}
       </SafeAreaView>
     </GestureHandlerRootView>
   );
@@ -459,6 +523,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F0F7F7",
+    padding: 10,
   },
   header: {
     fontSize: 24,
@@ -510,46 +575,13 @@ const styles = StyleSheet.create({
     color: "#66B2B2",
     marginTop: 8,
   },
-  categoryContainer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    padding: 10,
-    marginTop: 10,
-    marginRight: 10,
-    height: 45,
-    marginBottom: 5,
-    borderWidth: 2,
-    borderColor: "#B0C4C4",
-    borderRadius: 10,
-    backgroundColor: "#FFFFFF",
-    fontFamily: "Poppins_400Regular",
-    color: "#000",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
-    transitionDuration: "200ms",
-  },
-  categoryText: {
-    fontSize: 14,
-    fontFamily: "Poppins_400Regular",
-    color: "#008B8B",
-    textAlign: "center",
-  },
-  activeCategoryContainer: {
-    backgroundColor: "rgba(0, 139, 139, 0.1)",
-    borderWidth: 2,
-  },
+
   filterButton: {
     padding: 10,
     borderRadius: 10,
     backgroundColor: "#FFFFFF",
     shadowColor: "#000",
     marginTop: 10,
-
     borderWidth: 2,
     borderColor: "#B0C4C4",
     fontFamily: "Poppins_400Regular",
@@ -674,6 +706,22 @@ const styles = StyleSheet.create({
     alignItems: "center",
     width: "100%",
     marginTop: 6,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noResultsContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  noResultsText: {
+    color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
+    fontSize: 16,
+    marginBottom: 4,
   },
 });
 export default Search;
