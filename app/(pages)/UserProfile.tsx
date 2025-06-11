@@ -11,9 +11,8 @@ import {
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { useAuth } from "@/context/AuthContext";
-import { FontAwesome5 } from "@expo/vector-icons";
+import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import * as Clipboard from "expo-clipboard";
 import { Feather } from "@expo/vector-icons";
 import {
   GestureHandlerRootView,
@@ -214,6 +213,20 @@ const UserProfile = () => {
             >
               Personal Information
             </Text>
+            <TouchableOpacity
+              onPress={() =>
+                router.replace({
+                  pathname: "/(pages)/ChatPage",
+                  params: {
+                    userId: otherUser?.id,
+                    userName: otherUser?.userName,
+                    profilePic: otherUser?.profilePic,
+                  },
+                })
+              }
+            >
+              <FontAwesome name="bathtub" size={24} color="#008B8B" />
+            </TouchableOpacity>
           </View>
 
           <View style={styles.personalInfo}>
