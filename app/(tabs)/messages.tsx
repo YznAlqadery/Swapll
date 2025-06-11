@@ -7,9 +7,29 @@ import {
   StyleSheet,
   TouchableOpacity,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useChatInbox } from "@/hooks/useChatInbox"; // Adjust this import path
+import { useChatInbox } from "@/hooks/useChatInbox";
+
+const formatTime = (timeString: string | undefined) => {
+  if (!timeString) return "";
+  const date = new Date(timeString);
+  if (isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+
+  return date.toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+  });
+};
 
 const Messages = () => {
   const { chats, loading, error } = useChatInbox();
@@ -19,9 +39,9 @@ const Messages = () => {
     router.push({
       pathname: "/(pages)/ChatPage",
       params: {
-        conversationId: chat.chatId?.toString(),
-        receiverId: chat.otherUserId?.toString(),
-        receiverUsername: chat.otherUsername,
+        userId: chat.otherUserId?.toString() ?? "",
+        userName: chat.otherUsername ?? "",
+        profilePic: chat.otherPicture ?? "", // optional, add if available
       },
     });
   };
@@ -32,8 +52,18 @@ const Messages = () => {
       onPress={() => onPressMessage(item)}
     >
       <View style={styles.messageHeader}>
-        <Text style={styles.sender}>{item.otherUsername}</Text>
-        <Text style={styles.time}>{item.lastMessageTime || ""}</Text>
+        <View style={styles.profileContainer}>
+          <Image
+            source={
+              item.otherPicture
+                ? { uri: item.otherPicture }
+                : require("@/assets/images/profile-pic-placeholder.png") // fallback image if no profile picture
+            }
+            style={styles.profileImage}
+          />
+          <Text style={styles.sender}>{item.otherUsername}</Text>
+        </View>
+        <Text style={styles.time}>{formatTime(item.lastMessageTime)}</Text>
       </View>
       <Text style={styles.subject} numberOfLines={1}>
         {item.lastMessage || "No messages yet"}
@@ -97,6 +127,18 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 6,
+    alignItems: "center",
+  },
+  profileContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  profileImage: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 10,
+    backgroundColor: "#ccc",
   },
   sender: {
     fontSize: 16,
