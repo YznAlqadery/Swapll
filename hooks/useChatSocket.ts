@@ -2,7 +2,8 @@ import { useEffect, useRef } from "react";
 import SockJS from "sockjs-client";
 import { Client, IMessage } from "@stomp/stompjs";
 
-interface ChatMessage {
+export interface ChatMessage {
+  sender: string;
   id?: string;
   content: string;
   senderId: number;
@@ -11,27 +12,40 @@ interface ChatMessage {
   timestamp?: string;
 }
 
+interface ChatMessageDTO {
+  content: string;
+  receiverId: number;
+  token: string;
+  chatId?: number;
+}
+
+interface SendMessageInput {
+  content: string;
+  receiverId: number;
+}
+
 const SOCKET_URL = `${process.env.EXPO_PUBLIC_WS_URL}/ws`;
 
 export const useChatSocket = (
   chatId: number,
   senderId: number,
-  onMessagesReceived: (msgs: ChatMessage[]) => void, // for bulk messages
-  onMessageReceived: (msg: ChatMessage) => void // for single new messages
+  token: string,
+  onMessagesReceived: (msgs: ChatMessage[]) => void,
+  onMessageReceived: (msg: ChatMessage) => void
 ) => {
   const clientRef = useRef<Client | null>(null);
 
   useEffect(() => {
+    if (!chatId || !token) return;
+
     const socket = new SockJS(SOCKET_URL);
     const client = new Client({
       webSocketFactory: () => socket,
       reconnectDelay: 5000,
       onConnect: () => {
-        // Subscribe to topic for chat messages (both existing and new)
+        // Subscribe to chat messages topic
         client.subscribe(`/topic/chat.${chatId}`, (message: IMessage) => {
           const body = JSON.parse(message.body);
-
-          // The message could be either a single message or an array of messages
           if (Array.isArray(body)) {
             onMessagesReceived(body);
           } else {
@@ -39,7 +53,7 @@ export const useChatSocket = (
           }
         });
 
-        // Request existing messages for this chatId
+        // Request past messages for this chat
         client.publish({
           destination: `/app/chat.getMessages.${chatId}`,
           body: "",
@@ -53,18 +67,20 @@ export const useChatSocket = (
     return () => {
       client.deactivate();
     };
-  }, [chatId]);
+  }, [chatId, token]);
 
-  const sendMessage = (msg: Omit<ChatMessage, "senderId">) => {
-    const messageWithSender: ChatMessage = {
+  const sendMessage = (msg: SendMessageInput) => {
+    if (!clientRef.current) return;
+
+    const messageWithToken: ChatMessageDTO = {
       ...msg,
-      senderId,
+      token,
       chatId,
     };
 
-    clientRef.current?.publish({
+    clientRef.current.publish({
       destination: "/app/chat.sendMessage",
-      body: JSON.stringify(messageWithSender),
+      body: JSON.stringify(messageWithToken),
     });
   };
 

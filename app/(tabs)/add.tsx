@@ -131,9 +131,6 @@ const AddPost = () => {
       console.log("Offer added:", data);
       Alert.alert("Success", "Offer added successfully!");
 
-      revalidate(categoryId ?? 0);
-      router.replace("/(tabs)");
-
       setTitle("");
       setDescription("");
       setPrice(0);
@@ -142,6 +139,9 @@ const AddPost = () => {
       setOfferType("");
       setPaymentMethod("");
       setDeliveryTime("");
+
+      await revalidate(categoryId ?? 0);
+      router.replace("/(pages)/YourOffers");
     } catch (error: any) {
       console.error("Error:", error.message);
       Alert.alert("Error", error.message || "Could not add offer.");

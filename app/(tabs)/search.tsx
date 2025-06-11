@@ -28,7 +28,6 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchCategories, Offer } from ".";
 import { useAuth } from "@/context/AuthContext";
 import CategoryFlatlist from "@/components/CategoryFlatlist";
-import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
 import { useRouter } from "expo-router";
 
 const Search = () => {
@@ -122,34 +121,6 @@ const Search = () => {
     }
   }
 
-  const fetchOfferImages = async (offers: Offer[], token: string) => {
-    setIsLoadingImages(true);
-    try {
-      const imageMap = new Map<string, string>();
-      await Promise.all(
-        offers.map(async (offer) => {
-          const uri = await downloadImageWithAuth(
-            offer.image,
-            token,
-            `offer-${offer.id}.jpg`
-          );
-          if (uri) imageMap.set(offer.id, uri);
-        })
-      );
-      setOfferImageMap(imageMap);
-    } catch (error) {
-      console.error("Error fetching images", error);
-    } finally {
-      setIsLoadingImages(false);
-    }
-  };
-
-  useEffect(() => {
-    if (searchedOffers && token) {
-      fetchOfferImages(searchedOffers, token);
-    }
-  }, [searchedOffers, token]);
-
   function renderOffer({ item }: { item: Offer }): JSX.Element | null {
     return (
       <TouchableOpacity
@@ -166,8 +137,8 @@ const Search = () => {
         <View style={styles.offerImageContainer}>
           <Image
             source={
-              offerImageMap.get(item.id)
-                ? { uri: offerImageMap.get(item.id) }
+              item.image
+                ? { uri: item.image }
                 : require("@/assets/images/no_image.jpeg")
             }
             style={styles.offerImage}

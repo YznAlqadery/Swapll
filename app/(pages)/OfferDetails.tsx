@@ -12,22 +12,12 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/context/AuthContext";
-import * as FileSystem from "expo-file-system";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import { fetchCategories, fetchOffersByCategory } from "../(tabs)";
 import OfferCard from "@/components/OfferCard";
 import ReviewItem from "@/components/ReviewItem";
 import Divider from "@/components/Divider";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
-import { v4 as uuidv4 } from "uuid";
-
-const saveBase64ToFile = async (base64String: string, filename: string) => {
-  const fileUri = FileSystem.cacheDirectory + filename;
-  await FileSystem.writeAsStringAsync(fileUri, base64String, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-  return fileUri;
-};
 
 async function fetchReviews(offerId: number, token: string) {
   const response = await fetch(
@@ -44,10 +34,8 @@ const OfferDetails = () => {
   const { offerId } = useLocalSearchParams();
   const { user } = useLoggedInUser();
   const { user: token } = useAuth();
-  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
+
   const [isLoading, setIsLoading] = useState(false);
-  const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
-  const [imageUri, setImageUri] = useState<string | null>(null);
 
   const router = useRouter();
 
@@ -90,70 +78,17 @@ const OfferDetails = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  useEffect(() => {
-    const loadImage = async () => {
-      if (!data?.image) return;
-
-      setIsLoading(true);
-      try {
-        const imageUrl = process.env.EXPO_PUBLIC_API_URL + data.image;
-        const localUri = `${FileSystem.cacheDirectory}temp-image.jpg`;
-
-        const result = await FileSystem.downloadAsync(imageUrl, localUri, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setLocalImageUri(result.uri);
-        Image.getSize(result.uri, (w, h) => setImageAspectRatio(w / h));
-      } catch (e) {
-        console.log("Image loading error:", e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadImage();
-  }, [data, token]);
-
-  useEffect(() => {
-    const convertAndSave = async () => {
-      if (data?.profilePic) {
-        const uri = await saveBase64ToFile(
-          data?.profilePic,
-          `user-${data?.ownerId}.jpg`
-        );
-        setImageUri(uri);
-      }
-    };
-    convertAndSave();
-  }, [data?.profilePic]);
-
-  if (isLoading || dataIsLoading || categoriesIsLoading) {
-    return (
-      <SafeAreaView style={styles.centered}>
-        <ActivityIndicator size="large" />
-      </SafeAreaView>
-    );
-  }
-
-  if (error) {
-    return (
-      <SafeAreaView style={styles.centered}>
-        <Text style={styles.errorText}>Failed to load offer.</Text>
-      </SafeAreaView>
-    );
-  }
-
   const RenderHeader = () => {
     return (
       <>
         <View style={styles.imageWrapper}>
-          {localImageUri && imageAspectRatio ? (
+          {data?.image ? (
             <Image
-              source={{ uri: localImageUri }}
+              source={{ uri: data.image }}
               style={{
                 width: "100%",
-                aspectRatio: imageAspectRatio,
+                height: 350, // Adjust height as needed
+                resizeMode: "cover",
                 borderBottomLeftRadius: 12,
                 borderBottomRightRadius: 12,
               }}
@@ -223,8 +158,8 @@ const OfferDetails = () => {
               >
                 <Image
                   source={
-                    data.image
-                      ? { uri: imageUri }
+                    data.profilePic
+                      ? { uri: data.profilePic }
                       : require("@/assets/images/profile-pic-placeholder.png")
                   }
                   style={styles.profileImage}
@@ -387,14 +322,32 @@ const OfferDetails = () => {
     );
   };
 
-  return (
-    <SafeAreaView style={styles.container}>
-      {reviewsIsLoading ? (
+  if (isLoading || dataIsLoading || categoriesIsLoading) {
+    return (
+      <SafeAreaView style={styles.centered}>
         <ActivityIndicator size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  if (error) {
+    return (
+      <SafeAreaView style={styles.centered}>
+        <Text style={styles.errorText}>Failed to load offer.</Text>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={{ flex: 1 }}>
+      {reviewsIsLoading || dataIsLoading ? (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" />
+        </View>
       ) : (
         <FlatList
           data={reviews}
-          keyExtractor={(item) => uuidv4()}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => <ReviewItem review={item} />}
           ListHeaderComponent={RenderHeader}
           ListEmptyComponent={
@@ -419,7 +372,6 @@ const OfferDetails = () => {
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#fff" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },

@@ -81,33 +81,33 @@ const UserProfile = () => {
     enabled: !!userId,
   });
 
-  useEffect(() => {
-    async function fetchProfileImage() {
-      if (!otherUser?.profilePic || !token) return;
+  // useEffect(() => {
+  //   async function fetchProfileImage() {
+  //     if (!otherUser?.profilePic || !token) return;
 
-      setIsLoading(true);
-      try {
-        const imageUrl = process.env.EXPO_PUBLIC_API_URL + otherUser.profilePic;
+  //     setIsLoading(true);
+  //     try {
+  //       const imageUrl = process.env.EXPO_PUBLIC_API_URL + otherUser.profilePic;
 
-        // Create a local file path to save the image
-        const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
+  //       // Create a local file path to save the image
+  //       const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
 
-        // Download the image with authorization headers
-        const downloadRes = await FileSystem.downloadAsync(imageUrl, localUri, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+  //       // Download the image with authorization headers
+  //       const downloadRes = await FileSystem.downloadAsync(imageUrl, localUri, {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
 
-        setLocalImageUri(downloadRes.uri);
-      } catch (error) {
-        console.error("Failed downloading profile pic:", error);
-        setLocalImageUri(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  //       setLocalImageUri(downloadRes.uri);
+  //     } catch (error) {
+  //       console.error("Failed downloading profile pic:", error);
+  //       setLocalImageUri(null);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   }
 
-    fetchProfileImage();
-  }, [otherUser, token]);
+  //   fetchProfileImage();
+  // }, [otherUser, token]);
 
   if (isLoading) {
     return (
@@ -149,9 +149,9 @@ const UserProfile = () => {
             </View>
             {!isLoading && (
               <View style={styles.profilePicWrapper}>
-                {localImageUri ? (
+                {otherUser?.profilePic ? (
                   <Image
-                    source={{ uri: localImageUri }}
+                    source={{ uri: otherUser.profilePic }}
                     style={styles.profilePic}
                   />
                 ) : (
@@ -225,7 +225,10 @@ const UserProfile = () => {
                 })
               }
             >
-              <FontAwesome name="bathtub" size={24} color="#008B8B" />
+              <Image
+                source={require("@/assets/images/swapll_tabs.png")}
+                style={{ width: 30, height: 30 }}
+              />
             </TouchableOpacity>
           </View>
 

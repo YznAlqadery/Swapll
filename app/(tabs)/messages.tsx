@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
-import { useChatInbox } from "@/hooks/useChatInbox"; // Adjust path as needed
+import { useChatInbox } from "@/hooks/useChatInbox"; // Adjust this import path
 
 const Messages = () => {
   const { chats, loading, error } = useChatInbox();
@@ -19,8 +19,8 @@ const Messages = () => {
     router.push({
       pathname: "/(pages)/ChatPage",
       params: {
-        conversationId: chat.chatId.toString(),
-        receiverId: chat.otherUserId.toString(),
+        conversationId: chat.chatId?.toString(),
+        receiverId: chat.otherUserId?.toString(),
         receiverUsername: chat.otherUsername,
       },
     });
@@ -33,7 +33,7 @@ const Messages = () => {
     >
       <View style={styles.messageHeader}>
         <Text style={styles.sender}>{item.otherUsername}</Text>
-        <Text style={styles.time}>{item.lastMessageTime}</Text>
+        <Text style={styles.time}>{item.lastMessageTime || ""}</Text>
       </View>
       <Text style={styles.subject} numberOfLines={1}>
         {item.lastMessage || "No messages yet"}
@@ -49,16 +49,17 @@ const Messages = () => {
         <ActivityIndicator size="large" color="#008B8B" />
       ) : error ? (
         <Text style={styles.errorText}>{error}</Text>
+      ) : chats.length === 0 ? (
+        <Text style={styles.emptyText}>No conversations yet.</Text>
       ) : (
         <FlatList
           data={chats}
-          keyExtractor={(item) => item.chatId.toString()}
+          keyExtractor={(item) =>
+            item.chatId?.toString() ?? Math.random().toString()
+          }
           renderItem={renderItem}
           contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 8 }}
           showsVerticalScrollIndicator={false}
-          ListEmptyComponent={
-            <Text style={styles.emptyText}>No conversations yet.</Text>
-          }
         />
       )}
     </SafeAreaView>
@@ -75,7 +76,6 @@ const styles = StyleSheet.create({
     fontSize: 28,
     fontWeight: "700",
     color: "#008B8B",
-    fontFamily: "Poppins_700Bold",
     marginBottom: 16,
     paddingHorizontal: 16,
   },
@@ -102,18 +102,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "700",
     color: "#008B8B",
-    fontFamily: "Poppins_700Bold",
   },
   time: {
     fontSize: 12,
     color: "#008B8B",
-    fontFamily: "Poppins_400Regular",
   },
   subject: {
     fontSize: 15,
     fontWeight: "600",
     color: "#333",
-    fontFamily: "Poppins_600SemiBold",
     marginBottom: 4,
   },
   errorText: {

@@ -54,33 +54,33 @@ const EditProfile = () => {
     }
   }, [user]);
 
-  useEffect(() => {
-    async function fetchProfileImage() {
-      if (!user?.profilePic || !token) return;
+  // useEffect(() => {
+  //   async function fetchProfileImage() {
+  //     if (!user?.profilePic || !token) return;
 
-      setIsLoading(true);
-      try {
-        const imageUrl = process.env.EXPO_PUBLIC_API_URL + user.profilePic;
+  //     setIsLoading(true);
+  //     try {
+  //       const imageUrl = process.env.EXPO_PUBLIC_API_URL + user.profilePic;
 
-        // Create a local file path to save the image
-        const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
+  //       // Create a local file path to save the image
+  //       const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
 
-        // Download the image with authorization headers
-        const downloadRes = await FileSystem.downloadAsync(imageUrl, localUri, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+  //       // Download the image with authorization headers
+  //       const downloadRes = await FileSystem.downloadAsync(imageUrl, localUri, {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
 
-        setLocalImageUri(downloadRes.uri);
-      } catch (error) {
-        console.error("Failed downloading profile pic:", error);
-        setLocalImageUri(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  //       setLocalImageUri(downloadRes.uri);
+  //     } catch (error) {
+  //       console.error("Failed downloading profile pic:", error);
+  //       setLocalImageUri(null);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   }
 
-    fetchProfileImage();
-  }, [user, token]);
+  //   fetchProfileImage();
+  // }, [user, token]);
 
   const router = useRouter();
 
@@ -197,9 +197,7 @@ const EditProfile = () => {
           <View style={{ alignItems: "center", marginBottom: 24 }}>
             <Image
               source={
-                localImageUri
-                  ? { uri: localImageUri }
-                  : profilePic
+                profilePic
                   ? { uri: profilePic }
                   : require("@/assets/images/profile-pic-placeholder.png")
               }

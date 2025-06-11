@@ -13,32 +13,25 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { FontAwesome } from "@expo/vector-icons";
-import * as FileSystem from "expo-file-system";
 import { useAuth } from "@/context/AuthContext";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
-import Divider from "@/components/Divider";
-import { useChatSocket } from "@/hooks/useChatSocket";
-
-interface ChatMessage {
-  id?: string;
-  content: string;
-  senderId: number;
-  receiverId: number;
-  chatId?: number;
-  timestamp?: string;
-  sender?: "me" | "other";
-}
+import { useChatSocket, ChatMessage } from "@/hooks/useChatSocket";
 
 const ChatPage = () => {
-  const { userId, userName, profilePic } = useLocalSearchParams();
+  const {
+    userId: otherUserIdStr,
+    userName,
+    profilePic,
+  } = useLocalSearchParams();
   const { user: token } = useAuth();
   const { user } = useLoggedInUser();
   const router = useRouter();
 
+  const otherUserId = Number(otherUserIdStr);
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState("");
   const [chatId, setChatId] = useState<number | null>(null);
-  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
   const flatListRef = useRef<FlatList>(null);
 
   const formatTimestamp = (timestamp?: string) => {
@@ -49,12 +42,12 @@ const ChatPage = () => {
   };
 
   useEffect(() => {
-    if (!user?.id || !userId) return;
+    if (!user?.id || !otherUserId || !token) return;
 
     const fetchChatId = async () => {
       try {
         const response = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/api/with/${userId}`,
+          `${process.env.EXPO_PUBLIC_API_URL}/api/with/${otherUserId}`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -70,21 +63,19 @@ const ChatPage = () => {
     };
 
     fetchChatId();
-  }, [userId, user?.id, token]);
+  }, [otherUserId, user?.id, token]);
 
   const { sendMessage: sendSocketMessage } = useChatSocket(
     chatId ?? 0,
     user?.id ?? 0,
+    token ?? "",
     (incomingMessages: ChatMessage[]) => {
       const formatted = incomingMessages.map((msg) => ({
         ...msg,
-        sender:
-          msg.senderId === user?.id ? ("me" as const) : ("other" as const),
+        sender: msg.senderId === user?.id ? "me" : "other",
         timestamp: formatTimestamp(msg.timestamp),
       }));
-
       setMessages(formatted);
-
       setTimeout(
         () => flatListRef.current?.scrollToEnd({ animated: false }),
         100
@@ -93,14 +84,10 @@ const ChatPage = () => {
     (incomingMessage: ChatMessage) => {
       const formatted: ChatMessage = {
         ...incomingMessage,
-        sender: (incomingMessage.senderId === user?.id ? "me" : "other") as
-          | "me"
-          | "other",
+        sender: incomingMessage.senderId === user?.id ? "me" : "other",
         timestamp: formatTimestamp(incomingMessage.timestamp),
       };
-
       setMessages((prev) => [...prev, formatted]);
-
       setTimeout(
         () => flatListRef.current?.scrollToEnd({ animated: true }),
         100
@@ -108,37 +95,14 @@ const ChatPage = () => {
     }
   );
 
-  useEffect(() => {
-    if (!profilePic || !token) return;
-
-    const fetchProfileImage = async () => {
-      try {
-        const imageUrl = process.env.EXPO_PUBLIC_API_URL! + profilePic;
-        const localUri = `${FileSystem.cacheDirectory}profile-pic-${userId}.jpg`;
-
-        const downloadRes = await FileSystem.downloadAsync(imageUrl, localUri, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setLocalImageUri(downloadRes.uri);
-      } catch (error) {
-        console.error("Failed to download profile pic:", error);
-        setLocalImageUri(null);
-      }
-    };
-
-    fetchProfileImage();
-  }, [profilePic, token, userId]);
-
   const handleSendMessage = () => {
-    if (!inputText.trim() || !chatId || !user?.id) return;
+    if (!inputText.trim() || !chatId || !user?.id || !token) return;
 
-    const newMessage = {
+    sendSocketMessage({
       content: inputText.trim(),
-      receiverId: Number(userId),
-    };
+      receiverId: otherUserId,
+    });
 
-    sendSocketMessage(newMessage);
     setInputText("");
   };
 
@@ -169,8 +133,8 @@ const ChatPage = () => {
         </TouchableOpacity>
         <Image
           source={
-            localImageUri
-              ? { uri: localImageUri }
+            profilePic
+              ? { uri: profilePic }
               : require("@/assets/images/profile-pic-placeholder.png")
           }
           style={styles.profilePic}
@@ -288,13 +252,13 @@ const styles = StyleSheet.create({
   },
   sendButton: {
     backgroundColor: "#008B8B",
-    paddingHorizontal: 14,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
     borderRadius: 12,
   },
   sendButtonText: {
-    color: "white",
-    fontWeight: "700",
+    color: "#fff",
+    fontWeight: "bold",
   },
 });
 

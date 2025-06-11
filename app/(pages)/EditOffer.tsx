@@ -41,7 +41,6 @@ const EditOffer = () => {
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [deliveryTime, setDeliveryTime] = useState<string>("");
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
-  const [imageAspectRatio, setImageAspectRatio] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
   const queryClient = useQueryClient();
@@ -183,31 +182,6 @@ const EditOffer = () => {
     }
   }, [offer]);
 
-  useEffect(() => {
-    const loadImage = async () => {
-      if (!offer?.image) return;
-
-      setIsLoading(true);
-      try {
-        const imageUrl = process.env.EXPO_PUBLIC_API_URL + offer.image;
-        const localUri = `${FileSystem.cacheDirectory}temp-image.jpg`;
-
-        const result = await FileSystem.downloadAsync(imageUrl, localUri, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-
-        setLocalImageUri(result.uri);
-        Image.getSize(result.uri, (w, h) => setImageAspectRatio(w / h));
-      } catch (e) {
-        console.log("Image loading error:", e);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadImage();
-  }, [offer, token]);
-
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -251,9 +225,7 @@ const EditOffer = () => {
                 <View style={styles.imageWrapper}>
                   <Image
                     source={
-                      localImageUri
-                        ? { uri: localImageUri }
-                        : image
+                      image
                         ? { uri: image }
                         : require("@/assets/images/profile-pic-placeholder.png")
                     }

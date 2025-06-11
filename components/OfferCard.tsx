@@ -8,7 +8,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { useAuth } from "@/context/AuthContext";
-import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
+
 import { useRouter } from "expo-router";
 
 const OfferCard = ({
@@ -28,24 +28,6 @@ const OfferCard = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
-
-  useEffect(() => {
-    const loadImage = async () => {
-      setIsLoading(true);
-      const uri = await downloadImageWithAuth(
-        image,
-        token as string,
-        `offer-${id}.jpg`
-      );
-      if (uri) {
-        setLocalImageUri(uri);
-        Image.getSize(uri, (w, h) => setAspectRatio(w / h));
-      }
-      setIsLoading(false);
-    };
-
-    loadImage();
-  }, [image, token]);
 
   if (isLoading)
     return (

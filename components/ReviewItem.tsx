@@ -19,35 +19,16 @@ interface ReviewItemProps {
     userId: number;
   };
 }
-const saveBase64ToFile = async (base64String: string, filename: string) => {
-  const fileUri = FileSystem.cacheDirectory + filename;
-  await FileSystem.writeAsStringAsync(fileUri, base64String, {
-    encoding: FileSystem.EncodingType.Base64,
-  });
-  return fileUri;
-};
 
 const ReviewItem: React.FC<ReviewItemProps> = ({ review }) => {
-  const [imageUri, setImageUri] = useState<string | null>(null);
-
-  useEffect(() => {
-    const convertAndSave = async () => {
-      if (review.profilePicture) {
-        const uri = await saveBase64ToFile(
-          review.profilePicture,
-          `user-${review.userId}.jpg`
-        );
-        setImageUri(uri);
-      }
-    };
-    convertAndSave();
-  }, [review.profilePicture]);
-
   return (
     <View style={styles.reviewItem}>
       <View style={styles.header}>
-        {imageUri ? (
-          <Image source={{ uri: imageUri }} style={styles.avatar} />
+        {review.profilePicture ? (
+          <Image
+            source={{ uri: review.profilePicture }}
+            style={styles.avatar}
+          />
         ) : (
           <Ionicons name="person-circle-outline" size={40} color="#ccc" />
         )}

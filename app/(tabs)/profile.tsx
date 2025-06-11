@@ -68,34 +68,34 @@ const Profile = () => {
     authContext?.setUser(null);
     router.replace("/(auth)/Login");
   };
-  useEffect(() => {
-    async function fetchProfileImage() {
-      if (!user?.profilePic || !token) return;
+  // useEffect(() => {
+  //   async function fetchProfileImage() {
+  //     if (!user?.profilePic || !token) return;
 
-      setIsLoading(true);
-      try {
-        const imageUrl = process.env.EXPO_PUBLIC_API_URL + user.profilePic;
+  //     setIsLoading(true);
+  //     try {
+  //       const imageUrl = process.env.EXPO_PUBLIC_API_URL + user.profilePic;
 
-        // Create a local file path to save the image
-        const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
+  //       // Create a local file path to save the image
+  //       const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
 
-        // Download the image with authorization headers
-        const downloadRes = await FileSystem.downloadAsync(imageUrl, localUri, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+  //       // Download the image with authorization headers
+  //       const downloadRes = await FileSystem.downloadAsync(imageUrl, localUri, {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //       });
 
-        setLocalImageUri(downloadRes.uri);
-      } catch (error) {
-        console.error("Failed downloading profile pic:", error);
-        setLocalImageUri(null);
-      } finally {
-        setIsLoading(false);
-      }
-    }
+  //       setLocalImageUri(downloadRes.uri);
+  //     } catch (error) {
+  //       console.error("Failed downloading profile pic:", error);
+  //       setLocalImageUri(null);
+  //     } finally {
+  //       setIsLoading(false);
+  //     }
+  //   }
 
-    fetchProfileImage();
-  }, [user, token]);
-
+  //   fetchProfileImage();
+  // }, [user, token]);
+  //console.log(user?.profilePic);
   const copyToClipboard = async (text: string) => {
     await Clipboard.setStringAsync(text);
     Toast.show({
@@ -146,9 +146,9 @@ const Profile = () => {
           </View>
           {!isLoading && (
             <View style={styles.profilePicWrapper}>
-              {localImageUri ? (
+              {user?.profilePic ? (
                 <Image
-                  source={{ uri: localImageUri }}
+                  source={{ uri: user?.profilePic }}
                   style={styles.profilePic}
                 />
               ) : (

@@ -99,37 +99,40 @@ const YourOffers = () => {
   const deleteOfferMutation = useMutation({
     mutationFn: (offerId: number) => handleDelete(offerId, token as string),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["yourOffers"] });
+      queryClient.setQueryData<Offer[]>(["yourOffers"], (oldOffers = []) =>
+        oldOffers.filter((offer) => offer.id !== Number(offerId))
+      );
     },
   });
 
-  const fetchOfferImages = async (offers: Offer[], token: string) => {
-    setIsLoadingImages(true);
-    try {
-      const imageMap = new Map<string, string>();
-      await Promise.all(
-        offers.map(async (offer) => {
-          const uri = await downloadImageWithAuth(
-            offer.image,
-            token,
-            `offer-${offer.id}.jpg`
-          );
-          if (uri) imageMap.set(offer.id, uri);
-        })
-      );
-      setOfferImageMap(imageMap);
-    } catch (error) {
-      console.error("Error fetching images", error);
-    } finally {
-      setIsLoadingImages(false);
-    }
-  };
+  // const fetchOfferImages = async (offers: Offer[], token: string) => {
+  //   if (!offers || !token) return;
+  //   setIsLoadingImages(true);
+  //   try {
+  //     const imageMap = new Map<string, string>();
+  //     await Promise.all(
+  //       offers.map(async (offer) => {
+  //         const uri = await downloadImageWithAuth(
+  //           offer.image,
+  //           token,
+  //           `offer-${offer.id}.jpg`
+  //         );
+  //         if (uri) imageMap.set(offer.id, uri);
+  //       })
+  //     );
+  //     setOfferImageMap(imageMap);
+  //   } catch (error) {
+  //     console.error("Error fetching images", error);
+  //   } finally {
+  //     setIsLoadingImages(false);
+  //   }
+  // };
 
-  useEffect(() => {
-    if (yourOffers && token) {
-      fetchOfferImages(yourOffers, token);
-    }
-  }, [yourOffers, token]);
+  // useEffect(() => {
+  //   if (yourOffers && token) {
+  //     fetchOfferImages(yourOffers, token);
+  //   }
+  // }, [yourOffers, token]);
 
   const RenderOffer = ({ item }: { item: Offer }) => {
     return (
@@ -148,7 +151,7 @@ const YourOffers = () => {
           <Image
             source={
               item.image
-                ? { uri: offerImageMap.get(item.id) }
+                ? { uri: item.image }
                 : require("@/assets/images/no_image.jpeg")
             }
             style={styles.offerImage}
@@ -226,9 +229,42 @@ const YourOffers = () => {
         )}
 
         {yourOffersError && (
-          <Text style={{ color: "red", textAlign: "center" }}>
-            Failed to load your offers.
-          </Text>
+          <View
+            style={{
+              flex: 1,
+              justifyContent: "center",
+              alignItems: "center",
+            }}
+          >
+            <Text
+              style={{
+                color: "#008b8b",
+                textAlign: "center",
+                fontFamily: "Poppins_400Regular",
+              }}
+            >
+              You have no offers, start by adding some!
+            </Text>
+            <TouchableOpacity
+              style={{
+                marginTop: 10,
+                paddingVertical: 10,
+                paddingHorizontal: 20,
+                backgroundColor: "#008B8B",
+                borderRadius: 8,
+                marginBottom: 20,
+                borderColor: "#008B8B",
+                borderWidth: 1,
+              }}
+              onPress={() => router.push("/(tabs)/add")}
+            >
+              <Text
+                style={{ color: "#fff", fontFamily: "Poppins_600SemiBold" }}
+              >
+                Add Offer
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
 
         <FlatList

@@ -18,6 +18,13 @@ import {
   ScrollView,
 } from "react-native-gesture-handler";
 import { useAuth } from "@/context/AuthContext";
+import { useRevalidateQueries } from "@/hooks/useRevalidate";
+import {
+  fetchCategories,
+  fetchRecentOffers,
+  fetchTopRatedOffers,
+} from "../(tabs)";
+import { useQueryClient } from "@tanstack/react-query";
 
 const Login = () => {
   const { user, setUser } = useAuth();
@@ -28,7 +35,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-
+  const queryClient = useQueryClient();
   const router = useRouter();
 
   // Add this useEffect to observe the context user state
@@ -63,7 +70,23 @@ const Login = () => {
         console.log("User logged in successfully:", data);
         console.log("Token received:", data.token);
         setUser(data.token);
-        console.log("setUser called with token.");
+
+        // Prefetch categories and offers
+        const categories = await queryClient.fetchQuery({
+          queryKey: ["categories"],
+          queryFn: () => fetchCategories(data.token),
+        });
+
+        const topRatedOffers = await queryClient.fetchQuery({
+          queryKey: ["top-rated-offers"],
+          queryFn: () => fetchTopRatedOffers(data.token),
+        });
+
+        const recentOffers = await queryClient.fetchQuery({
+          queryKey: ["recent-offers"],
+          queryFn: () => fetchRecentOffers(data.token),
+        });
+
         router.replace("/(tabs)/" as any);
       } else {
         console.log("Login failed:", data);
