@@ -50,14 +50,9 @@ const CategoryFlatlist: React.FC<CategoryFlatlistProps> = ({
   data,
   selectedCategoryId,
   setSelectedCategoryId,
-  // setCategory, // No longer needed here
 }) => {
   const handleCategoryPress = (id: number) => {
-    // If the clicked category is already selected, deselect it (set to 0 for "All Categories")
-    // Otherwise, select the new category ID
     setSelectedCategoryId((prevId) => (prevId === id ? 0 : id));
-    // The `setCategoryName` logic in Index.tsx's useEffect will handle
-    // updating the display text based on this `selectedCategoryId` change.
   };
 
   return (

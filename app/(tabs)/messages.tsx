@@ -1,16 +1,18 @@
+// app/(tabs)/messages.tsx
 import React from "react";
 import {
   View,
   Text,
   SafeAreaView,
-  FlatList,
   StyleSheet,
+  FlatList,
   TouchableOpacity,
-  ActivityIndicator,
   Image,
+  ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useChatInbox } from "@/hooks/useChatInbox";
+import { Feather } from "@expo/vector-icons"; // Import Feather for the arrow icon
 
 const formatTime = (timeString: string | undefined) => {
   if (!timeString) return "";
@@ -73,12 +75,27 @@ const Messages = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Inbox</Text>
+      <View style={styles.headerContainer}>
+        <Text style={styles.headerTitle}>Inbox</Text>
+        <TouchableOpacity
+          style={styles.transactionsButton}
+          onPress={() => router.push("/(pages)/TransactionPage")}
+        >
+          <Text style={styles.transactionsButtonText}>Transactions</Text>
+          <Feather name="arrow-right" size={16} color="#008B8B" />
+        </TouchableOpacity>
+      </View>
 
       {loading ? (
-        <ActivityIndicator size="large" color="#008B8B" />
+        <ActivityIndicator
+          size="large"
+          color="#008B8B"
+          style={styles.loadingIndicator}
+        />
       ) : error ? (
-        <Text style={styles.errorText}>{error}</Text>
+        <Text style={styles.errorText}>
+          {typeof error === "string" ? error : "Failed to load conversations."}
+        </Text>
       ) : chats.length === 0 ? (
         <Text style={styles.emptyText}>No conversations yet.</Text>
       ) : (
@@ -102,12 +119,33 @@ const styles = StyleSheet.create({
     backgroundColor: "#F0F7F7",
     paddingTop: 16,
   },
-  header: {
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+    paddingHorizontal: 16,
+  },
+  headerTitle: {
     fontSize: 28,
     fontWeight: "700",
     color: "#008B8B",
-    marginBottom: 16,
-    paddingHorizontal: 16,
+  },
+  transactionsButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E0FFFF", // Light background for the button
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: "#008B8B",
+  },
+  transactionsButtonText: {
+    color: "#008B8B",
+    fontSize: 14,
+    fontWeight: "600",
+    marginRight: 5,
   },
   messageBox: {
     backgroundColor: "#fff",
@@ -155,16 +193,21 @@ const styles = StyleSheet.create({
     color: "#333",
     marginBottom: 4,
   },
+  loadingIndicator: {
+    marginTop: 20,
+  },
   errorText: {
     color: "red",
     textAlign: "center",
     marginTop: 20,
+    paddingHorizontal: 20,
   },
   emptyText: {
     textAlign: "center",
     marginTop: 40,
     color: "#777",
     fontSize: 16,
+    paddingHorizontal: 20,
   },
 });
 
