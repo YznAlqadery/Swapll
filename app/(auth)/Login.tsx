@@ -180,7 +180,12 @@ const Login = () => {
                   </TouchableOpacity>
                 </View>
 
-                <TouchableOpacity style={styles.forgotPasswordContainer}>
+                <TouchableOpacity
+                  style={styles.forgotPasswordContainer}
+                  onPress={() =>
+                    router.replace("/(pages)/ForgotPasswordScreen")
+                  }
+                >
                   <Text style={styles.forgotPasswordText}>
                     Forgot Password?
                   </Text>

@@ -13,6 +13,12 @@ import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useAuth } from "@/context/AuthContext";
 import * as FileSystem from "expo-file-system";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  fetchCategories,
+  fetchRecentOffers,
+  fetchTopRatedOffers,
+} from "../(tabs)";
 
 const ContinueSignUp = () => {
   const { setUser } = useAuth();
@@ -29,6 +35,8 @@ const ContinueSignUp = () => {
   const { firstName, lastName, username, email, password, image } =
     useLocalSearchParams();
   const router = useRouter();
+
+  const queryClient = useQueryClient();
 
   const handleSignUp = async () => {
     Keyboard.dismiss();
@@ -89,6 +97,23 @@ const ContinueSignUp = () => {
       if (setUser) {
         setUser(data.token);
       }
+
+      //Prefetch categories and offers
+      const categories = await queryClient.fetchQuery({
+        queryKey: ["categories"],
+        queryFn: () => fetchCategories(data.token),
+      });
+
+      const topRatedOffers = await queryClient.fetchQuery({
+        queryKey: ["top-rated-offers"],
+        queryFn: () => fetchTopRatedOffers(data.token),
+      });
+
+      const recentOffers = await queryClient.fetchQuery({
+        queryKey: ["recent-offers"],
+        queryFn: () => fetchRecentOffers(data.token),
+      });
+
       router.replace("/(tabs)/" as any);
     } catch (error: any) {
       console.error("Sign up error:", error);

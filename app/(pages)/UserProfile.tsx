@@ -8,6 +8,7 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Linking,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { useAuth } from "@/context/AuthContext";
@@ -233,7 +234,14 @@ const UserProfile = () => {
           </View>
 
           <View style={styles.personalInfo}>
-            <View style={styles.infoBox}>
+            <TouchableOpacity
+              style={styles.infoBox}
+              onPress={() => {
+                if (otherUser?.phone) {
+                  Linking.openURL(`tel:${otherUser.phone}`);
+                }
+              }}
+            >
               <View
                 style={{
                   flexDirection: "row",
@@ -249,7 +257,7 @@ const UserProfile = () => {
                 <Text style={styles.infoLabel}>Phone</Text>
               </View>
               <Text style={styles.infoText}>{otherUser?.phone}</Text>
-            </View>
+            </TouchableOpacity>
             <View style={styles.infoBox}>
               <View
                 style={{

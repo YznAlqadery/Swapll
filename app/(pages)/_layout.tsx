@@ -15,6 +15,15 @@ const PagesLayout = () => {
         <Stack.Screen name="EditOffer" options={{ headerShown: false }} />
         <Stack.Screen name="UserProfile" options={{ headerShown: false }} />
         <Stack.Screen name="AddReview" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="ForgotPasswordScreen"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen
+          name="VerificationScreen"
+          options={{ headerShown: false }}
+        />
+        <Stack.Screen name="ResetPassword" options={{ headerShown: false }} />
       </Stack>
     </>
   );
