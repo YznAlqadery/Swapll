@@ -12,14 +12,14 @@ import {
 import React, { useEffect, useState } from "react";
 
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
+import CategoryFlatlist from "@/components/CategoryFlatlist"; // Your updated component
 import { useAuth } from "@/context/AuthContext";
-import CategoryFlatlist from "@/components/CategoryFlatlist";
-import { downloadImageWithAuth } from "@/services/DownloadImageWithAuth";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
 
 import Divider from "@/components/Divider";
 import { useRouter } from "expo-router";
+import SkeletonOfferItem from "@/components/SkeletonOfferItem";
 
 export interface Offer {
   username: string;
@@ -35,13 +35,26 @@ export interface Offer {
   paymentMethod: string;
   categoryId: number;
 }
+
 type Category = {
   id: number;
   title: string;
 };
 
-const OfferItem = ({ item }: { item: Offer }) => {
+// OfferItem Component (Refactored for Image Loading)
+const OfferItem = React.memo(({ item }: { item: Offer }) => {
   const router = useRouter();
+  const [imageLoading, setImageLoading] = useState(true);
+  const [imageError, setImageError] = useState(false);
+
+  // Determine the image source based on item.image availability and error status
+  const getImageSource = () => {
+    if (item.image && !imageError) {
+      return { uri: item.image };
+    }
+    return require("@/assets/images/no_image.jpeg"); // Fallback no image
+  };
+
   return (
     <TouchableOpacity
       style={styles.offerItem}
@@ -53,25 +66,24 @@ const OfferItem = ({ item }: { item: Offer }) => {
       }}
     >
       <View style={styles.offerImageContainer}>
-        {item.image ? (
-          item.image ? (
-            <Image
-              source={{ uri: item.image }}
-              style={styles.offerImage}
-              resizeMode="cover"
-            />
-          ) : (
-            <View style={styles.loadingImage}>
-              <ActivityIndicator color="#008b8b" size="small" />
-            </View>
-          )
-        ) : (
-          <Image
-            source={require("@/assets/images/no_image.jpeg")}
-            style={styles.offerImage}
-            resizeMode="cover"
-          />
+        {/* Show ActivityIndicator while image is loading, only if a valid image URI exists */}
+        {imageLoading && item.image && !imageError && (
+          <View style={styles.loadingImage}>
+            <ActivityIndicator color="#008b8b" size="small" />
+          </View>
         )}
+
+        <Image
+          source={getImageSource()}
+          style={styles.offerImage}
+          resizeMode="cover"
+          onLoadStart={() => setImageLoading(true)}
+          onLoadEnd={() => setImageLoading(false)}
+          onError={() => {
+            setImageLoading(false);
+            setImageError(true); // Set error state to show fallback image
+          }}
+        />
       </View>
       <View style={styles.offerDetails}>
         <Text style={styles.offerTitle}>{item.title}</Text>
@@ -87,8 +99,9 @@ const OfferItem = ({ item }: { item: Offer }) => {
       </View>
     </TouchableOpacity>
   );
-};
+});
 
+// API Calls (Kept as is, but ensure process.env.EXPO_PUBLIC_API_URL is defined)
 export const fetchCategories = async (userToken: string) => {
   const response = await fetch(
     `${process.env.EXPO_PUBLIC_API_URL}/api/categories`,
@@ -131,27 +144,59 @@ export const fetchOffersByCategory = async (
 const Index = () => {
   const { user: token } = useAuth();
   const { user, setUser } = useLoggedInUser();
-  const [categoryId, setCategoryId] = useState<number | null>(0);
-  const [category, setCategory] = useState("");
+  const [categoryId, setCategoryId] = useState<number | null>(0); // 0 indicates "all categories" or default view
+  const [categoryName, setCategoryName] = useState("All Categories"); // Display name for the current category selection
 
-  const queryClient = useQueryClient();
+  // --- Data Fetching with useQuery ---
+  // Categories
+  const {
+    data: categories,
+    isLoading: categoriesLoading,
+    // error: categoriesError, // Error handling can be added if needed
+  } = useQuery<Category[]>({
+    queryKey: ["categories"],
+    queryFn: () => fetchCategories(token || ""),
+    enabled: !!token, // Only fetch if token is available
+    staleTime: 5 * 60 * 1000, // Cache for 5 minutes (adjust as needed)
+  });
 
-  const categories = queryClient.getQueryData<Category[]>(["categories"]);
-  const topRatedOffers = queryClient.getQueryData<Offer[]>([
-    "top-rated-offers",
-  ]);
-  const recentOffers = queryClient.getQueryData<Offer[]>(["recent-offers"]);
+  // Top Rated Offers (fetched only when categoryId is 0, i.e., "All Categories" view)
+  const {
+    data: topRatedOffers,
+    isLoading: topRatedOffersLoading,
+    // error: topRatedOffersError,
+  } = useQuery<Offer[]>({
+    queryKey: ["top-rated-offers"],
+    queryFn: () => fetchTopRatedOffers(token || ""),
+    enabled: !!token && categoryId === 0, // Only fetch if token and on default view
+    staleTime: 5 * 60 * 1000,
+  });
 
+  // Recent Offers (fetched only when categoryId is 0)
+  const {
+    data: recentOffers,
+    isLoading: recentOffersLoading,
+    // error: recentOffersError,
+  } = useQuery<Offer[]>({
+    queryKey: ["recent-offers"],
+    queryFn: () => fetchRecentOffers(token || ""),
+    enabled: !!token && categoryId === 0, // Only fetch if token and on default view
+    staleTime: 5 * 60 * 1000,
+  });
+
+  // Offers by Category (fetched only when a specific category is selected, i.e., categoryId is not 0)
   const {
     data: offersByCategory,
     isLoading: offersByCategoryLoading,
-    error: offersByCategoryError,
-  } = useQuery({
+    // error: offersByCategoryError,
+  } = useQuery<Offer[]>({
     queryKey: ["offers-by-category", categoryId],
     queryFn: () => fetchOffersByCategory(token || "", categoryId || 0),
-    enabled: !!user && !!categoryId,
+    enabled: !!token && categoryId !== 0, // Only fetch if token and a specific category is selected
+    staleTime: 5 * 60 * 1000,
   });
 
+  // Effect to fetch user info on token change
   useEffect(() => {
     async function fetchUser() {
       if (!token) return;
@@ -168,29 +213,88 @@ const Index = () => {
         console.error("Failed fetching user info:", error);
       }
     }
-
     fetchUser();
-  }, [token]);
+  }, [token, setUser]);
 
+  // Effect to update categoryName based on selected categoryId
+  useEffect(() => {
+    if (categoryId === 0) {
+      setCategoryName("Our Community's Favorites"); // Default text for main view
+    } else if (categories && categoryId !== null) {
+      const selectedCat = categories.find((cat) => cat.id === categoryId);
+      setCategoryName(selectedCat ? selectedCat.title : "Unknown Category");
+    }
+  }, [categories, categoryId]);
+
+  // Prepare data for CategoryFlatlist, ensuring "All Categories" is first
+  const categoriesForFlatlist = React.useMemo(() => {
+    const allCategoriesOption = { id: 0, title: "All Categories" };
+    return categories
+      ? [allCategoriesOption, ...categories]
+      : [allCategoriesOption];
+  }, [categories]);
+
+  // Initial loading state for user data (before main content renders)
   if (!user) {
     return (
-      <SafeAreaView>
+      <SafeAreaView style={styles.centeredLoading}>
         <ActivityIndicator size="large" color="#008B8B" />
         <Text>Loading user data...</Text>
       </SafeAreaView>
     );
   }
 
+  // Helper function to render horizontal FlatLists of offers
+  const renderOfferSection = (
+    data: Offer[] | undefined,
+    isLoading: boolean,
+    title: string
+  ) => {
+    // Filter out offers owned by the current user
+    const filteredData = data?.filter((offer) => offer.ownerId !== user?.id);
+    const hasData = filteredData && filteredData.length > 0;
+
+    return (
+      <View>
+        <Text style={styles.header}>{title}</Text>
+        {isLoading ? (
+          // Render skeleton items when loading
+          <FlatList
+            data={[1, 2, 3]} // Array of placeholders for skeleton items
+            renderItem={() => <SkeletonOfferItem />}
+            keyExtractor={(item) => `skeleton-${item}`}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          />
+        ) : hasData ? (
+          // Render actual offers when data is available
+          <FlatList
+            data={filteredData}
+            renderItem={({ item }) => <OfferItem item={item} />}
+            keyExtractor={(item) => item.id}
+            horizontal
+            showsHorizontalScrollIndicator={false}
+          />
+        ) : (
+          // Display message if no offers are available for this section
+          <Text style={styles.noOffersText}>No offers available.</Text>
+        )}
+      </View>
+    );
+  };
+
   return (
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#fff" }}>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.container}>
+        {/* Main FlatList acting as a ScrollView for the header content */}
         <FlatList
-          data={[]}
+          data={[]} // Empty data, as content is in ListHeaderComponent
           renderItem={null}
           ListEmptyComponent={null}
           ListHeaderComponent={
             <View>
+              {/* Header Row: Logo and Balance */}
               <View style={styles.headerRow}>
                 <Image
                   source={require("@/assets/images/swapll_home.png")}
@@ -207,70 +311,52 @@ const Index = () => {
 
               <Divider />
 
+              {/* Popular Categories Section */}
               <Text style={styles.header}>Popular Categories</Text>
               <View style={{ height: 70 }}>
-                <CategoryFlatlist
-                  data={categories as Category[]}
-                  selectedCategoryId={categoryId}
-                  setSelectedCategoryId={setCategoryId}
-                  setCategory={setCategory}
-                />
+                {categoriesLoading ? (
+                  <ActivityIndicator size="small" color="#008B8B" />
+                ) : categoriesForFlatlist.length > 0 ? ( // Use categoriesForFlatlist here
+                  <CategoryFlatlist
+                    data={categoriesForFlatlist}
+                    selectedCategoryId={categoryId}
+                    setSelectedCategoryId={setCategoryId}
+                    // The setCategoryName prop is removed as its logic is now handled in Index.tsx's useEffect
+                  />
+                ) : (
+                  <Text style={styles.noOffersText}>No categories found.</Text>
+                )}
               </View>
 
               <Divider />
 
-              {!offersByCategoryLoading && (
+              {/* Conditional Offer Sections based on Category Selection */}
+              {categoryId !== 0 ? (
+                // Display offers by selected category when a category is chosen
+                renderOfferSection(
+                  offersByCategory,
+                  offersByCategoryLoading,
+                  `Offers in ${categoryName}`
+                )
+              ) : (
+                // Display Top Rated and Recent Offers when "All Categories" is selected
                 <>
-                  {!offersByCategoryError ? (
-                    <Text style={styles.header}>Offers in {category}</Text>
-                  ) : (
-                    <Text style={styles.header}>Our Community's Favorites</Text>
+                  {renderOfferSection(
+                    topRatedOffers,
+                    topRatedOffersLoading,
+                    categoryName // This will be "Our Community's Favorites"
                   )}
-                  {categoryId && offersByCategory?.length! > 0 && (
-                    <FlatList
-                      data={offersByCategory.filter(
-                        (offer: Offer) => offer.ownerId !== user?.id
-                      )}
-                      renderItem={({ item }) => <OfferItem item={item} />}
-                      keyExtractor={(item) => item.id}
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                    />
-                  )}
-
-                  {!categoryId && topRatedOffers?.length! > 0 && (
-                    <>
-                      <FlatList
-                        data={topRatedOffers?.filter(
-                          (offer) => offer.ownerId !== user?.id
-                        )}
-                        renderItem={({ item }) => <OfferItem item={item} />}
-                        keyExtractor={(item) => item.id}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                      />
-                    </>
-                  )}
-
                   <Divider />
-
-                  {!categoryId && recentOffers?.length! > 0 && (
-                    <>
-                      <Text style={styles.header}>Latest Deals for You</Text>
-                      <FlatList
-                        data={recentOffers?.filter(
-                          (offer) => offer.ownerId !== user?.id
-                        )}
-                        renderItem={({ item }) => <OfferItem item={item} />}
-                        keyExtractor={(item) => item.id}
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        style={{ marginBottom: 60 }}
-                      />
-                    </>
+                  {renderOfferSection(
+                    recentOffers,
+                    recentOffersLoading,
+                    "Latest Deals for You"
                   )}
                 </>
               )}
+
+              {/* Spacer at the bottom for better scrolling experience */}
+              <View style={{ height: 60 }} />
             </View>
           }
         />
@@ -313,7 +399,7 @@ const styles = StyleSheet.create({
     width: 25,
     height: 25,
     marginRight: 4,
-    borderRadius: 50,
+    borderRadius: 50, // For circular coin
   },
   balanceText: {
     color: "#fff",
@@ -334,6 +420,7 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    // alignSelf: "center", // Removed as FlatList handles horizontal alignment
   },
   offerImageContainer: {
     width: "100%",
@@ -348,10 +435,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   loadingImage: {
-    flex: 1,
+    position: "absolute", // Position over the image container
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f0f0f0",
+    backgroundColor: "#f0f0f0", // Light background for loading
+    borderRadius: 12,
+    zIndex: 1, // Ensure it's above the image if image takes time to load
   },
   offerDetails: {
     justifyContent: "space-between",
@@ -383,6 +476,20 @@ const styles = StyleSheet.create({
     color: "#008B8B",
     fontFamily: "Poppins_700Bold",
     fontSize: 15,
+  },
+  centeredLoading: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#F0F7F7",
+  },
+  noOffersText: {
+    textAlign: "center",
+    marginTop: 20,
+    marginBottom: 20, // Added margin for spacing
+    fontSize: 16,
+    color: "#888",
+    fontFamily: "Poppins_400Regular",
   },
 });
 

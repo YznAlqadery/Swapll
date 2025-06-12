@@ -12,11 +12,11 @@ import {
   Image,
 } from "react-native";
 import { Offer } from "../(tabs)";
-import SkeletonOfferItem from "@/components/SkeletonItem";
 import { Feather, FontAwesome5 } from "@expo/vector-icons";
 import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Modal from "react-native-modal";
+import SkeletonOfferItem from "@/components/SkeletonOfferItem";
 
 async function fetchOffers(userId: number, token: string) {
   const url = `${process.env.EXPO_PUBLIC_API_URL}/api/offers/user/${userId}`;
@@ -184,7 +184,7 @@ const YourOffers = () => {
           </Text>
         </View>
 
-        {(yourOffersLoading || isLoadingImages) && (
+        {yourOffersLoading && (
           <>
             <SkeletonOfferItem />
             <SkeletonOfferItem />
