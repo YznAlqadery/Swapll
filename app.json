@@ -13,9 +13,13 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.Swapll"
     },
     "web": {
       "bundler": "metro",
@@ -33,7 +37,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/swapll-logo.png",
+          "image": "./assets/images/splash-screen.png",
           "imageResizeMode": "contain",
           "backgroundColor": "#F0F7F7",
           "imageWidth": 200,

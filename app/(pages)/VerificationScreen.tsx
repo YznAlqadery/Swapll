@@ -202,13 +202,9 @@ const styles = StyleSheet.create({
     color: "#666",
     marginBottom: 40,
   },
-  resendLink: {
-    color: "#000",
-    fontWeight: "bold",
-    textDecorationLine: "underline",
-  },
+
   verificationButton: {
-    backgroundColor: "#000",
+    backgroundColor: "#008b8b",
     padding: 18,
     borderRadius: 10,
     width: "100%",

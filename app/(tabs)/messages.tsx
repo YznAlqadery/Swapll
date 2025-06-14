@@ -12,20 +12,25 @@ import {
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useChatInbox } from "@/hooks/useChatInbox";
-import { Feather } from "@expo/vector-icons"; // Import Feather for the arrow icon
+import { Feather } from "@expo/vector-icons";
 
-const formatTime = (timeString: string | undefined) => {
+const formatTime = (timeString: string | undefined): string => {
   if (!timeString) return "";
   const date = new Date(timeString);
   if (isNaN(date.getTime())) return "";
 
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
-  const diffMins = Math.floor(diffMs / 60000);
+  const diffMinutes = Math.floor(diffMs / 60000);
 
-  if (diffMins < 1) return "Just now";
-  if (diffMins < 60) return `${diffMins}m ago`;
-  if (diffMins < 1440) return `${Math.floor(diffMins / 60)}h ago`;
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes}m ago`;
+  if (diffMinutes < 1440) return `${Math.floor(diffMinutes / 60)}h ago`; // Less than 24 hours
+  if (diffMinutes < 10080) {
+    // Less than 7 days
+    const diffDays = Math.floor(diffMinutes / 1440);
+    return `${diffDays}d ago`;
+  }
 
   return date.toLocaleDateString(undefined, {
     month: "short",
@@ -33,8 +38,8 @@ const formatTime = (timeString: string | undefined) => {
   });
 };
 
-const Messages = () => {
-  const { chats, loading, error } = useChatInbox();
+const Messages: React.FC = () => {
+  const { chats, isLoading, error, isRefetching, refetch } = useChatInbox();
   const router = useRouter();
 
   const onPressMessage = (chat: any) => {
@@ -43,12 +48,13 @@ const Messages = () => {
       params: {
         userId: chat.otherUserId?.toString() ?? "",
         userName: chat.otherUsername ?? "",
-        profilePic: chat.otherPicture ?? "", // optional, add if available
+        profilePic: chat.otherPicture ?? "",
       },
     });
   };
 
-  const renderItem = ({ item }: { item: any }) => (
+  // Render function for each item in the FlatList
+  const renderChatItem = ({ item }: { item: any }) => (
     <TouchableOpacity
       style={styles.messageBox}
       onPress={() => onPressMessage(item)}
@@ -59,15 +65,17 @@ const Messages = () => {
             source={
               item.otherPicture
                 ? { uri: item.otherPicture }
-                : require("@/assets/images/profile-pic-placeholder.png") // fallback image if no profile picture
+                : require("@/assets/images/profile-pic-placeholder.png")
             }
             style={styles.profileImage}
           />
-          <Text style={styles.sender}>{item.otherUsername}</Text>
+          <Text style={styles.sender}>
+            {item.otherUsername || "Unknown User"}
+          </Text>
         </View>
         <Text style={styles.time}>{formatTime(item.lastMessageTime)}</Text>
       </View>
-      <Text style={styles.subject} numberOfLines={1}>
+      <Text style={styles.lastMessagePreview} numberOfLines={1}>
         {item.lastMessage || "No messages yet"}
       </Text>
     </TouchableOpacity>
@@ -86,7 +94,7 @@ const Messages = () => {
         </TouchableOpacity>
       </View>
 
-      {loading ? (
+      {isLoading && !isRefetching ? (
         <ActivityIndicator
           size="large"
           color="#008B8B"
@@ -96,23 +104,26 @@ const Messages = () => {
         <Text style={styles.errorText}>
           {typeof error === "string" ? error : "Failed to load conversations."}
         </Text>
-      ) : chats.length === 0 ? (
+      ) : chats && chats.length === 0 ? (
         <Text style={styles.emptyText}>No conversations yet.</Text>
       ) : (
         <FlatList
           data={chats}
-          keyExtractor={(item) =>
-            item.chatId?.toString() ?? Math.random().toString()
+          keyExtractor={
+            (item) => item.chatId?.toString() ?? `chat-${Math.random()}` // More stable fallback key
           }
-          renderItem={renderItem}
-          contentContainerStyle={{ paddingBottom: 20, paddingHorizontal: 8 }}
+          renderItem={renderChatItem}
+          contentContainerStyle={styles.flatListContent}
           showsVerticalScrollIndicator={false}
+          onRefresh={refetch}
+          refreshing={isRefetching}
         />
       )}
     </SafeAreaView>
   );
 };
 
+// --- Stylesheet ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
@@ -123,91 +134,105 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 16,
-    paddingHorizontal: 16,
+    marginBottom: 20,
+    paddingHorizontal: 20,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "700",
+    fontSize: 30,
     color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
   },
   transactionsButton: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#E0FFFF", // Light background for the button
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 20,
+    paddingVertical: 10, // Increased padding
+    paddingHorizontal: 15, // Increased padding
+    borderRadius: 25, // More rounded pill shape
     borderWidth: 1,
     borderColor: "#008B8B",
   },
   transactionsButtonText: {
     color: "#008B8B",
-    fontSize: 14,
+    fontSize: 15, // Slightly larger text
     fontWeight: "600",
-    marginRight: 5,
+    marginRight: 6, // More space
+    fontFamily: "Poppins_500Medium",
   },
   messageBox: {
     backgroundColor: "#fff",
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 16,
-    marginBottom: 14,
+    paddingVertical: 18, // More vertical padding
+    paddingHorizontal: 22, // More horizontal padding
+    borderRadius: 18, // More rounded corners
+    marginBottom: 16, // More space between items
+    marginHorizontal: 12, // Add horizontal margin to the cards themselves
     borderWidth: 1,
-    borderColor: "#B0C4C4",
+    borderColor: "#E0F2F2", // Lighter border color
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 2 }, // Slightly more pronounced shadow
+    shadowOpacity: 0.15, // Increased opacity
+    shadowRadius: 4, // Increased radius
+    elevation: 4, // For Android shadow
   },
   messageHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 6,
+    marginBottom: 8, // More space between header and message preview
     alignItems: "center",
+    fontFamily: "Poppins_400Regular",
   },
   profileContainer: {
     flexDirection: "row",
     alignItems: "center",
   },
   profileImage: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    marginRight: 10,
-    backgroundColor: "#ccc",
+    width: 40, // Larger profile picture
+    height: 40,
+    borderRadius: 20, // Half of width/height for perfect circle
+    marginRight: 12, // More space
+    backgroundColor: "#D3D3D3", // Placeholder background for image
   },
   sender: {
-    fontSize: 16,
+    fontSize: 17, // Larger font
     fontWeight: "700",
     color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
   },
   time: {
-    fontSize: 12,
-    color: "#008B8B",
+    fontSize: 13, // Slightly larger time font
+    color: "#777", // Softer color for time
+    fontFamily: "Poppins_400Regular",
   },
-  subject: {
+  lastMessagePreview: {
     fontSize: 15,
-    fontWeight: "600",
-    color: "#333",
-    marginBottom: 4,
+    fontWeight: "500", // Medium weight
+    color: "#555", // Softer color for message preview
+    fontFamily: "Poppins_500Medium",
   },
   loadingIndicator: {
-    marginTop: 20,
+    flex: 1, // Take full space for centering
+    justifyContent: "center",
+    alignItems: "center",
   },
   errorText: {
-    color: "red",
+    color: "#D9534F", // A clear error red
     textAlign: "center",
-    marginTop: 20,
+    marginTop: 40,
+    fontSize: 16,
     paddingHorizontal: 20,
+    fontFamily: "Poppins_400Regular",
   },
   emptyText: {
     textAlign: "center",
-    marginTop: 40,
-    color: "#777",
-    fontSize: 16,
+    marginTop: 60, // More space from top
+    color: "#999", // Softer grey
+    fontSize: 18, // Larger font for empty state
     paddingHorizontal: 20,
+    fontFamily: "Poppins_400Regular",
+  },
+  flatListContent: {
+    paddingBottom: 20,
+    paddingHorizontal: 8, // Adjust as per `messageBox` marginHorizontal
   },
 });
 

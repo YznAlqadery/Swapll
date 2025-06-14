@@ -1,20 +1,19 @@
 import React, { createContext, useContext, useState, ReactNode } from "react";
 
-type User = {
-  referralCode: string;
-  myReferralCode: string;
+export interface User {
   id: number;
   userName: string;
-  firstName: string;
-  lastName: string;
   email: string;
+  balance: number;
+  referralCode?: string;
+  myReferralCode?: string;
+  firstName?: string;
+  lastName?: string;
   phone?: string;
   address?: string;
   bio?: string;
   profilePic?: string;
-  balance: number;
-  // add other user fields as needed
-};
+}
 
 type LoggedInUserContextType = {
   user: User | null;

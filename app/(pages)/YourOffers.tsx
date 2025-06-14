@@ -175,7 +175,7 @@ const YourOffers = () => {
         <View style={styles.headerContainer}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => navigation.goBack()}
+            onPress={() => router.push("/(tabs)")}
           >
             <Feather name="arrow-left" size={24} color="#008B8B" />
           </TouchableOpacity>

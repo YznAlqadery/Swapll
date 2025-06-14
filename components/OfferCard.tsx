@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -22,9 +22,6 @@ const OfferCard = ({
   image: string;
   id: number;
 }) => {
-  const { user: token } = useAuth();
-  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
-  const [aspectRatio, setAspectRatio] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
@@ -48,21 +45,27 @@ const OfferCard = ({
         });
       }}
     >
-      {localImageUri && (
-        <Image
-          source={{ uri: localImageUri }}
-          style={[
-            styles.image,
-            aspectRatio !== null ? { aspectRatio } : { height: 100 }, // fallback height while loading aspectRatio
-          ]}
-        />
-      )}
-      {!localImageUri && (
+      {!image && (
         <Image
           source={require("@/assets/images/no_image.jpeg")}
           style={[
             styles.image,
-            aspectRatio !== null ? { aspectRatio } : { height: 120 }, // fallback height while loading aspectRatio
+            {
+              width: "100%",
+              height: 100,
+            },
+          ]}
+        />
+      )}
+      {image && (
+        <Image
+          source={{ uri: image }}
+          style={[
+            styles.image,
+            {
+              width: "100%",
+              height: 100,
+            },
           ]}
         />
       )}

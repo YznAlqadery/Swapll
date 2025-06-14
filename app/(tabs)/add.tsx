@@ -9,7 +9,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Modal, // Import Modal for the custom component
+  Pressable, // Import Pressable for modal backdrop
 } from "react-native";
 import React, { useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
@@ -25,6 +26,48 @@ import { useRouter } from "expo-router";
 type Category = {
   id: number;
   title: string;
+};
+
+// --- Custom Alert Modal Component (Copied from OfferDetails.tsx pattern) ---
+interface CustomAlertModalProps {
+  isVisible: boolean;
+  title: string;
+  message: string;
+  onClose: () => void;
+  onConfirm?: () => void; // Optional callback for "OK" button
+}
+
+const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
+  isVisible,
+  title,
+  message,
+  onClose,
+  onConfirm,
+}) => {
+  return (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
+      <Pressable style={modalStyles.centeredView} onPress={onClose}>
+        <View style={modalStyles.modalView}>
+          <Text style={modalStyles.modalTitle}>{title}</Text>
+          <Text style={modalStyles.modalMessage}>{message}</Text>
+          <TouchableOpacity
+            style={modalStyles.okButton}
+            onPress={() => {
+              onClose();
+              if (onConfirm) onConfirm();
+            }}
+          >
+            <Text style={modalStyles.okButtonText}>OK</Text>
+          </TouchableOpacity>
+        </View>
+      </Pressable>
+    </Modal>
+  );
 };
 
 const AddPost = () => {
@@ -45,17 +88,45 @@ const AddPost = () => {
 
   const categories = queryClient.getQueryData(["categories"]) as Category[];
 
+  // MODIFIED: Changed 'key' to match 'value' for enum consistency
   const offerTypes = [
-    { key: "1", value: "SKILL" },
-    { key: "2", value: "SERVICE" },
-    { key: "3", value: "ITEM" },
+    { key: "SKILL", value: "SKILL" },
+    { key: "SERVICE", value: "SERVICE" },
+    { key: "ITEM", value: "ITEM" },
   ];
 
+  // MODIFIED: Changed 'key' to match 'value' for enum consistency
   const paymentMethods = [
-    { key: "1", value: "SWAP" },
-    { key: "2", value: "COIN" },
-    { key: "3", value: "BOTH" },
+    { key: "SWAP", value: "SWAP" },
+    { key: "COIN", value: "COIN" },
+    { key: "BOTH", value: "BOTH" },
   ];
+
+  // --- State for Custom Alert Modal ---
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertOnConfirm, setAlertOnConfirm] = useState<
+    (() => void) | undefined
+  >(undefined);
+
+  const showAlert = (
+    title: string,
+    message: string,
+    onConfirm?: () => void
+  ) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertOnConfirm(() => onConfirm); // Set the function for the callback
+    setIsAlertVisible(true);
+  };
+
+  const hideAlert = () => {
+    setIsAlertVisible(false);
+    setAlertTitle("");
+    setAlertMessage("");
+    setAlertOnConfirm(undefined);
+  };
 
   const handleSelectImage = async () => {
     const selectedImage = await selectImage();
@@ -67,13 +138,31 @@ const AddPost = () => {
   const removeImage = () => setImage(undefined);
 
   const handleAddOffer = async () => {
-    // Replace these with your actual state variables
+    // Basic validation
+    if (
+      !title ||
+      !description ||
+      price <= 0 ||
+      !categoryId ||
+      !offerType ||
+      !paymentMethod ||
+      !deliveryTime ||
+      !image
+    ) {
+      // Using custom modal for validation error
+      showAlert(
+        "Missing Information",
+        "Please fill in all the required fields, including adding an image, before submitting your offer."
+      );
+      return;
+    }
+
     const offer = {
       title,
       description,
       price,
-      type: offerType,
-      paymentMethod,
+      type: offerType, // This will now be "SKILL", "ITEM", or "SERVICE"
+      paymentMethod, // This will now be "SWAP", "COIN", or "BOTH"
       deliveryTime,
       categoryId,
     };
@@ -112,6 +201,7 @@ const AddPost = () => {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
+            // 'Content-Type': 'multipart/form-data' is usually set automatically by FormData
           },
           body: formData,
         }
@@ -119,32 +209,67 @@ const AddPost = () => {
 
       if (!response.ok) {
         const contentType = response.headers.get("content-type");
-        const errorData = contentType?.includes("application/json")
-          ? await response.json()
-          : await response.text();
+        let errorData: any;
+        if (contentType?.includes("application/json")) {
+          errorData = await response.json();
+        } else {
+          errorData = await response.text();
+        }
 
         console.error("Upload failed:", errorData);
-        throw new Error(errorData?.error || "Failed to add offer");
+        throw new Error(
+          errorData?.error ||
+            errorData?.message ||
+            "Failed to add offer due to server issue."
+        );
       }
 
       const data = await response.json();
       console.log("Offer added:", data);
-      Alert.alert("Success", "Offer added successfully!");
+      // Using custom modal for success message
+      showAlert(
+        "Offer Added",
+        "Your offer has been successfully posted!",
+        async () => {
+          // Reset form fields only on success and after user acknowledges
+          setTitle("");
+          setDescription("");
+          setPrice(0);
+          setCategoryId(0);
+          setImage(undefined);
+          setOfferType("");
+          setPaymentMethod("");
+          setDeliveryTime("");
 
-      setTitle("");
-      setDescription("");
-      setPrice(0);
-      setCategoryId(0);
-      setImage(undefined);
-      setOfferType("");
-      setPaymentMethod("");
-      setDeliveryTime("");
-
-      await revalidate(categoryId ?? 0);
-      router.replace("/(pages)/YourOffers");
+          await revalidate(categoryId ?? 0); // Revalidate offers based on category
+          router.replace("/(tabs)"); // Navigate to YourOffers page
+        }
+      );
     } catch (error: any) {
       console.error("Error:", error.message);
-      Alert.alert("Error", error.message || "Could not add offer.");
+      let userFriendlyMessage =
+        "An unexpected error occurred. Please try again.";
+
+      if (typeof error.message === "string" && error.message.length > 0) {
+        if (
+          error.message.includes("Failed to add offer") ||
+          error.message.includes("server issue")
+        ) {
+          userFriendlyMessage =
+            "We couldn't add your offer right now. Please try again in a moment.";
+        } else if (error.message.includes("access token")) {
+          userFriendlyMessage =
+            "Your session has expired. Please log in again.";
+        } else {
+          userFriendlyMessage = error.message;
+        }
+      } else {
+        userFriendlyMessage =
+          "Could not add your offer. Please check your internet connection.";
+      }
+
+      // Using custom modal for submission failure
+      showAlert("Submission Failed", userFriendlyMessage);
     } finally {
       setIsLoading(false);
     }
@@ -166,7 +291,7 @@ const AddPost = () => {
             <SelectList
               setSelected={(val: any) => setOfferType(val)}
               data={offerTypes}
-              save="value"
+              save="value" // Keep save="value", but now key and value are the same.
               fontFamily="Poppins_400Regular"
               boxStyles={styles.input}
               placeholder="Select offer type"
@@ -179,6 +304,7 @@ const AddPost = () => {
                 />
               }
               search={false}
+              defaultOption={offerTypes.find((opt) => opt.value === offerType)} // Maintain selection
             />
             <View style={{ height: 70, marginLeft: -10 }}>
               <CategoryFlatlist
@@ -220,6 +346,7 @@ const AddPost = () => {
               placeholder="Enter title"
               placeholderTextColor="#888"
               onChangeText={setTitle}
+              value={title}
             />
             <Text style={styles.label}>Description</Text>
             <TextInput
@@ -229,6 +356,7 @@ const AddPost = () => {
               numberOfLines={4}
               placeholderTextColor="gray"
               onChangeText={setDescription}
+              value={description}
             />
             <Text style={styles.label}>Price</Text>
             <TextInput
@@ -236,6 +364,8 @@ const AddPost = () => {
               placeholder="Enter price in JOD"
               placeholderTextColor="gray"
               onChangeText={(val) => setPrice(parseFloat(val))}
+              keyboardType="numeric"
+              value={price > 0 ? price.toString() : ""}
             />
             <Text style={styles.label}>Delivery Time</Text>
             <TextInput
@@ -249,7 +379,7 @@ const AddPost = () => {
             <SelectList
               setSelected={(val: any) => setPaymentMethod(val)}
               data={paymentMethods}
-              save="value"
+              save="value" // Keep save="value", but now key and value are the same.
               boxStyles={styles.input}
               fontFamily="Poppins_400Regular"
               placeholder="Select payment method"
@@ -262,6 +392,9 @@ const AddPost = () => {
                 />
               }
               search={false}
+              defaultOption={paymentMethods.find(
+                (opt) => opt.value === paymentMethod
+              )} // Maintain selection
             />
 
             <TouchableOpacity
@@ -276,6 +409,15 @@ const AddPost = () => {
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
+
+      {/* Custom Alert Modal */}
+      <CustomAlertModal
+        isVisible={isAlertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={hideAlert}
+        onConfirm={alertOnConfirm}
+      />
     </SafeAreaView>
   );
 };
@@ -380,6 +522,62 @@ const styles = StyleSheet.create({
     fontSize: 12,
     textAlign: "center",
     fontFamily: "Poppins_400Regular",
+  },
+});
+
+// Styles for the custom modal
+const modalStyles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)", // Semi-transparent background
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: "80%", // Adjust width as needed
+  },
+  modalTitle: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
+  },
+  modalMessage: {
+    marginBottom: 20,
+    textAlign: "center",
+    fontSize: 16,
+    color: "#333",
+    fontFamily: "Poppins_400Regular",
+  },
+  okButton: {
+    backgroundColor: "#20B2AA",
+    borderRadius: 10,
+    padding: 12,
+    elevation: 2,
+    minWidth: 100,
+    alignItems: "center",
+  },
+  okButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 16,
+    fontFamily: "Poppins_600SemiBold",
   },
 });
 

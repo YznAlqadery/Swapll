@@ -11,7 +11,7 @@ import {
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { AuthContext } from "@/context/AuthContext";
-import { MaterialIcons, FontAwesome5 } from "@expo/vector-icons";
+import { MaterialIcons, FontAwesome5, FontAwesome } from "@expo/vector-icons"; // Import FontAwesome for logout icon
 import { Link, useRouter } from "expo-router";
 import * as Clipboard from "expo-clipboard";
 import { Feather } from "@expo/vector-icons";
@@ -33,6 +33,7 @@ interface User {
   address: string;
   referralCode: string | null;
   profilePic: string;
+  bio: string | null; // Added bio to interface as it's being used
 }
 
 const toastConfig = {
@@ -54,13 +55,25 @@ const toastConfig = {
   ),
 };
 
+// Helper function to format phone number
+const formatPhoneNumber = (phoneNumber: string) => {
+  if (!phoneNumber) return "N/A";
+  // Remove non-numeric characters
+  const cleaned = ("" + phoneNumber).replace(/\D/g, "");
+  const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
+  if (match) {
+    return `(${match[1]}) ${match[2]}-${match[3]}`;
+  }
+  return phoneNumber; // Return original if format doesn't match
+};
+
 const Profile = () => {
   const authContext = useContext(AuthContext);
   const { user } = useLoggedInUser();
   const token = authContext?.user ?? null;
 
   const [localImageUri, setLocalImageUri] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false); // Controlled by user hook, likely not needed here for loading user profile data
 
   const router = useRouter();
 
@@ -68,46 +81,23 @@ const Profile = () => {
     authContext?.setUser(null);
     router.replace("/(auth)/Login");
   };
-  // useEffect(() => {
-  //   async function fetchProfileImage() {
-  //     if (!user?.profilePic || !token) return;
 
-  //     setIsLoading(true);
-  //     try {
-  //       const imageUrl = process.env.EXPO_PUBLIC_API_URL + user.profilePic;
-
-  //       // Create a local file path to save the image
-  //       const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
-
-  //       // Download the image with authorization headers
-  //       const downloadRes = await FileSystem.downloadAsync(imageUrl, localUri, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-
-  //       setLocalImageUri(downloadRes.uri);
-  //     } catch (error) {
-  //       console.error("Failed downloading profile pic:", error);
-  //       setLocalImageUri(null);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   }
-
-  //   fetchProfileImage();
-  // }, [user, token]);
-  //console.log(user?.profilePic);
   const copyToClipboard = async (text: string) => {
     await Clipboard.setStringAsync(text);
     Toast.show({
       type: "success",
       text1: "Copied!",
       text2: `${text} copied to clipboard.`,
-      position: "top", // or 'top'
-      visibilityTime: 2000, // duration in ms
+      position: "top",
+      visibilityTime: 2000,
     });
   };
 
+  // The isLoading state here seems to be unused for actual data loading
+  // as user data comes from useLoggedInUser hook.
+  // I will keep it but it might be redundant depending on its intended use.
   if (isLoading) {
+    // This part will only show a spinner if setIsLoading is set to true somewhere.
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle={"dark-content"} />
@@ -129,14 +119,7 @@ const Profile = () => {
         contentContainerStyle={{ paddingHorizontal: 6, paddingTop: 0 }}
       >
         <View style={styles.profileContainer}>
-          {isLoading && (
-            <ActivityIndicator
-              size="large"
-              color="#008B8B"
-              style={{ marginTop: 200 }}
-            />
-          )}
-
+          {/* Removed redundant isLoading check here as it's handled above */}
           <View style={styles.profileWrapper}>
             <Image
               source={require("@/assets/images/profile-page-bg.png")}
@@ -144,21 +127,21 @@ const Profile = () => {
               resizeMode="cover"
             />
           </View>
-          {!isLoading && (
-            <View style={styles.profilePicWrapper}>
-              {user?.profilePic ? (
-                <Image
-                  source={{ uri: user?.profilePic }}
-                  style={styles.profilePic}
-                />
-              ) : (
-                <Image
-                  source={require("@/assets/images/profile-pic-placeholder.png")}
-                  style={styles.profilePic}
-                />
-              )}
-            </View>
-          )}
+          {/* {!isLoading && ( is always true now if the component renders this far */}
+          <View style={styles.profilePicWrapper}>
+            {user?.profilePic ? (
+              <Image
+                source={{ uri: user?.profilePic }}
+                style={styles.profilePic}
+              />
+            ) : (
+              <Image
+                source={require("@/assets/images/profile-pic-placeholder.png")}
+                style={styles.profilePic}
+              />
+            )}
+          </View>
+          {/* )} */}
 
           <View
             style={{
@@ -166,10 +149,10 @@ const Profile = () => {
             }}
           >
             <Text style={styles.username}>
-              {user?.firstName.substring(0, 1).toLocaleUpperCase()! +
-                user?.firstName.substring(1)}{" "}
-              {user?.lastName.substring(0, 1).toLocaleUpperCase()! +
-                user?.lastName.substring(1)}
+              {user?.firstName?.substring(0, 1).toLocaleUpperCase()! +
+                user?.firstName?.substring(1)}{" "}
+              {user?.lastName?.substring(0, 1).toLocaleUpperCase()! +
+                user?.lastName?.substring(1)}
             </Text>
           </View>
           <View
@@ -296,7 +279,10 @@ const Profile = () => {
               />
               <Text style={styles.infoLabel}>Phone</Text>
             </View>
-            <Text style={styles.infoText}>{user?.phone}</Text>
+            {/* MODIFIED: Format phone number */}
+            <Text style={styles.infoText}>
+              {formatPhoneNumber(user?.phone || "")}
+            </Text>
           </View>
           <View style={styles.infoBox}>
             <View
@@ -347,7 +333,7 @@ const Profile = () => {
           style={[
             styles.personalInfo,
             {
-              marginBottom: 50,
+              marginBottom: 20, // Adjusted margin to make space for logout
             },
           ]}
         >
@@ -359,32 +345,36 @@ const Profile = () => {
               width: "100%",
               padding: 16,
               borderRadius: 10,
+              justifyContent: "space-between", // To push chevron to the right
             }}
           >
-            <FontAwesome5
-              name="box"
-              size={20}
-              color="#008B8B"
-              style={{ marginRight: 6 }}
-            />
-            <Text
-              style={[
-                styles.infoLabel,
-                {
-                  fontSize: 16,
-                  fontWeight: "bold",
-                  fontFamily: "Poppins_700Bold",
-                  color: "#008B8B",
-                },
-              ]}
-            >
-              Your offers
-            </Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <FontAwesome5
+                name="box"
+                size={20}
+                color="#008B8B"
+                style={{ marginRight: 6 }}
+              />
+              <Text
+                style={[
+                  styles.infoLabel,
+                  {
+                    fontSize: 16,
+                    fontWeight: "bold",
+                    fontFamily: "Poppins_700Bold",
+                    color: "#008B8B",
+                  },
+                ]}
+              >
+                Your offers
+              </Text>
+            </View>
             <FontAwesome5 name="chevron-right" size={16} color="#008B8B" />
           </View>
         </TouchableOpacity>
 
-        {/* <View style={styles.logoutContainer}>
+        {/* MODIFIED: Logout Button */}
+        <View style={styles.logoutContainer}>
           <TouchableOpacity
             style={styles.logoutButton}
             onPress={handleLogout}
@@ -393,7 +383,7 @@ const Profile = () => {
             <FontAwesome name="sign-out" size={20} color="#008B8B" />
             <Text style={styles.logoutText}>Log Out</Text>
           </TouchableOpacity>
-        </View> */}
+        </View>
       </ScrollView>
       <Toast config={toastConfig} />
     </SafeAreaView>
@@ -477,6 +467,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
   },
   backButton: {
+    // This style is defined but not used in the provided JSX
     position: "absolute",
     top: 110,
     left: 16,
@@ -487,7 +478,8 @@ const styles = StyleSheet.create({
   },
   logoutContainer: {
     width: "100%",
-    padding: 16,
+    paddingHorizontal: 16, // Ensure consistent padding with other sections
+    marginBottom: 50, // Added margin for spacing at the bottom
   },
   logoutButton: {
     flexDirection: "row",

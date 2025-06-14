@@ -8,6 +8,14 @@ import { useRouter } from "expo-router";
 
 import { Text, View } from "react-native";
 
+import { LogBox } from "react-native";
+
+// To ignore the specific warning:
+LogBox.ignoreLogs([
+  "Warning: Text strings must be rendered within a <Text> component.",
+  "Warning: Encountered two children with the same key,",
+]);
+
 const InnerIndex = () => {
   const { user, setUser } = useAuth();
   const router = useRouter();

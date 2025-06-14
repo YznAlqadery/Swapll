@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import {
   View,
   Text,
@@ -10,9 +10,8 @@ import {
   StatusBar,
   Linking,
 } from "react-native";
-import * as FileSystem from "expo-file-system";
 import { useAuth } from "@/context/AuthContext";
-import { FontAwesome, FontAwesome5 } from "@expo/vector-icons";
+import { FontAwesome5, Ionicons } from "@expo/vector-icons"; // Import Ionicons
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import {
@@ -33,9 +32,39 @@ interface User {
   phone: string;
   address: string;
   referralCode: string | null;
-  profilePic: string;
+  profilePic: string; // This should be the relative path from the backend
   bio: string;
 }
+
+/**
+ * Helper function to format phone numbers.
+ * This is a basic formatter and can be extended for more complex international formats
+ * or by using a dedicated library (e.g., 'libphonenumber-js').
+ */
+const formatPhoneNumber = (phoneNumberString: string | undefined): string => {
+  if (!phoneNumberString) return "";
+
+  // Remove all non-digit characters
+  const cleaned = ("" + phoneNumberString).replace(/\D/g, "");
+
+  // Basic formatting for a 10-digit number (e.g., 079 123 4567)
+  // or 12-digit international (e.g., +962 79 123 4567)
+  if (cleaned.length === 12 && cleaned.startsWith("962")) {
+    // Assumes +962 prefix, e.g., 962791234567 -> +962 79 123 4567
+    return `+${cleaned.substring(0, 3)} ${cleaned.substring(
+      3,
+      5
+    )} ${cleaned.substring(5, 8)} ${cleaned.substring(8, 12)}`;
+  } else if (cleaned.length === 10 && cleaned.startsWith("07")) {
+    // Assumes local 07x prefix, e.g., 0791234567 -> 079 123 4567
+    return `${cleaned.substring(0, 3)} ${cleaned.substring(
+      3,
+      6
+    )} ${cleaned.substring(6, 10)}`;
+  }
+  // Fallback to original string if no specific format matches
+  return phoneNumberString;
+};
 
 async function fetchUser(
   userId: number,
@@ -61,8 +90,6 @@ const UserProfile = () => {
   const { user: token } = useAuth();
   const { user } = useLoggedInUser();
   const { userId } = useLocalSearchParams();
-  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
 
   const router = useRouter();
 
@@ -72,45 +99,24 @@ const UserProfile = () => {
   // Convert to number (or NaN if invalid)
   const userIdNumber = normalizedUserId ? Number(normalizedUserId) : undefined;
 
+  // Redirect if viewing own profile
   if (user?.id !== undefined && user?.id === userIdNumber) {
     router.replace("/(tabs)/profile");
+    return null; // Return null to prevent rendering this component
   }
 
-  const { data: otherUser } = useQuery({
-    queryKey: ["otherUser", userId],
-    queryFn: () => fetchUser(userId as unknown as number, token as string),
-    enabled: !!userId,
+  // Use useQuery for fetching other user's data
+  const {
+    data: otherUser,
+    isLoading: isOtherUserLoading, // Renamed to clearly indicate it's for 'otherUser'
+    error: otherUserError,
+  } = useQuery<User | undefined>({
+    queryKey: ["otherUser", userIdNumber], // Use userIdNumber for queryKey
+    queryFn: () => fetchUser(userIdNumber as number, token as string),
+    enabled: !!userIdNumber && !!token, // Only fetch if userIdNumber and token are available
   });
 
-  // useEffect(() => {
-  //   async function fetchProfileImage() {
-  //     if (!otherUser?.profilePic || !token) return;
-
-  //     setIsLoading(true);
-  //     try {
-  //       const imageUrl = process.env.EXPO_PUBLIC_API_URL + otherUser.profilePic;
-
-  //       // Create a local file path to save the image
-  //       const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
-
-  //       // Download the image with authorization headers
-  //       const downloadRes = await FileSystem.downloadAsync(imageUrl, localUri, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-
-  //       setLocalImageUri(downloadRes.uri);
-  //     } catch (error) {
-  //       console.error("Failed downloading profile pic:", error);
-  //       setLocalImageUri(null);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   }
-
-  //   fetchProfileImage();
-  // }, [otherUser, token]);
-
-  if (isLoading) {
+  if (isOtherUserLoading) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle={"dark-content"} />
@@ -120,27 +126,54 @@ const UserProfile = () => {
             color="#008B8B"
             style={{ marginTop: 200 }}
           />
+          <Text style={{ marginTop: 10, color: "#008B8B" }}>
+            Loading user profile...
+          </Text>
         </View>
       </SafeAreaView>
     );
   }
 
+  // Show error or not found message if data fetching failed or user is not found
+  if (otherUserError || !otherUser) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <StatusBar barStyle={"dark-content"} />
+        <View style={styles.profileContainer}>
+          <Text style={styles.errorText}>
+            {otherUserError
+              ? `Error: ${otherUserError.message}`
+              : "User profile not found or could not be loaded."}
+          </Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.retryButton}
+          >
+            <Text style={styles.retryButtonText}>Go Back</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  // Main content once user data is loaded
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle={"dark-content"} />
+        {/* Back Button */}
+        <TouchableOpacity
+          style={styles.backButton}
+          onPress={() => router.back()}
+          activeOpacity={0.7}
+        >
+          <Ionicons name="chevron-back" size={24} color="#008B8B" />
+        </TouchableOpacity>
+
         <ScrollView
           contentContainerStyle={{ paddingHorizontal: 6, paddingTop: 0 }}
         >
           <View style={styles.profileContainer}>
-            {isLoading && (
-              <ActivityIndicator
-                size="large"
-                color="#008B8B"
-                style={{ marginTop: 200 }}
-              />
-            )}
-
             <View style={styles.profileWrapper}>
               <Image
                 source={require("@/assets/images/profile-page-bg.png")}
@@ -148,21 +181,19 @@ const UserProfile = () => {
                 resizeMode="cover"
               />
             </View>
-            {!isLoading && (
-              <View style={styles.profilePicWrapper}>
-                {otherUser?.profilePic ? (
-                  <Image
-                    source={{ uri: otherUser.profilePic }}
-                    style={styles.profilePic}
-                  />
-                ) : (
-                  <Image
-                    source={require("@/assets/images/profile-pic-placeholder.png")}
-                    style={styles.profilePic}
-                  />
-                )}
-              </View>
-            )}
+            <View style={styles.profilePicWrapper}>
+              <Image
+                source={
+                  otherUser?.profilePic
+                    ? { uri: otherUser?.profilePic }
+                    : require("@/assets/images/profile-pic-placeholder.png")
+                }
+                style={styles.profilePic}
+                onError={(e) =>
+                  console.log("Profile Image Load Error:", e.nativeEvent.error)
+                } // Added error logging for the Image component itself
+              />
+            </View>
 
             <View
               style={{
@@ -214,6 +245,7 @@ const UserProfile = () => {
             >
               Personal Information
             </Text>
+            {/* START: Enhanced Messaging Button (with original image) */}
             <TouchableOpacity
               onPress={() =>
                 router.replace({
@@ -225,12 +257,15 @@ const UserProfile = () => {
                   },
                 })
               }
+              style={styles.messageButton} // Apply new style here
             >
               <Image
-                source={require("@/assets/images/swapll_tabs.png")}
-                style={{ width: 30, height: 30 }}
+                source={require("@/assets/images/swapll_message.png")} // Retained original image
+                style={styles.messageButtonIcon} // Applied specific style for the icon
               />
+              <Text style={styles.messageButtonText}>Message</Text>
             </TouchableOpacity>
+            {/* END: Enhanced Messaging Button */}
           </View>
 
           <View style={styles.personalInfo}>
@@ -256,7 +291,10 @@ const UserProfile = () => {
                 />
                 <Text style={styles.infoLabel}>Phone</Text>
               </View>
-              <Text style={styles.infoText}>{otherUser?.phone}</Text>
+              {/* Apply phone number formatting here */}
+              <Text style={styles.infoText}>
+                {formatPhoneNumber(otherUser?.phone)}
+              </Text>
             </TouchableOpacity>
             <View style={styles.infoBox}>
               <View
@@ -287,9 +325,10 @@ const UserProfile = () => {
           <TouchableOpacity
             onPress={() =>
               router.push({
-                pathname: "/(pages)/YourOffers",
+                pathname: "/(pages)/YourOffers", // This path might need to be dynamic to show *other* user's offers
                 params: {
                   userId: otherUser?.id,
+                  userName: otherUser?.userName, // Pass userName for display in YourOffers page if needed
                 },
               })
             }
@@ -308,27 +347,30 @@ const UserProfile = () => {
                 width: "100%",
                 padding: 16,
                 borderRadius: 10,
+                justifyContent: "space-between", // Added to push arrow to the right
               }}
             >
-              <FontAwesome5
-                name="box"
-                size={20}
-                color="#008B8B"
-                style={{ marginRight: 6 }}
-              />
-              <Text
-                style={[
-                  styles.infoLabel,
-                  {
-                    fontSize: 16,
-                    fontWeight: "bold",
-                    fontFamily: "Poppins_700Bold",
-                    color: "#008B8B",
-                  },
-                ]}
-              >
-                {otherUser?.userName}'s Offers
-              </Text>
+              <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <FontAwesome5
+                  name="box"
+                  size={20}
+                  color="#008B8B"
+                  style={{ marginRight: 6 }}
+                />
+                <Text
+                  style={[
+                    styles.infoLabel,
+                    {
+                      fontSize: 16,
+                      fontWeight: "bold",
+                      fontFamily: "Poppins_700Bold",
+                      color: "#008B8B",
+                    },
+                  ]}
+                >
+                  {otherUser?.userName}'s Offers
+                </Text>
+              </View>
               <FontAwesome5 name="chevron-right" size={16} color="#008B8B" />
             </View>
           </TouchableOpacity>
@@ -339,7 +381,7 @@ const UserProfile = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 16, backgroundColor: "#F0F7F7" },
+  container: { flex: 1, backgroundColor: "#F0F7F7" }, // Removed horizontal padding from container
   profileContainer: { alignItems: "center", justifyContent: "center" },
   profileWrapper: {
     width: "100%",
@@ -388,8 +430,9 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "flex-start",
     alignSelf: "flex-start",
-    padding: 16,
+    paddingHorizontal: 16, // Added horizontal padding here instead of container
     width: "100%",
+    marginTop: 10,
   },
   infoBox: {
     flexDirection: "row",
@@ -414,14 +457,20 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Poppins_400Regular",
   },
+  // Adjusted backButton style
   backButton: {
     position: "absolute",
-    top: 110,
+    top: 50, // Adjust this as needed based on StatusBar height and desired padding
     left: 16,
-    zIndex: 10,
-    backgroundColor: "#F0F7F7",
-    borderRadius: 20,
-    padding: 4,
+    zIndex: 10, // Ensure it's above other content
+    backgroundColor: "#fff", // White background
+    borderRadius: 25, // Circular shape
+    padding: 8, // Padding inside the button
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 3,
   },
   logoutContainer: {
     width: "100%",
@@ -465,6 +514,51 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
     color: "#555",
     lineHeight: 20,
+  },
+  errorText: {
+    color: "red",
+    textAlign: "center",
+    marginTop: 50,
+    fontSize: 16,
+  },
+  retryButton: {
+    marginTop: 20,
+    backgroundColor: "#008B8B",
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+  },
+  retryButtonText: {
+    color: "#fff",
+    fontSize: 16,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  // Styles for the message button (with original image)
+  messageButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#E0F2F2", // A lighter shade of your theme color
+    paddingVertical: 8,
+    paddingHorizontal: 15,
+    borderRadius: 20, // Pill-shaped
+    borderWidth: 1,
+    borderColor: "#008B8B", // Theme color border
+    shadowColor: "#000", // Subtle shadow for depth
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 3, // Android shadow
+    gap: 8, // Space between icon and text (React Native 0.71+)
+  },
+  messageButtonIcon: {
+    width: 20, // Adjust size as needed for the image
+    height: 20, // Adjust size as needed for the image
+    tintColor: "#008B8B", // Apply tint color if you want to recolor the image
+  },
+  messageButtonText: {
+    color: "#008B8B",
+    fontSize: 14,
+    fontFamily: "Poppins_600SemiBold",
   },
 });
 

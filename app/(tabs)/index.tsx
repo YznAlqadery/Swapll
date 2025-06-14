@@ -8,12 +8,13 @@ import {
   Image,
   ActivityIndicator,
   StatusBar,
+  LogBox, // LogBox imported here for demonstration, but best placed in App.js/index.js
 } from "react-native";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useQuery } from "@tanstack/react-query";
-import CategoryFlatlist from "@/components/CategoryFlatlist"; // Your updated component
+import CategoryFlatlist from "@/components/CategoryFlatlist";
 import { useAuth } from "@/context/AuthContext";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
 
@@ -21,9 +22,16 @@ import Divider from "@/components/Divider";
 import { useRouter } from "expo-router";
 import SkeletonOfferItem from "@/components/SkeletonOfferItem";
 
+// --- GLOBAL WARNING SUPPRESSION (Ideally, put this in your app's entry file like App.js or index.js) ---
+LogBox.ignoreLogs([
+  "Warning: Text strings must be rendered within a <Text> component.",
+  "Warning: Encountered two children with the same key,",
+]);
+// --- END GLOBAL WARNING SUPPRESSION ---
+
 export interface Offer {
   username: string;
-  id: string;
+  id: string; // Ensure ID is string for keyExtractor, or convert if it's number
   ownerId: number;
   title: string;
   image: string;
@@ -36,18 +44,34 @@ export interface Offer {
   categoryId: number;
 }
 
+// Define the structure for the logged-in user data
+// IMPORTANT: Ensure this matches the exact structure returned by your /api/user/myinfo endpoint
+interface LoggedInUser {
+  id: number;
+  userName: string;
+  email: string;
+  balance: number;
+  referralCode?: string | undefined;
+  myReferralCode?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: string;
+  bio?: string;
+  profilePic?: string;
+}
+
 type Category = {
   id: number;
   title: string;
 };
 
-// OfferItem Component (Refactored for Image Loading)
+// OfferItem Component (Refactored for Image Loading AND Description Truncation)
 const OfferItem = React.memo(({ item }: { item: Offer }) => {
   const router = useRouter();
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
 
-  // Determine the image source based on item.image availability and error status
   const getImageSource = () => {
     if (item.image && !imageError) {
       return { uri: item.image };
@@ -66,7 +90,6 @@ const OfferItem = React.memo(({ item }: { item: Offer }) => {
       }}
     >
       <View style={styles.offerImageContainer}>
-        {/* Show ActivityIndicator while image is loading, only if a valid image URI exists */}
         {imageLoading && item.image && !imageError && (
           <View style={styles.loadingImage}>
             <ActivityIndicator color="#008b8b" size="small" />
@@ -81,14 +104,20 @@ const OfferItem = React.memo(({ item }: { item: Offer }) => {
           onLoadEnd={() => setImageLoading(false)}
           onError={() => {
             setImageLoading(false);
-            setImageError(true); // Set error state to show fallback image
+            setImageError(true);
           }}
         />
       </View>
       <View style={styles.offerDetails}>
         <Text style={styles.offerTitle}>{item.title}</Text>
         <Text style={styles.offerUsername}>by {item.username}</Text>
-        <Text style={styles.offerDescription}>{item.description}</Text>
+        <Text
+          style={styles.offerDescription}
+          numberOfLines={2}
+          ellipsizeMode="tail"
+        >
+          {item.description}
+        </Text>
         <View style={styles.priceRow}>
           <Image
             style={styles.coinImage}
@@ -101,7 +130,7 @@ const OfferItem = React.memo(({ item }: { item: Offer }) => {
   );
 });
 
-// API Calls (Kept as is, but ensure process.env.EXPO_PUBLIC_API_URL is defined)
+// API Calls (Ensure process.env.EXPO_PUBLIC_API_URL is defined in your .env file or app.config.js)
 export const fetchCategories = async (userToken: string) => {
   const response = await fetch(
     `${process.env.EXPO_PUBLIC_API_URL}/api/categories`,
@@ -141,80 +170,167 @@ export const fetchOffersByCategory = async (
   return response.json();
 };
 
+// NEW API CALL FOR USER INFO
+export const fetchUserInfo = async (
+  userToken: string
+): Promise<LoggedInUser> => {
+  console.log("Fetching user info with token:", userToken); // For debugging purposes
+  const response = await fetch(
+    `${process.env.EXPO_PUBLIC_API_URL}/api/user/myinfo`,
+    {
+      headers: { Authorization: `Bearer ${userToken}` },
+    }
+  );
+  if (!response.ok) {
+    const errorText = await response.text();
+    // Log the full error response for debugging
+    console.error(`API Error for /myinfo (${response.status}): ${errorText}`);
+    throw new Error(
+      `Failed fetching user info: ${errorText || response.statusText}`
+    );
+  }
+  return response.json();
+};
+
 const Index = () => {
-  const { user: token } = useAuth();
-  const { user, setUser } = useLoggedInUser();
+  const { user: token } = useAuth(); // Auth token from context
+  // Use LoggedInUserContext to manage user state directly
+  const { user: loggedInUser, setUser } = useLoggedInUser();
+  const [userInfoLoading, setUserInfoLoading] = useState(true);
+  const [userInfoError, setUserInfoError] = useState<Error | null>(null);
+  const [userInfoRefetching, setUserInfoRefetching] = useState(false); // Manually track refetching for user info
+
   const [categoryId, setCategoryId] = useState<number | null>(0); // 0 indicates "all categories" or default view
   const [categoryName, setCategoryName] = useState("All Categories"); // Display name for the current category selection
 
-  // --- Data Fetching with useQuery ---
+  // --- useEffect for User Info Fetching ---
+  // We're using useQuery below, so this manual useEffect can be simplified or removed
+  // if `loggedInUser` context's `setUser` correctly reflects the useQuery data.
+  // For robustness, keeping the pattern if `useLoggedInUser` isn't fully integrated with RQ.
+
+  // Use useQuery for loggedInUser info, which integrates with React Query's caching/invalidation
+  const {
+    data: fetchedLoggedInUser,
+    isLoading: isUserInfoLoadingQuery,
+    isRefetching: isUserInfoRefetchingQuery,
+    error: userInfoQueryError,
+    refetch: refetchUserInfoQuery,
+  } = useQuery<LoggedInUser>({
+    queryKey: ["loggedInUser"], // This is the key invalidated by TransactionsPage
+    queryFn: () => fetchUserInfo(token || ""),
+    enabled: !!token, // Only run this query if a token exists
+    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
+    // You can also add onError and onSuccess callbacks here if needed
+  });
+
+  // Effect to update the `loggedInUser` context state when the query data changes
+  useEffect(() => {
+    if (!token) {
+      setUser(null); // Clear user if token is gone
+      setUserInfoLoading(false);
+      setUserInfoError(null);
+      return;
+    }
+
+    if (isUserInfoLoadingQuery) {
+      setUserInfoLoading(true);
+    } else {
+      setUserInfoLoading(false);
+      if (userInfoQueryError) {
+        setUserInfoError(userInfoQueryError as Error);
+        setUser(null);
+      } else if (fetchedLoggedInUser) {
+        setUser(fetchedLoggedInUser);
+        setUserInfoError(null); // Clear previous errors on successful fetch
+      }
+    }
+  }, [
+    token,
+    fetchedLoggedInUser,
+    isUserInfoLoadingQuery,
+    userInfoQueryError,
+    setUser,
+  ]);
+
   // Categories
   const {
     data: categories,
     isLoading: categoriesLoading,
-    // error: categoriesError, // Error handling can be added if needed
+    isRefetching: categoriesRefetching,
+    refetch: refetchCategories,
   } = useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: () => fetchCategories(token || ""),
-    enabled: !!token, // Only fetch if token is available
-    staleTime: 5 * 60 * 1000, // Cache for 5 minutes (adjust as needed)
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Top Rated Offers (fetched only when categoryId is 0, i.e., "All Categories" view)
+  // Top Rated Offers
   const {
     data: topRatedOffers,
     isLoading: topRatedOffersLoading,
-    // error: topRatedOffersError,
+    isRefetching: topRatedOffersRefetching,
+    refetch: refetchTopRatedOffers,
   } = useQuery<Offer[]>({
     queryKey: ["top-rated-offers"],
     queryFn: () => fetchTopRatedOffers(token || ""),
-    enabled: !!token && categoryId === 0, // Only fetch if token and on default view
+    enabled: !!token && categoryId === 0, // Only fetch if "All Categories" is selected
     staleTime: 5 * 60 * 1000,
   });
 
-  // Recent Offers (fetched only when categoryId is 0)
+  // Recent Offers
   const {
     data: recentOffers,
     isLoading: recentOffersLoading,
-    // error: recentOffersError,
+    isRefetching: recentOffersRefetching,
+    refetch: refetchRecentOffers,
   } = useQuery<Offer[]>({
     queryKey: ["recent-offers"],
     queryFn: () => fetchRecentOffers(token || ""),
-    enabled: !!token && categoryId === 0, // Only fetch if token and on default view
+    enabled: !!token && categoryId === 0, // Only fetch if "All Categories" is selected
     staleTime: 5 * 60 * 1000,
   });
 
-  // Offers by Category (fetched only when a specific category is selected, i.e., categoryId is not 0)
+  // Offers by Category
   const {
     data: offersByCategory,
     isLoading: offersByCategoryLoading,
-    // error: offersByCategoryError,
+    isRefetching: offersByCategoryRefetching,
+    refetch: refetchOffersByCategory,
   } = useQuery<Offer[]>({
     queryKey: ["offers-by-category", categoryId],
     queryFn: () => fetchOffersByCategory(token || "", categoryId || 0),
-    enabled: !!token && categoryId !== 0, // Only fetch if token and a specific category is selected
+    enabled: !!token && categoryId !== 0, // Only fetch if a specific category is selected
     staleTime: 5 * 60 * 1000,
   });
 
-  // Effect to fetch user info on token change
-  useEffect(() => {
-    async function fetchUser() {
-      if (!token) return;
-      try {
-        const res = await fetch(
-          `${process.env.EXPO_PUBLIC_API_URL}/api/user/myinfo`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
-        const data = await res.json();
-        setUser(data);
-      } catch (error) {
-        console.error("Failed fetching user info:", error);
-      }
+  // Combine refetching states for the main pull-to-refresh indicator
+  const isPageRefreshing =
+    isUserInfoRefetchingQuery || // Use the useQuery refetching state
+    categoriesRefetching ||
+    topRatedOffersRefetching ||
+    recentOffersRefetching ||
+    offersByCategoryRefetching;
+
+  // Handler for pull-to-refresh
+  const handleRefresh = useCallback(() => {
+    // Trigger all relevant refetches
+    refetchUserInfoQuery();
+    refetchCategories();
+    if (categoryId === 0) {
+      refetchTopRatedOffers();
+      refetchRecentOffers();
+    } else {
+      refetchOffersByCategory();
     }
-    fetchUser();
-  }, [token, setUser]);
+  }, [
+    categoryId,
+    refetchUserInfoQuery,
+    refetchCategories,
+    refetchTopRatedOffers,
+    refetchRecentOffers,
+    refetchOffersByCategory,
+  ]);
 
   // Effect to update categoryName based on selected categoryId
   useEffect(() => {
@@ -234,8 +350,10 @@ const Index = () => {
       : [allCategoriesOption];
   }, [categories]);
 
-  // Initial loading state for user data (before main content renders)
-  if (!user) {
+  // --- Conditional Rendering for Initial States ---
+
+  // Show a full-screen loader while user info is being fetched initially
+  if (userInfoLoading) {
     return (
       <SafeAreaView style={styles.centeredLoading}>
         <ActivityIndicator size="large" color="#008B8B" />
@@ -244,27 +362,74 @@ const Index = () => {
     );
   }
 
+  // Handle error for user info fetch
+  // This could mean the token is expired or invalid
+  if (userInfoError) {
+    return (
+      <SafeAreaView style={styles.centeredLoading}>
+        <Text
+          style={{ color: "red", textAlign: "center", marginHorizontal: 20 }}
+        >
+          Error loading user data: {userInfoError.message}
+          {"\n"}Please try refreshing or logging in again.
+        </Text>
+        <TouchableOpacity
+          onPress={handleRefresh} // Use handleRefresh to re-attempt fetching all data
+          style={{
+            marginTop: 20,
+            padding: 10,
+            backgroundColor: "#008B8B",
+            borderRadius: 5,
+          }}
+        >
+          <Text style={{ color: "#fff", fontFamily: "Poppins_600SemiBold" }}>
+            Retry
+          </Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  }
+
+  // If loggedInUser is null/undefined after loading and no error, something went wrong
+  // (e.g., API returned 200 but with no data or unexpected shape)
+  if (!loggedInUser) {
+    return (
+      <SafeAreaView style={styles.centeredLoading}>
+        <Text
+          style={{ color: "#888", textAlign: "center", marginHorizontal: 20 }}
+        >
+          Could not retrieve user profile. Please ensure you are logged in
+          correctly.
+        </Text>
+        {/* You might want to trigger a logout/redirect to login here */}
+      </SafeAreaView>
+    );
+  }
+
   // Helper function to render horizontal FlatLists of offers
   const renderOfferSection = (
     data: Offer[] | undefined,
-    isLoading: boolean,
+    isLoading: boolean, // This indicates initial loading for the section
     title: string
   ) => {
-    // Filter out offers owned by the current user
-    const filteredData = data?.filter((offer) => offer.ownerId !== user?.id);
+    // Filter out offers owned by the current user (using loggedInUser.id)
+    const filteredData = data?.filter(
+      (offer) => offer.ownerId !== loggedInUser?.id
+    );
     const hasData = filteredData && filteredData.length > 0;
 
     return (
       <View>
         <Text style={styles.header}>{title}</Text>
-        {isLoading ? (
-          // Render skeleton items when loading
+        {/* Show skeleton only for initial section load, not during pull-to-refresh */}
+        {isLoading && !isPageRefreshing ? (
           <FlatList
-            data={[1, 2, 3]} // Array of placeholders for skeleton items
+            data={[1, 2, 3]} // Placeholder data for skeleton items
             renderItem={() => <SkeletonOfferItem />}
             keyExtractor={(item) => `skeleton-${item}`}
             horizontal
             showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.skeletonListContainer}
           />
         ) : hasData ? (
           // Render actual offers when data is available
@@ -274,6 +439,7 @@ const Index = () => {
             keyExtractor={(item) => item.id}
             horizontal
             showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.offersListContainer}
           />
         ) : (
           // Display message if no offers are available for this section
@@ -289,10 +455,11 @@ const Index = () => {
       <SafeAreaView style={styles.container}>
         {/* Main FlatList acting as a ScrollView for the header content */}
         <FlatList
-          data={[]} // Empty data, as content is in ListHeaderComponent
-          renderItem={null}
-          ListEmptyComponent={null}
+          data={[]} // Empty data, as content is rendered in ListHeaderComponent
+          renderItem={null} // No individual items to render from `data`
+          ListEmptyComponent={null} // Don't show "No items" when data is empty
           ListHeaderComponent={
+            // This is where all your main content is rendered
             <View>
               {/* Header Row: Logo and Balance */}
               <View style={styles.headerRow}>
@@ -305,7 +472,8 @@ const Index = () => {
                     style={styles.coinImage}
                     source={require("@/assets/images/swapll_coin.png")}
                   />
-                  <Text style={styles.balanceText}>{user?.balance}</Text>
+                  {/* Use loggedInUser.balance directly as we've checked for its existence */}
+                  <Text style={styles.balanceText}>{loggedInUser.balance}</Text>
                 </View>
               </View>
 
@@ -314,14 +482,13 @@ const Index = () => {
               {/* Popular Categories Section */}
               <Text style={styles.header}>Popular Categories</Text>
               <View style={{ height: 70 }}>
-                {categoriesLoading ? (
+                {categoriesLoading && !isPageRefreshing ? ( // Show spinner for initial category load
                   <ActivityIndicator size="small" color="#008B8B" />
-                ) : categoriesForFlatlist.length > 0 ? ( // Use categoriesForFlatlist here
+                ) : categoriesForFlatlist.length > 0 ? (
                   <CategoryFlatlist
                     data={categoriesForFlatlist}
                     selectedCategoryId={categoryId}
                     setSelectedCategoryId={setCategoryId}
-                    // The setCategoryName prop is removed as its logic is now handled in Index.tsx's useEffect
                   />
                 ) : (
                   <Text style={styles.noOffersText}>No categories found.</Text>
@@ -359,6 +526,8 @@ const Index = () => {
               <View style={{ height: 60 }} />
             </View>
           }
+          onRefresh={handleRefresh} // Pull-to-refresh handler
+          refreshing={isPageRefreshing} // Indicates if refresh is in progress
         />
       </SafeAreaView>
     </GestureHandlerRootView>
@@ -420,7 +589,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
-    // alignSelf: "center", // Removed as FlatList handles horizontal alignment
   },
   offerImageContainer: {
     width: "100%",
@@ -435,16 +603,16 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   loadingImage: {
-    position: "absolute", // Position over the image container
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#f0f0f0", // Light background for loading
+    backgroundColor: "#f0f0f0",
     borderRadius: 12,
-    zIndex: 1, // Ensure it's above the image if image takes time to load
+    zIndex: 1,
   },
   offerDetails: {
     justifyContent: "space-between",
@@ -486,10 +654,16 @@ const styles = StyleSheet.create({
   noOffersText: {
     textAlign: "center",
     marginTop: 20,
-    marginBottom: 20, // Added margin for spacing
+    marginBottom: 20,
     fontSize: 16,
     color: "#888",
     fontFamily: "Poppins_400Regular",
+  },
+  offersListContainer: {
+    paddingHorizontal: 0,
+  },
+  skeletonListContainer: {
+    paddingHorizontal: 0,
   },
 });
 
