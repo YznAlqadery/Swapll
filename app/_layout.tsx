@@ -43,7 +43,11 @@ export default function RootLayout() {
         <LoggedInUserProvider>
           <StatusBar translucent backgroundColor="#F0F7F7" style="dark" />
           <BottomSheetModalProvider>
-            <Stack>
+            <Stack
+              screenOptions={{
+                gestureEnabled: false,
+              }}
+            >
               <Stack.Screen name="index" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />

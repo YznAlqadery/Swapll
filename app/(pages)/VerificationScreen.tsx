@@ -1,5 +1,4 @@
-// app/verify-code.tsx
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -8,46 +7,127 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
   NativeSyntheticEvent,
   TextInputKeyPressEventData,
+  Modal,
+  Pressable,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
 
-// Correct way to define screen options for Expo Router file-system routing
-// Export 'options' directly from the file, not as a property of the component.
 export const options = {
   title: "Verify Code",
-  headerShown: false, // Hide the header if your design doesn't have one
+  headerShown: false,
 };
 
-// You can remove unstable_settings if you don't need it for static optimization or initialRouteName specific to a group
-// export const unstable_settings = {
-//   // initialRouteName: 'verify-code',
-// };
+interface CustomAlertModalProps {
+  isVisible: boolean;
+  title: string;
+  message: string;
+  onClose: () => void;
+  onConfirm?: () => void;
+  showConfirmButton?: boolean;
+}
+
+const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
+  isVisible,
+  title,
+  message,
+  onClose,
+  onConfirm,
+  showConfirmButton = false,
+}) => {
+  return (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
+      <Pressable
+        style={modalStyles.centeredView}
+        onPress={showConfirmButton ? undefined : onClose}
+      >
+        <View style={modalStyles.modalView}>
+          <Text style={modalStyles.modalTitle}>{title}</Text>
+          <Text style={modalStyles.modalMessage}>{message}</Text>
+          {showConfirmButton && onConfirm ? (
+            <View style={modalStyles.modalButtons}>
+              <TouchableOpacity
+                style={[modalStyles.modalButton, modalStyles.cancelButton]}
+                onPress={onClose}
+              >
+                <Text style={modalStyles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[modalStyles.modalButton, modalStyles.confirmButton]}
+                onPress={() => {
+                  onConfirm();
+                  onClose();
+                }}
+              >
+                <Text style={modalStyles.confirmButtonText}>Confirm</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity style={modalStyles.okButton} onPress={onClose}>
+              <Text style={modalStyles.okButtonText}>OK</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </Pressable>
+    </Modal>
+  );
+};
 
 const VerificationScreen: React.FC = () => {
   const router = useRouter();
   const { email } = useLocalSearchParams<{ email: string }>();
 
-  // Assuming a 6-digit code based on your useState initialization
   const [code, setCode] = useState<string[]>(["", "", "", "", "", ""]);
 
   const textInputRefs = useRef<(TextInput | null)[]>([]);
 
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertOnConfirm, setAlertOnConfirm] = useState<
+    (() => void) | undefined
+  >(undefined);
+  const [showAlertConfirmButton, setShowAlertConfirmButton] = useState(false);
+
+  const showAlert = useCallback(
+    (
+      title: string,
+      message: string,
+      onConfirm?: () => void,
+      showConfirmButton: boolean = false
+    ) => {
+      setAlertTitle(title);
+      setAlertMessage(message);
+      setAlertOnConfirm(() => onConfirm);
+      setShowAlertConfirmButton(showConfirmButton);
+      setIsAlertVisible(true);
+    },
+    []
+  );
+
+  const hideAlert = useCallback(() => {
+    setIsAlertVisible(false);
+    setAlertTitle("");
+    setAlertMessage("");
+    setAlertOnConfirm(undefined);
+    setShowAlertConfirmButton(false);
+  }, []);
+
   const handleCodeChange = (text: string, index: number) => {
     const newCode = [...code];
 
-    // Always take the last character entered for a digit input
     newCode[index] = text.slice(-1);
     setCode(newCode);
 
-    // Auto-focus to next input if a character was entered and it's not the last input
     if (text.length > 0 && index < code.length - 1) {
       textInputRefs.current[index + 1]?.focus();
-    }
-    // If it's the last input and a character is entered, blur the keyboard
-    else if (text.length > 0 && index === code.length - 1) {
+    } else if (text.length > 0 && index === code.length - 1) {
       textInputRefs.current[index]?.blur();
     }
   };
@@ -59,15 +139,11 @@ const VerificationScreen: React.FC = () => {
     if (e.nativeEvent.key === "Backspace") {
       const newCode = [...code];
 
-      // If the current input has a value, clear it
       if (newCode[index] !== "") {
         newCode[index] = "";
         setCode(newCode);
-      }
-      // If the current input is empty AND it's not the first input,
-      // move focus to the previous input and clear its value
-      else if (index > 0) {
-        newCode[index - 1] = ""; // Clear the previous input's value
+      } else if (index > 0) {
+        newCode[index - 1] = "";
         setCode(newCode);
         textInputRefs.current[index - 1]?.focus();
       }
@@ -76,9 +152,8 @@ const VerificationScreen: React.FC = () => {
 
   const handleVerification = async () => {
     const enteredCode = code.join("");
-    // Check if all inputs are filled based on `code.length`
     if (enteredCode.length !== code.length) {
-      Alert.alert(
+      showAlert(
         "Invalid Code",
         `Please enter the ${code.length}-digit verification code.`
       );
@@ -89,14 +164,13 @@ const VerificationScreen: React.FC = () => {
       console.log("Verifying code:", enteredCode);
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Adjusted path assuming 'app/reset-password.tsx'
       router.push({
         pathname: "/(pages)/ResetPassword",
         params: { email: email, verificationCode: enteredCode },
       });
     } catch (error) {
       console.error("Failed to verify code:", error);
-      Alert.alert(
+      showAlert(
         "Error",
         "Verification failed. Please check the code and try again."
       );
@@ -145,6 +219,15 @@ const VerificationScreen: React.FC = () => {
       >
         <Text style={styles.verificationButtonText}>Verification</Text>
       </TouchableOpacity>
+
+      <CustomAlertModal
+        isVisible={isAlertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={hideAlert}
+        onConfirm={alertOnConfirm}
+        showConfirmButton={showAlertConfirmButton}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -214,6 +297,91 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.5)",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 20,
+    padding: 35,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 5,
+    width: "85%",
+    maxWidth: 400,
+  },
+  modalTitle: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 20,
+    fontFamily: "Poppins_700Bold",
+    color: "#008B8B",
+  },
+  modalMessage: {
+    marginBottom: 20,
+    textAlign: "center",
+    fontSize: 15,
+    fontFamily: "Poppins_400Regular",
+    color: "#333",
+  },
+  okButton: {
+    backgroundColor: "#008B8B",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    elevation: 2,
+    minWidth: 120,
+    alignItems: "center",
+  },
+  okButtonText: {
+    color: "white",
+    fontFamily: "Poppins_600SemiBold",
+    textAlign: "center",
+    fontSize: 16,
+  },
+  modalButtons: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+  },
+  modalButton: {
+    flex: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 8,
+    alignItems: "center",
+    justifyContent: "center",
+    marginHorizontal: 5,
+  },
+  cancelButton: {
+    backgroundColor: "#E0E0E0",
+  },
+  confirmButton: {
+    backgroundColor: "#20B2AA",
+  },
+  cancelButtonText: {
+    color: "#555",
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 15,
+  },
+  confirmButtonText: {
+    color: "white",
+    fontFamily: "Poppins_600SemiBold",
+    fontSize: 15,
   },
 });
 

@@ -22,10 +22,8 @@ import ReviewItem from "@/components/ReviewItem";
 import Divider from "@/components/Divider";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
 
-// --- API Configuration ---
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8080";
 
-// --- Transaction DTO Interface (Copy from your TransactionDetails.tsx) ---
 interface TransactionDTO {
   id: number;
   createdAt: string;
@@ -38,7 +36,6 @@ interface TransactionDTO {
   sellerConfirmed: boolean;
 }
 
-// --- API Function to fetch reviews ---
 async function fetchReviews(offerId: number, token: string) {
   const response = await fetch(`${API_BASE_URL}/api/reviews/offer/${offerId}`, {
     headers: { Authorization: `Bearer ${token}` },
@@ -52,7 +49,6 @@ async function fetchReviews(offerId: number, token: string) {
   return response.json();
 }
 
-// --- API Function to initiate a transaction ---
 async function initiateTransaction(
   token: string,
   sellerId: number,
@@ -70,20 +66,26 @@ async function initiateTransaction(
 
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(
-      `Failed to initiate transaction: ${errorText || response.statusText}`
-    );
+    let errorMessage = "Failed to initiate transaction. Please try again.";
+    if (errorText) {
+      try {
+        const errorJson = JSON.parse(errorText);
+        errorMessage = errorJson.message || errorMessage;
+      } catch (e) {
+        errorMessage = errorText;
+      }
+    }
+    throw new Error(errorMessage);
   }
   return response.json();
 }
 
-// --- Custom Alert Modal Component ---
 interface CustomAlertModalProps {
   isVisible: boolean;
   title: string;
   message: string;
   onClose: () => void;
-  onConfirm?: () => void; // Optional callback for "OK" button
+  onConfirm?: () => void;
 }
 
 const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
@@ -95,7 +97,7 @@ const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
 }) => {
   return (
     <Modal
-      animationType="fade" // Or "slide"
+      animationType="fade"
       transparent={true}
       visible={isVisible}
       onRequestClose={onClose}
@@ -129,7 +131,6 @@ const OfferDetails = () => {
 
   const parsedOfferId = parseInt(offerId as string);
 
-  // --- State for Custom Alert Modal ---
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
@@ -144,7 +145,7 @@ const OfferDetails = () => {
   ) => {
     setAlertTitle(title);
     setAlertMessage(message);
-    setAlertOnConfirm(() => onConfirm); // Set the function for the callback
+    setAlertOnConfirm(() => onConfirm);
     setIsAlertVisible(true);
   };
 
@@ -155,7 +156,6 @@ const OfferDetails = () => {
     setAlertOnConfirm(undefined);
   };
 
-  // Fetch offer details
   const {
     data,
     error,
@@ -181,7 +181,6 @@ const OfferDetails = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Fetch categories (used for offer category display)
   const { data: categories, isLoading: categoriesIsLoading } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => fetchCategories(token as string),
@@ -189,7 +188,6 @@ const OfferDetails = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Fetch related offers by category
   const { data: offersByCategory } = useQuery({
     queryKey: ["offers-by-category", data?.categoryId],
     queryFn: () =>
@@ -198,7 +196,6 @@ const OfferDetails = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Fetch reviews for the offer
   const { data: reviews, isLoading: reviewsIsLoading } = useQuery({
     queryKey: ["reviews", parsedOfferId],
     queryFn: () => fetchReviews(parsedOfferId, token as string),
@@ -206,7 +203,6 @@ const OfferDetails = () => {
     staleTime: 1000 * 60 * 5,
   });
 
-  // Mutation for initiating a transaction
   const startTransactionMutation = useMutation({
     mutationFn: (args: { sellerId: number; offerId: number }) =>
       initiateTransaction(token as string, args.sellerId, args.offerId),
@@ -230,10 +226,14 @@ const OfferDetails = () => {
       });
     },
     onError: (err: Error) => {
-      showAlert(
-        "Error",
-        "Could not start the transaction. Please check your internet connection and try again. If the problem persists, contact support."
-      );
+      let errorMessage = "An unexpected error occurred. Please try again.";
+      // Check if the error message contains "Insufficient funds"
+      if (err.message.includes("Insufficient funds")) {
+        errorMessage = "Insufficient funds"; // Set the specific message
+      } else {
+        errorMessage = err.message || errorMessage;
+      }
+      showAlert("Error", errorMessage);
     },
   });
 
@@ -244,7 +244,6 @@ const OfferDetails = () => {
   const RenderHeader = () => {
     if (!data) return null;
 
-    // Helper to determine payment method string
     const getPaymentMethodString = (method: string | undefined) => {
       switch (method) {
         case "BOTH":
@@ -293,7 +292,6 @@ const OfferDetails = () => {
           <View style={styles.ratingAndUserInfoRow}>
             <View style={styles.ratingContainer}>
               <Ionicons name="star" size={16} color="#FFD700" />{" "}
-              {/* Ensure space is part of a Text component if needed */}
               <Text style={styles.rating}>
                 {typeof data?.averageRating === "number"
                   ? data.averageRating.toFixed(1)
@@ -308,7 +306,7 @@ const OfferDetails = () => {
                 router.push({
                   pathname: "/(pages)/UserProfile",
                   params: {
-                    userId: data?.ownerId?.toString() || "", // Ensure userId is a string
+                    userId: data?.ownerId?.toString() || "",
                   },
                 })
               }
@@ -334,7 +332,6 @@ const OfferDetails = () => {
               color="#008B8B"
               style={{ marginRight: 6 }}
             />
-            {/* Wrap the entire text segment including the dot in one Text component */}
             {typeof data?.deliveryTime === "number" && data.deliveryTime > 2 ? (
               <Text style={styles.deliveryText}>
                 {data.deliveryTime - 2}–{data.deliveryTime + 2} days •
@@ -378,7 +375,6 @@ const OfferDetails = () => {
             </Text>
           </View>
 
-          {/* Start Transaction Button - only show if not owner and all IDs are available */}
           {showStartTransactionButton && (
             <TouchableOpacity
               style={styles.startTransactionButton}
@@ -408,7 +404,7 @@ const OfferDetails = () => {
           data={offersByCategory?.filter((item: any) => item.id !== data?.id)}
           keyExtractor={(item, index) =>
             item.id?.toString() || `offer-${index}`
-          } // Robust keyExtractor
+          }
           renderItem={({ item }) => (
             <OfferCard
               id={item.id}
@@ -444,7 +440,7 @@ const OfferDetails = () => {
                 onPress={() =>
                   router.push({
                     pathname: "/(pages)/AddReview",
-                    params: { offerId: data?.id?.toString() || "" }, // Ensure offerId is a string
+                    params: { offerId: data?.id?.toString() || "" },
                   })
                 }
               >
@@ -516,7 +512,7 @@ const OfferDetails = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#F0F7F7", // Lighter background for the entire screen
+    backgroundColor: "#F0F7F7",
   },
   centered: {
     flex: 1,
@@ -526,11 +522,11 @@ const styles = StyleSheet.create({
   },
   infoContainer: {
     padding: 16,
-    backgroundColor: "#fff", // White background for the info section
-    marginHorizontal: 0, // Ensure it spans full width
-    borderBottomLeftRadius: 12, // Match image border radius
-    borderBottomRightRadius: 12, // Match image border radius
-    marginBottom: 8, // Space before the divider
+    backgroundColor: "#fff",
+    marginHorizontal: 0,
+    borderBottomLeftRadius: 12,
+    borderBottomRightRadius: 12,
+    marginBottom: 8,
   },
   titleRow: {
     flexDirection: "row",
@@ -543,10 +539,10 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
     color: "#008B8B",
     fontFamily: "Poppins_700Bold",
-    flexShrink: 1, // Allow text to wrap
+    flexShrink: 1,
   },
   subtext: {
-    color: "#666", // Slightly darker grey for better readability
+    color: "#666",
     marginTop: 4,
     fontFamily: "Poppins_400Regular",
     fontSize: 13,
@@ -555,31 +551,31 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 8,
-    marginBottom: 8, // Space after this row
+    marginBottom: 8,
   },
   ratingContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginRight: 12, // Space between rating and type label
+    marginRight: 12,
   },
   rating: {
     marginLeft: 4,
     fontWeight: "bold",
-    color: "#333", // Darker text for rating
+    color: "#333",
     fontFamily: "Poppins_600SemiBold",
     fontSize: 14,
   },
   offerTypeLabel: {
     backgroundColor: "#E0FFFF",
     color: "#008B8B",
-    paddingHorizontal: 8, // Increased padding
-    paddingVertical: 4, // Increased padding
-    borderRadius: 6, // Slightly more rounded
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
     fontSize: 12,
-    fontFamily: "Poppins_600SemiBold", // Bolder font for labels
+    fontFamily: "Poppins_600SemiBold",
   },
   userInfo: {
-    marginLeft: "auto", // Pushes user info to the right
+    marginLeft: "auto",
   },
   userProfileLink: {
     flexDirection: "row",
@@ -588,7 +584,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#E0F0F0",
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: 20, // More rounded for profile link
+    borderRadius: 20,
   },
   username: {
     fontSize: 14,
@@ -598,19 +594,19 @@ const styles = StyleSheet.create({
   profileImage: {
     width: 30,
     height: 30,
-    borderRadius: 15, // Half of width/height for perfect circle
-    borderWidth: 1.5, // Slightly thinner border
+    borderRadius: 15,
+    borderWidth: 1.5,
     borderColor: "#008B8B",
   },
   deliveryAndPriceRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginTop: 10, // More space
+    marginTop: 10,
   },
   deliveryText: {
     fontSize: 14,
     color: "#333",
-    fontFamily: "Poppins_500Medium", // Medium font for delivery
+    fontFamily: "Poppins_500Medium",
     marginRight: 8,
   },
   priceContainer: {
@@ -618,32 +614,32 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   coinImage: {
-    width: 20, // Slightly smaller coin image
+    width: 20,
     height: 20,
-    marginRight: 4, // Closer to the price text
+    marginRight: 4,
   },
   meta: {
-    color: "#333", // Darker color for price
-    fontSize: 16, // Larger price font
+    color: "#333",
+    fontSize: 16,
     fontFamily: "Poppins_600SemiBold",
   },
   dateContainer: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 12,
-    marginBottom: 8, // Space before description
+    marginBottom: 8,
   },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     marginHorizontal: 16,
     marginBottom: 8,
-    marginTop: 16, // Added margin top for better spacing
+    marginTop: 16,
     color: "#008B8B",
     fontFamily: "Poppins_700Bold",
   },
   errorText: {
-    color: "#D32F2F", // A more distinct red for errors
+    color: "#D32F2F",
     fontSize: 16,
     fontFamily: "Poppins_500Medium",
     textAlign: "center",
@@ -657,17 +653,17 @@ const styles = StyleSheet.create({
   },
   backButton: {
     position: "absolute",
-    top: 20, // More padding from top
-    left: 16, // More padding from left
+    top: 20,
+    left: 16,
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#fff",
     paddingHorizontal: 12,
-    paddingVertical: 8, // Increased vertical padding
-    borderRadius: 25, // More rounded for a prominent button
+    paddingVertical: 8,
+    borderRadius: 25,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15, // Slightly more visible shadow
+    shadowOpacity: 0.15,
     shadowRadius: 3,
     elevation: 3,
     zIndex: 10,
@@ -684,53 +680,53 @@ const styles = StyleSheet.create({
     borderBottomRightRadius: 12,
   },
   descriptionBox: {
-    backgroundColor: "#E6F4F4", // New color for description box
-    padding: 15, // Increased padding
-    borderRadius: 10, // Slightly more rounded
-    marginTop: 20, // More space from previous elements
-    borderWidth: 1, // Subtle border
-    borderColor: "#B2D8D8", // New border color
+    backgroundColor: "#E6F4F4",
+    padding: 15,
+    borderRadius: 10,
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "#B2D8D8",
   },
   descriptionText: {
-    fontSize: 15, // Slightly larger font
+    fontSize: 15,
     fontFamily: "Poppins_400Regular",
-    color: "#333", // Darker text for readability
-    lineHeight: 22, // Better line spacing
+    color: "#333",
+    lineHeight: 22,
   },
   addReviewButton: {
     borderWidth: 1,
     borderColor: "#008B8B",
     borderRadius: 8,
     paddingHorizontal: 12,
-    paddingVertical: 6, // Slightly more padding
-    backgroundColor: "#E0F2F2", // Light background for button
+    paddingVertical: 6,
+    backgroundColor: "#E0F2F2",
   },
   addReviewButtonText: {
     color: "#008B8B",
-    fontSize: 15, // Adjusted font size
-    fontFamily: "Poppins_600SemiBold", // Bolder font
+    fontSize: 15,
+    fontFamily: "Poppins_600SemiBold",
   },
   startTransactionButton: {
-    backgroundColor: "#20B2AA", // Your primary action color
-    paddingVertical: 16, // More prominent padding
-    borderRadius: 12, // More rounded corners
+    backgroundColor: "#20B2AA",
+    paddingVertical: 16,
+    borderRadius: 12,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: 30, // More space from description
+    marginTop: 30,
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 4 }, // Stronger shadow
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
     shadowRadius: 5,
     elevation: 5,
   },
   startTransactionButtonText: {
     color: "#fff",
-    fontSize: 20, // Larger text for main action
+    fontSize: 20,
     fontWeight: "700",
     fontFamily: "Poppins_700Bold",
   },
   horizontalListContent: {
-    paddingHorizontal: 16, // Padding for the horizontal list
+    paddingHorizontal: 16,
     paddingBottom: 10,
   },
   noOffersContainer: {
@@ -738,10 +734,10 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     backgroundColor: "#F0FDFD",
     borderRadius: 8,
-    marginHorizontal: 16, // Align with other content
+    marginHorizontal: 16,
     marginTop: 10,
-    marginBottom: 20, // Space before next divider
-    alignItems: "center", // Center text
+    marginBottom: 20,
+    alignItems: "center",
   },
   noOffersText: {
     fontSize: 14,
@@ -754,8 +750,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
     paddingVertical: 12,
-    marginTop: 8, // Space from the divider
-    marginBottom: 4, // Space before review items
+    marginTop: 8,
+    marginBottom: 4,
   },
   reviewsTitle: {
     fontSize: 18,
@@ -785,51 +781,51 @@ const modalStyles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)", // Slightly darker overlay
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
   modalView: {
     margin: 20,
     backgroundColor: "white",
-    borderRadius: 15, // Slightly less rounded
-    padding: 30, // Reduced padding
+    borderRadius: 15,
+    padding: 30,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4, // Stronger shadow
+      height: 4,
     },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
-    width: "85%", // Slightly wider modal
-    borderWidth: 1, // Subtle border
+    width: "85%",
+    borderWidth: 1,
     borderColor: "#E0FFFF",
   },
   modalTitle: {
     marginBottom: 15,
     textAlign: "center",
-    fontSize: 22, // Larger title
+    fontSize: 22,
     fontWeight: "bold",
     color: "#008B8B",
     fontFamily: "Poppins_700Bold",
   },
   modalMessage: {
-    marginBottom: 25, // More space
+    marginBottom: 25,
     textAlign: "center",
     fontSize: 16,
-    color: "#555", // Slightly softer black
+    color: "#555",
     fontFamily: "Poppins_400Regular",
-    lineHeight: 22, // Better line height
+    lineHeight: 22,
   },
   okButton: {
     backgroundColor: "#20B2AA",
     borderRadius: 10,
     paddingVertical: 12,
-    paddingHorizontal: 25, // Wider button
+    paddingHorizontal: 25,
     elevation: 3,
-    minWidth: 120, // Minimum width
+    minWidth: 120,
     alignItems: "center",
-    shadowColor: "#000", // Shadow for button
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
@@ -838,7 +834,7 @@ const modalStyles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     textAlign: "center",
-    fontSize: 17, // Slightly larger text
+    fontSize: 17,
     fontFamily: "Poppins_600SemiBold",
   },
 });

@@ -11,9 +11,8 @@ import {
   TouchableOpacity,
   Image,
 } from "react-native";
-import { Offer } from "../(tabs)";
 import { Feather, FontAwesome5 } from "@expo/vector-icons";
-import { useLocalSearchParams, useNavigation, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import Modal from "react-native-modal";
 import SkeletonOfferItem from "@/components/SkeletonOfferItem";
@@ -43,14 +42,21 @@ async function handleDelete(offerId: number, token: string) {
   }
 }
 
+interface Offer {
+  id: number;
+  title: string;
+  description: string;
+  price: number;
+  image: string;
+  username: string;
+}
+
 const YourOffers = () => {
   const { user: token } = useAuth();
   const { user } = useLoggedInUser();
-  const navigation = useNavigation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const { userId } = useLocalSearchParams();
-  const [isLoadingImages, setIsLoadingImages] = useState(false);
 
   const [isDeleteModalVisible, setIsDeleteModalVisible] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
@@ -62,7 +68,7 @@ const YourOffers = () => {
     data: yourOffers,
     isLoading: yourOffersLoading,
     error: yourOffersError,
-  } = useQuery({
+  } = useQuery<Offer[]>({
     queryKey: offersQueryKey,
     queryFn: () => fetchOffers(Number(MainId), token as string),
     enabled: !!user && !!MainId,
@@ -131,7 +137,9 @@ const YourOffers = () => {
       <View style={styles.offerDetails}>
         <Text style={styles.title}>{item.title}</Text>
         <Text style={styles.username}>by {item.username}</Text>
-        <Text style={styles.description}>{item.description}</Text>
+        <Text style={styles.description} numberOfLines={2}>
+          {item.description}
+        </Text>
 
         <View style={styles.priceButtonsRow}>
           <View style={styles.priceContainer}>
@@ -215,7 +223,6 @@ const YourOffers = () => {
           contentContainerStyle={styles.listContainer}
         />
 
-        {/* Delete Confirmation Modal */}
         <Modal
           isVisible={isDeleteModalVisible}
           onBackdropPress={closeDeleteModal}
@@ -386,7 +393,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Poppins_600SemiBold",
   },
-  // Modal styles
   modalContent: {
     backgroundColor: "white",
     padding: 20,

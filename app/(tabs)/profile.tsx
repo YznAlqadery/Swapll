@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   View,
   Text,
@@ -8,13 +8,19 @@ import {
   StyleSheet,
   TouchableOpacity,
   StatusBar,
+  Modal,
+  Pressable,
 } from "react-native";
 import * as FileSystem from "expo-file-system";
 import { AuthContext } from "@/context/AuthContext";
-import { MaterialIcons, FontAwesome5, FontAwesome } from "@expo/vector-icons"; // Import FontAwesome for logout icon
+import {
+  MaterialIcons,
+  FontAwesome5,
+  FontAwesome,
+  Feather,
+} from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import * as Clipboard from "expo-clipboard";
-import { Feather } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
 import Toast, {
@@ -33,8 +39,54 @@ interface User {
   address: string;
   referralCode: string | null;
   profilePic: string;
-  bio: string | null; // Added bio to interface as it's being used
+  bio: string | null;
 }
+
+interface ConfirmationModalProps {
+  isVisible: boolean;
+  title: string;
+  message: string;
+  onConfirm: () => void;
+  onCancel: () => void;
+}
+
+const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
+  isVisible,
+  title,
+  message,
+  onConfirm,
+  onCancel,
+}) => {
+  return (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onCancel}
+    >
+      <Pressable style={modalStyles.centeredView} onPress={onCancel}>
+        <View style={modalStyles.modalView}>
+          <Text style={modalStyles.modalTitle}>{title}</Text>
+          <Text style={modalStyles.modalMessage}>{message}</Text>
+          <View style={modalStyles.buttonContainer}>
+            <TouchableOpacity
+              style={modalStyles.cancelButton}
+              onPress={onCancel}
+            >
+              <Text style={modalStyles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={modalStyles.confirmButton}
+              onPress={onConfirm}
+            >
+              <Text style={modalStyles.confirmButtonText}>Confirm</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+};
 
 const toastConfig = {
   success: (props: React.JSX.IntrinsicAttributes & BaseToastProps) => (
@@ -55,31 +107,35 @@ const toastConfig = {
   ),
 };
 
-// Helper function to format phone number
 const formatPhoneNumber = (phoneNumber: string) => {
   if (!phoneNumber) return "N/A";
-  // Remove non-numeric characters
   const cleaned = ("" + phoneNumber).replace(/\D/g, "");
   const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
   if (match) {
     return `(${match[1]}) ${match[2]}-${match[3]}`;
   }
-  return phoneNumber; // Return original if format doesn't match
+  return phoneNumber;
 };
 
 const Profile = () => {
   const authContext = useContext(AuthContext);
   const { user } = useLoggedInUser();
-  const token = authContext?.user ?? null;
-
-  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false); // Controlled by user hook, likely not needed here for loading user profile data
-
   const router = useRouter();
 
-  const handleLogout = () => {
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
+
+  const handleLogoutPress = () => {
+    setShowLogoutModal(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutModal(false);
     authContext?.setUser(null);
     router.replace("/(auth)/Login");
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutModal(false);
   };
 
   const copyToClipboard = async (text: string) => {
@@ -93,11 +149,7 @@ const Profile = () => {
     });
   };
 
-  // The isLoading state here seems to be unused for actual data loading
-  // as user data comes from useLoggedInUser hook.
-  // I will keep it but it might be redundant depending on its intended use.
-  if (isLoading) {
-    // This part will only show a spinner if setIsLoading is set to true somewhere.
+  if (!user) {
     return (
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle={"dark-content"} />
@@ -107,6 +159,9 @@ const Profile = () => {
             color="#008B8B"
             style={{ marginTop: 200 }}
           />
+          <Text style={{ marginTop: 10, fontFamily: "Poppins_500Medium" }}>
+            Loading profile...
+          </Text>
         </View>
       </SafeAreaView>
     );
@@ -119,7 +174,6 @@ const Profile = () => {
         contentContainerStyle={{ paddingHorizontal: 6, paddingTop: 0 }}
       >
         <View style={styles.profileContainer}>
-          {/* Removed redundant isLoading check here as it's handled above */}
           <View style={styles.profileWrapper}>
             <Image
               source={require("@/assets/images/profile-page-bg.png")}
@@ -127,7 +181,6 @@ const Profile = () => {
               resizeMode="cover"
             />
           </View>
-          {/* {!isLoading && ( is always true now if the component renders this far */}
           <View style={styles.profilePicWrapper}>
             {user?.profilePic ? (
               <Image
@@ -141,8 +194,6 @@ const Profile = () => {
               />
             )}
           </View>
-          {/* )} */}
-
           <View
             style={{
               marginTop: 24,
@@ -279,7 +330,6 @@ const Profile = () => {
               />
               <Text style={styles.infoLabel}>Phone</Text>
             </View>
-            {/* MODIFIED: Format phone number */}
             <Text style={styles.infoText}>
               {formatPhoneNumber(user?.phone || "")}
             </Text>
@@ -333,7 +383,7 @@ const Profile = () => {
           style={[
             styles.personalInfo,
             {
-              marginBottom: 20, // Adjusted margin to make space for logout
+              marginBottom: 20,
             },
           ]}
         >
@@ -345,7 +395,7 @@ const Profile = () => {
               width: "100%",
               padding: 16,
               borderRadius: 10,
-              justifyContent: "space-between", // To push chevron to the right
+              justifyContent: "space-between",
             }}
           >
             <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -373,11 +423,10 @@ const Profile = () => {
           </View>
         </TouchableOpacity>
 
-        {/* MODIFIED: Logout Button */}
         <View style={styles.logoutContainer}>
           <TouchableOpacity
             style={styles.logoutButton}
-            onPress={handleLogout}
+            onPress={handleLogoutPress}
             activeOpacity={0.8}
           >
             <FontAwesome name="sign-out" size={20} color="#008B8B" />
@@ -386,6 +435,14 @@ const Profile = () => {
         </View>
       </ScrollView>
       <Toast config={toastConfig} />
+
+      <ConfirmationModal
+        isVisible={showLogoutModal}
+        title="Confirm Logout"
+        message="Are you sure you want to log out?"
+        onConfirm={confirmLogout}
+        onCancel={cancelLogout}
+      />
     </SafeAreaView>
   );
 };
@@ -467,7 +524,6 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
   },
   backButton: {
-    // This style is defined but not used in the provided JSX
     position: "absolute",
     top: 110,
     left: 16,
@@ -478,8 +534,8 @@ const styles = StyleSheet.create({
   },
   logoutContainer: {
     width: "100%",
-    paddingHorizontal: 16, // Ensure consistent padding with other sections
-    marginBottom: 50, // Added margin for spacing at the bottom
+    paddingHorizontal: 16,
+    marginBottom: 50,
   },
   logoutButton: {
     flexDirection: "row",
@@ -506,19 +562,105 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     width: "100%",
   },
-
   bioTitle: {
     fontSize: 16,
     fontFamily: "Poppins_600SemiBold",
     color: "#333",
     marginBottom: 6,
   },
-
   bioText: {
     fontSize: 14,
     fontFamily: "Poppins_400Regular",
     color: "#555",
     lineHeight: 20,
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+    width: "85%",
+    borderWidth: 1,
+    borderColor: "#E0FFFF",
+  },
+  modalTitle: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
+  },
+  modalMessage: {
+    marginBottom: 25,
+    textAlign: "center",
+    fontSize: 16,
+    color: "#555",
+    fontFamily: "Poppins_400Regular",
+    lineHeight: 22,
+  },
+  buttonContainer: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    width: "100%",
+  },
+  cancelButton: {
+    backgroundColor: "#B0C4C4",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    elevation: 3,
+    minWidth: 120,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  cancelButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 17,
+    fontFamily: "Poppins_600SemiBold",
+  },
+  confirmButton: {
+    backgroundColor: "#D9534F", // A color indicating caution/danger
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    elevation: 3,
+    minWidth: 120,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  confirmButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 17,
+    fontFamily: "Poppins_600SemiBold",
   },
 });
 

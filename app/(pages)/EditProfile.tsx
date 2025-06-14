@@ -16,21 +16,23 @@ import {
 
 import { FontAwesome } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { selectImage } from "@/services/selectImage";
+import { selectImage } from "@/services/selectImage"; // Assumed to return a 'file://' URI
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
 import { useAuth } from "@/context/AuthContext";
 import * as FileSystem from "expo-file-system";
-import Toast, {
-  BaseToast,
-  BaseToastProps,
-  ErrorToast,
-} from "react-native-toast-message";
+import Toast from "react-native-toast-message"; // Simplified Toast import
 
 const EditProfile = () => {
   const { user, setUser } = useLoggedInUser();
   const { user: token } = useAuth();
 
-  const [profilePic, setProfilePic] = useState<string | null>(null);
+  // This state will ONLY hold the URI of a *newly selected local image* for upload.
+  const [newlySelectedImageUri, setNewlySelectedImageUri] = useState<
+    string | null
+  >(null);
+  // This flag tracks if the user has explicitly selected a new image.
+  const [hasNewImageBeenSelected, setHasNewImageBeenSelected] = useState(false);
+
   const [userName, setUserName] = useState("");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -39,10 +41,10 @@ const EditProfile = () => {
   const [address, setAddress] = useState("");
   const [bio, setBio] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [localImageUri, setLocalImageUri] = useState<string | null>(null);
 
   useEffect(() => {
     if (user) {
+      // Initialize text fields from existing user data
       setUserName(user.userName ?? "");
       setFirstName(user.firstName ?? "");
       setLastName(user.lastName ?? "");
@@ -50,45 +52,18 @@ const EditProfile = () => {
       setPhone(user.phone ?? "");
       setAddress(user.address ?? "");
       setBio(user.bio ?? "");
-      setProfilePic(user.profilePic ?? null);
+      // DO NOT set newlySelectedImageUri here, as user.profilePic will likely be an HTTPS URL.
+      // newlySelectedImageUri is only for the *local file* that is chosen for upload.
     }
   }, [user]);
-
-  // useEffect(() => {
-  //   async function fetchProfileImage() {
-  //     if (!user?.profilePic || !token) return;
-
-  //     setIsLoading(true);
-  //     try {
-  //       const imageUrl = process.env.EXPO_PUBLIC_API_URL + user.profilePic;
-
-  //       // Create a local file path to save the image
-  //       const localUri = `${FileSystem.cacheDirectory}profile-pic.jpg`;
-
-  //       // Download the image with authorization headers
-  //       const downloadRes = await FileSystem.downloadAsync(imageUrl, localUri, {
-  //         headers: { Authorization: `Bearer ${token}` },
-  //       });
-
-  //       setLocalImageUri(downloadRes.uri);
-  //     } catch (error) {
-  //       console.error("Failed downloading profile pic:", error);
-  //       setLocalImageUri(null);
-  //     } finally {
-  //       setIsLoading(false);
-  //     }
-  //   }
-
-  //   fetchProfileImage();
-  // }, [user, token]);
 
   const router = useRouter();
 
   const handleSelectImage = async () => {
-    const selectedImage = await selectImage();
-    if (selectedImage) {
-      setProfilePic(selectedImage);
-      setLocalImageUri(null);
+    const selectedImageUri = await selectImage(); // This function should return a local file:// URI or null
+    if (selectedImageUri) {
+      setNewlySelectedImageUri(selectedImageUri); // Store the local URI for potential upload
+      setHasNewImageBeenSelected(true); // Mark that a new image has been selected
     }
   };
 
@@ -109,24 +84,86 @@ const EditProfile = () => {
       const formData = new FormData();
       formData.append("user", JSON.stringify(userPayload));
 
-      if (profilePic) {
-        const fileInfo = await FileSystem.getInfoAsync(profilePic);
-        if (fileInfo.exists) {
-          const filename = profilePic.split("/").pop() ?? "profile.jpg";
-          const ext = filename.split(".").pop()?.toLowerCase();
-          const mimeType =
-            ext === "png"
-              ? "image/png"
-              : ext === "jpg" || ext === "jpeg"
-              ? "image/jpeg"
-              : "application/octet-stream";
-          formData.append("profilePic", {
-            uri: profilePic,
-            name: filename,
-            type: mimeType,
-          } as any);
+      // --- Handle Profile Picture Upload ONLY if a new local image was selected ---
+      if (hasNewImageBeenSelected && newlySelectedImageUri) {
+        // Ensure it's a file URI before trying to get file system info
+        if (newlySelectedImageUri.startsWith("file://")) {
+          console.log(
+            "Attempting to get file info for newly selected local URI:",
+            newlySelectedImageUri
+          );
+
+          let fileInfo;
+          try {
+            fileInfo = await FileSystem.getInfoAsync(newlySelectedImageUri);
+            console.log("File info exists for new image:", fileInfo.exists);
+          } catch (fileInfoError: any) {
+            console.error(
+              "FileSystem.getInfoAsync failed for new image:",
+              fileInfoError
+            );
+            Toast.show({
+              type: "error",
+              text1: "Image Access Error",
+              text2: `Could not access the selected image: ${
+                fileInfoError.message || "Unknown error"
+              }`,
+              position: "top",
+              visibilityTime: 4000,
+            });
+            setIsLoading(false);
+            return; // Exit if file info cannot be retrieved
+          }
+
+          if (fileInfo.exists) {
+            const filename =
+              newlySelectedImageUri.split("/").pop() ?? "profile.jpg";
+            const ext = filename.split(".").pop()?.toLowerCase();
+            const mimeType =
+              ext === "png"
+                ? "image/png"
+                : ext === "jpg" || ext === "jpeg"
+                ? "image/jpeg"
+                : "application/octet-stream";
+            formData.append("profilePic", {
+              uri: newlySelectedImageUri,
+              name: filename,
+              type: mimeType,
+            } as any);
+          } else {
+            console.warn(
+              "Newly selected profile picture file does not exist at URI:",
+              newlySelectedImageUri
+            );
+            Toast.show({
+              type: "error",
+              text1: "Image Missing",
+              text2: "The selected profile picture was not found.",
+              position: "top",
+              visibilityTime: 4000,
+            });
+            // Decide if you want to proceed without the image or abort here.
+            // Currently, it will proceed but without appending 'profilePic' to formData.
+          }
+        } else {
+          // This case implies selectImage returned something other than a file:// URI when expected.
+          console.warn(
+            "Selected image URI is not a local file URI:",
+            newlySelectedImageUri
+          );
+          Toast.show({
+            type: "error",
+            text1: "Invalid Image URI",
+            text2: "The selected image path is not supported for upload.",
+            position: "top",
+            visibilityTime: 4000,
+          });
+          // Proceed without appending the image, as it's not a local file
         }
       }
+      // If hasNewImageBeenSelected is false, or newlySelectedImageUri is null,
+      // the 'profilePic' field will simply not be added to formData.
+      // Your backend should interpret this as 'no change to profile picture'.
 
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/user`,
@@ -134,7 +171,7 @@ const EditProfile = () => {
           method: "PUT",
           headers: {
             Authorization: `Bearer ${token}`,
-            // Note: do NOT specify Content-Type for FormData; RN handles it
+            // Do NOT set Content-Type header manually for FormData; React Native handles it
           },
           body: formData,
         }
@@ -145,7 +182,7 @@ const EditProfile = () => {
         const errorData = ct?.includes("application/json")
           ? await response.json()
           : await response.text();
-        throw new Error(errorData.error || "Update failed");
+        throw new Error(errorData.error || `Server error: ${response.status}`);
       }
 
       const data = await response.json();
@@ -157,14 +194,15 @@ const EditProfile = () => {
         visibilityTime: 3000,
       });
 
-      if (setUser) setUser(data);
+      if (setUser) setUser(data); // Update the user context with the new data
 
       router.back();
     } catch (err: any) {
+      console.error("Error updating profile:", err);
       Toast.show({
         type: "error",
         text1: "Error",
-        text2: err.message || "Update failed",
+        text2: err.message || "Failed to update profile",
         position: "top",
         visibilityTime: 3000,
       });
@@ -173,12 +211,12 @@ const EditProfile = () => {
     }
   };
 
-  if (isLoading)
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#008B8B" />
-      </View>
-    );
+  // Determine which URI to display in the Image component
+  const imageSource = newlySelectedImageUri
+    ? { uri: newlySelectedImageUri } // If a new local image is selected, show it
+    : user?.profilePic
+    ? { uri: user.profilePic } // Otherwise, show the existing (potentially remote) profile pic from user context
+    : require("@/assets/images/profile-pic-placeholder.png"); // Fallback placeholder
 
   return (
     <SafeAreaView style={styles.container}>
@@ -195,17 +233,11 @@ const EditProfile = () => {
           </TouchableOpacity>
           <Text style={styles.header}>Edit Profile</Text>
           <View style={{ alignItems: "center", marginBottom: 24 }}>
-            <Image
-              source={
-                profilePic
-                  ? { uri: profilePic }
-                  : require("@/assets/images/profile-pic-placeholder.png")
-              }
-              style={styles.profilePic}
-            />
+            <Image source={imageSource} style={styles.profilePic} />
             <TouchableOpacity
               style={styles.changePicBtn}
               onPress={handleSelectImage}
+              disabled={isLoading} // Disable button while loading
             >
               <Text style={styles.changePicText}>Change Profile Picture</Text>
             </TouchableOpacity>
@@ -284,8 +316,16 @@ const EditProfile = () => {
               multiline
               numberOfLines={4}
             />
-            <TouchableOpacity style={styles.button} onPress={handleEditProfile}>
-              <Text style={styles.buttonText}>Save Changes</Text>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={handleEditProfile}
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Save Changes</Text>
+              )}
             </TouchableOpacity>
           </View>
         </ScrollView>

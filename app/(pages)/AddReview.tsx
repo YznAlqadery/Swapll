@@ -1,27 +1,26 @@
-import React, { useState } from "react";
 import {
   View,
   Text,
-  TextInput,
-  TouchableOpacity,
   SafeAreaView,
   StyleSheet,
-  Modal, // Import Modal
-  Pressable, // Import Pressable for modal overlay
+  TextInput,
+  TouchableOpacity,
+  Modal,
+  Pressable,
 } from "react-native";
+import React, { useState } from "react";
 import { FontAwesome, Ionicons } from "@expo/vector-icons";
 import Divider from "@/components/Divider";
 import { useAuth } from "@/context/AuthContext";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useQueryClient } from "@tanstack/react-query";
 
-// --- Custom Alert Modal Component (Copied from OfferDetails.tsx) ---
 interface CustomAlertModalProps {
   isVisible: boolean;
   title: string;
   message: string;
   onClose: () => void;
-  onConfirm?: () => void; // Optional callback for "OK" button
+  onConfirm?: () => void;
 }
 
 const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
@@ -33,7 +32,7 @@ const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
 }) => {
   return (
     <Modal
-      animationType="fade" // Or "slide"
+      animationType="fade"
       transparent={true}
       visible={isVisible}
       onRequestClose={onClose}
@@ -58,7 +57,7 @@ const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
 };
 
 const AddReview = () => {
-  const { offerId } = useLocalSearchParams<{ offerId: string }>(); // Explicitly type offerId as string
+  const { offerId } = useLocalSearchParams<{ offerId: string }>();
   const { user: token } = useAuth();
   const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(0);
@@ -66,7 +65,6 @@ const AddReview = () => {
 
   const router = useRouter();
 
-  // --- State for Custom Alert Modal ---
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
@@ -81,7 +79,7 @@ const AddReview = () => {
   ) => {
     setAlertTitle(title);
     setAlertMessage(message);
-    setAlertOnConfirm(() => onConfirm); // Set the function for the callback
+    setAlertOnConfirm(() => onConfirm);
     setIsAlertVisible(true);
   };
 
@@ -93,7 +91,6 @@ const AddReview = () => {
   };
 
   const handleSubmit = async () => {
-    console.log("Submitting reviewText:", reviewText, "rating:", rating);
     if (!reviewText || rating === 0) {
       showAlert(
         "Missing Information",
@@ -112,7 +109,7 @@ const AddReview = () => {
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            offerId: parseInt(offerId as string), // Ensure offerId is a number for the API call
+            offerId: parseInt(offerId as string),
             rating,
             comment: reviewText,
           }),
@@ -120,22 +117,19 @@ const AddReview = () => {
       );
 
       if (!response.ok) {
-        // Attempt to read the error message from the response body
         const errorData = await response.text();
         let errorMessage = "Failed to submit review. Please try again.";
         try {
           const parsedError = JSON.parse(errorData);
           if (parsedError.message) {
-            errorMessage = parsedError.message; // Use backend's specific error message
+            errorMessage = parsedError.message;
           }
         } catch (parseError) {
-          // If response is not JSON, use the raw text or default message
           errorMessage = errorData || errorMessage;
         }
         throw new Error(errorMessage);
       }
 
-      // Invalidate queries to trigger refetch on OfferDetails page
       await queryClient.invalidateQueries({
         queryKey: ["reviews", parseInt(offerId as string)],
       });
@@ -144,12 +138,11 @@ const AddReview = () => {
       });
 
       showAlert("Success", "Your review has been added!", () => {
-        router.back(); // Navigate back to the OfferDetails page
+        router.back();
         setReviewText("");
         setRating(0);
       });
     } catch (error: any) {
-      console.error("Error submitting review:", error);
       showAlert(
         "Submission Error",
         error.message ||
@@ -209,7 +202,6 @@ const AddReview = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Custom Alert Modal */}
       <CustomAlertModal
         isVisible={isAlertVisible}
         title={alertTitle}
@@ -291,51 +283,51 @@ const modalStyles = StyleSheet.create({
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.6)", // Slightly darker overlay
+    backgroundColor: "rgba(0,0,0,0.6)",
   },
   modalView: {
     margin: 20,
     backgroundColor: "white",
-    borderRadius: 15, // Slightly less rounded
-    padding: 30, // Reduced padding
+    borderRadius: 15,
+    padding: 30,
     alignItems: "center",
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
-      height: 4, // Stronger shadow
+      height: 4,
     },
     shadowOpacity: 0.3,
     shadowRadius: 6,
     elevation: 8,
-    width: "85%", // Slightly wider modal
-    borderWidth: 1, // Subtle border
+    width: "85%",
+    borderWidth: 1,
     borderColor: "#E0FFFF",
   },
   modalTitle: {
     marginBottom: 15,
     textAlign: "center",
-    fontSize: 22, // Larger title
+    fontSize: 22,
     fontWeight: "bold",
     color: "#008B8B",
     fontFamily: "Poppins_700Bold",
   },
   modalMessage: {
-    marginBottom: 25, // More space
+    marginBottom: 25,
     textAlign: "center",
     fontSize: 16,
-    color: "#555", // Slightly softer black
+    color: "#555",
     fontFamily: "Poppins_400Regular",
-    lineHeight: 22, // Better line height
+    lineHeight: 22,
   },
   okButton: {
     backgroundColor: "#20B2AA",
     borderRadius: 10,
     paddingVertical: 12,
-    paddingHorizontal: 25, // Wider button
+    paddingHorizontal: 25,
     elevation: 3,
-    minWidth: 120, // Minimum width
+    minWidth: 120,
     alignItems: "center",
-    shadowColor: "#000", // Shadow for button
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 3,
@@ -344,7 +336,7 @@ const modalStyles = StyleSheet.create({
     color: "white",
     fontWeight: "bold",
     textAlign: "center",
-    fontSize: 17, // Slightly larger text
+    fontSize: 17,
     fontFamily: "Poppins_600SemiBold",
   },
 });

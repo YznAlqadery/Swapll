@@ -11,7 +11,7 @@ import {
   Linking,
 } from "react-native";
 import { useAuth } from "@/context/AuthContext";
-import { FontAwesome5, Ionicons } from "@expo/vector-icons"; // Import Ionicons
+import { FontAwesome5, Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import {
@@ -32,37 +32,26 @@ interface User {
   phone: string;
   address: string;
   referralCode: string | null;
-  profilePic: string; // This should be the relative path from the backend
+  profilePic: string;
   bio: string;
 }
 
-/**
- * Helper function to format phone numbers.
- * This is a basic formatter and can be extended for more complex international formats
- * or by using a dedicated library (e.g., 'libphonenumber-js').
- */
 const formatPhoneNumber = (phoneNumberString: string | undefined): string => {
   if (!phoneNumberString) return "";
 
-  // Remove all non-digit characters
   const cleaned = ("" + phoneNumberString).replace(/\D/g, "");
 
-  // Basic formatting for a 10-digit number (e.g., 079 123 4567)
-  // or 12-digit international (e.g., +962 79 123 4567)
   if (cleaned.length === 12 && cleaned.startsWith("962")) {
-    // Assumes +962 prefix, e.g., 962791234567 -> +962 79 123 4567
     return `+${cleaned.substring(0, 3)} ${cleaned.substring(
       3,
       5
     )} ${cleaned.substring(5, 8)} ${cleaned.substring(8, 12)}`;
   } else if (cleaned.length === 10 && cleaned.startsWith("07")) {
-    // Assumes local 07x prefix, e.g., 0791234567 -> 079 123 4567
     return `${cleaned.substring(0, 3)} ${cleaned.substring(
       3,
       6
     )} ${cleaned.substring(6, 10)}`;
   }
-  // Fallback to original string if no specific format matches
   return phoneNumberString;
 };
 
@@ -93,27 +82,23 @@ const UserProfile = () => {
 
   const router = useRouter();
 
-  // If userId could be string or string[], pick the first string if array
   const normalizedUserId = Array.isArray(userId) ? userId[0] : userId;
 
-  // Convert to number (or NaN if invalid)
   const userIdNumber = normalizedUserId ? Number(normalizedUserId) : undefined;
 
-  // Redirect if viewing own profile
   if (user?.id !== undefined && user?.id === userIdNumber) {
     router.replace("/(tabs)/profile");
-    return null; // Return null to prevent rendering this component
+    return null;
   }
 
-  // Use useQuery for fetching other user's data
   const {
     data: otherUser,
-    isLoading: isOtherUserLoading, // Renamed to clearly indicate it's for 'otherUser'
+    isLoading: isOtherUserLoading,
     error: otherUserError,
   } = useQuery<User | undefined>({
-    queryKey: ["otherUser", userIdNumber], // Use userIdNumber for queryKey
+    queryKey: ["otherUser", userIdNumber],
     queryFn: () => fetchUser(userIdNumber as number, token as string),
-    enabled: !!userIdNumber && !!token, // Only fetch if userIdNumber and token are available
+    enabled: !!userIdNumber && !!token,
   });
 
   if (isOtherUserLoading) {
@@ -134,7 +119,6 @@ const UserProfile = () => {
     );
   }
 
-  // Show error or not found message if data fetching failed or user is not found
   if (otherUserError || !otherUser) {
     return (
       <SafeAreaView style={styles.container}>
@@ -156,12 +140,10 @@ const UserProfile = () => {
     );
   }
 
-  // Main content once user data is loaded
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaView style={styles.container}>
         <StatusBar barStyle={"dark-content"} />
-        {/* Back Button */}
         <TouchableOpacity
           style={styles.backButton}
           onPress={() => router.back()}
@@ -191,7 +173,7 @@ const UserProfile = () => {
                 style={styles.profilePic}
                 onError={(e) =>
                   console.log("Profile Image Load Error:", e.nativeEvent.error)
-                } // Added error logging for the Image component itself
+                }
               />
             </View>
 
@@ -245,7 +227,6 @@ const UserProfile = () => {
             >
               Personal Information
             </Text>
-            {/* START: Enhanced Messaging Button (with original image) */}
             <TouchableOpacity
               onPress={() =>
                 router.replace({
@@ -257,15 +238,14 @@ const UserProfile = () => {
                   },
                 })
               }
-              style={styles.messageButton} // Apply new style here
+              style={styles.messageButton}
             >
               <Image
-                source={require("@/assets/images/swapll_message.png")} // Retained original image
-                style={styles.messageButtonIcon} // Applied specific style for the icon
+                source={require("@/assets/images/swapll_message.png")}
+                style={styles.messageButtonIcon}
               />
               <Text style={styles.messageButtonText}>Message</Text>
             </TouchableOpacity>
-            {/* END: Enhanced Messaging Button */}
           </View>
 
           <View style={styles.personalInfo}>
@@ -291,7 +271,6 @@ const UserProfile = () => {
                 />
                 <Text style={styles.infoLabel}>Phone</Text>
               </View>
-              {/* Apply phone number formatting here */}
               <Text style={styles.infoText}>
                 {formatPhoneNumber(otherUser?.phone)}
               </Text>
@@ -325,10 +304,10 @@ const UserProfile = () => {
           <TouchableOpacity
             onPress={() =>
               router.push({
-                pathname: "/(pages)/YourOffers", // This path might need to be dynamic to show *other* user's offers
+                pathname: "/(pages)/YourOffers",
                 params: {
                   userId: otherUser?.id,
-                  userName: otherUser?.userName, // Pass userName for display in YourOffers page if needed
+                  userName: otherUser?.userName,
                 },
               })
             }
@@ -347,7 +326,7 @@ const UserProfile = () => {
                 width: "100%",
                 padding: 16,
                 borderRadius: 10,
-                justifyContent: "space-between", // Added to push arrow to the right
+                justifyContent: "space-between",
               }}
             >
               <View style={{ flexDirection: "row", alignItems: "center" }}>
@@ -381,7 +360,7 @@ const UserProfile = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#F0F7F7" }, // Removed horizontal padding from container
+  container: { flex: 1, backgroundColor: "#F0F7F7" },
   profileContainer: { alignItems: "center", justifyContent: "center" },
   profileWrapper: {
     width: "100%",
@@ -430,7 +409,7 @@ const styles = StyleSheet.create({
     flexDirection: "column",
     alignItems: "flex-start",
     alignSelf: "flex-start",
-    paddingHorizontal: 16, // Added horizontal padding here instead of container
+    paddingHorizontal: 16,
     width: "100%",
     marginTop: 10,
   },
@@ -457,15 +436,14 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontFamily: "Poppins_400Regular",
   },
-  // Adjusted backButton style
   backButton: {
     position: "absolute",
-    top: 50, // Adjust this as needed based on StatusBar height and desired padding
+    top: 50,
     left: 16,
-    zIndex: 10, // Ensure it's above other content
-    backgroundColor: "#fff", // White background
-    borderRadius: 25, // Circular shape
-    padding: 8, // Padding inside the button
+    zIndex: 10,
+    backgroundColor: "#fff",
+    borderRadius: 25,
+    padding: 8,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.15,
@@ -533,27 +511,26 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: "Poppins_600SemiBold",
   },
-  // Styles for the message button (with original image)
   messageButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#E0F2F2", // A lighter shade of your theme color
+    backgroundColor: "#E0F2F2",
     paddingVertical: 8,
     paddingHorizontal: 15,
-    borderRadius: 20, // Pill-shaped
+    borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#008B8B", // Theme color border
-    shadowColor: "#000", // Subtle shadow for depth
+    borderColor: "#008B8B",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 3, // Android shadow
-    gap: 8, // Space between icon and text (React Native 0.71+)
+    elevation: 3,
+    gap: 8,
   },
   messageButtonIcon: {
-    width: 20, // Adjust size as needed for the image
-    height: 20, // Adjust size as needed for the image
-    tintColor: "#008B8B", // Apply tint color if you want to recolor the image
+    width: 20,
+    height: 20,
+    tintColor: "#008B8B",
   },
   messageButtonText: {
     color: "#008B8B",

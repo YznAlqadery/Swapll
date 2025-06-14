@@ -1,4 +1,3 @@
-// app/(pages)/TransactionsPage.tsx
 import React, { useState, useCallback } from "react";
 import {
   View,
@@ -18,11 +17,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useLoggedInUser } from "@/context/LoggedInUserContext";
 import { Feather } from "@expo/vector-icons";
 
-// --- API Configuration ---
-// Ensure this is defined in your .env file (e.g., EXPO_PUBLIC_API_URL=http://your-ip:8080)
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
-// --- Transaction Enums and Interfaces (should match your Spring Boot DTOs) ---
 enum TransactionStatus {
   PENDING = "PENDING",
   ACTIVE = "ACTIVE",
@@ -43,11 +39,8 @@ interface TransactionDTO {
   sellerName: string;
   buyerName: string;
   offerName: string;
-  // Potentially add offer price if needed for display or further calculations
-  // price?: number;
 }
 
-// --- Custom Alert Modal Component ---
 interface CustomAlertModalProps {
   isVisible: boolean;
   title: string;
@@ -72,10 +65,9 @@ const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
       visible={isVisible}
       onRequestClose={onClose}
     >
-      {/* Use Pressable to allow tapping outside the modal to close if no confirm button */}
       <Pressable
         style={modalStyles.centeredView}
-        onPress={showConfirmButton ? undefined : onClose} // Only close on overlay tap if no confirm option
+        onPress={showConfirmButton ? undefined : onClose}
       >
         <View style={modalStyles.modalView}>
           <Text style={modalStyles.modalTitle}>{title}</Text>
@@ -92,7 +84,6 @@ const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
                 style={[modalStyles.modalButton, modalStyles.confirmButton]}
                 onPress={() => {
                   onConfirm();
-                  // onClose(); // Let the action handler manage closing if needed, or keep for immediate close
                 }}
               >
                 <Text style={modalStyles.confirmButtonText}>Confirm</Text>
@@ -109,8 +100,6 @@ const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
   );
 };
 
-// --- API Fetch Functions ---
-// Centralize error handling for API calls
 async function fetchApi<T>(
   url: string,
   token: string,
@@ -120,31 +109,27 @@ async function fetchApi<T>(
     method,
     headers: {
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json", // Important for PUT/POST requests if sending body
+      "Content-Type": "application/json",
     },
   });
   if (!response.ok) {
     const errorText = await response.text();
-    // Attempt to parse JSON error if available, fallback to text
     let errorMessage = errorText;
     try {
       const errorJson = JSON.parse(errorText);
-      errorMessage = errorJson.message || errorText; // Use a specific error field if backend provides it
-    } catch (e) {
-      // Not a JSON error, use plain text
-    }
+      errorMessage = errorJson.message || errorText;
+    } catch (e) {}
     throw new Error(
       `Failed to ${method.toLowerCase()} ${url.split("/").pop()}: ${
         errorMessage || response.statusText
       }`
     );
   }
-  // For PUT requests that return no content, we might not get JSON
   if (
     response.status === 204 ||
     response.headers.get("content-length") === "0"
   ) {
-    return {} as T; // Return an empty object or null if your function type allows
+    return {} as T;
   }
   return response.json() as Promise<T>;
 }
@@ -200,7 +185,6 @@ async function confirmTransactionApi(
   );
 }
 
-// --- TransactionItem Component ---
 interface TransactionItemProps {
   item: TransactionDTO;
   currentUserId: number | undefined;
@@ -230,12 +214,12 @@ const TransactionItem = React.memo(
 
     const statusColor =
       item.status === TransactionStatus.COMPLETED
-        ? "#20B2AA" // Green for COMPLETED
+        ? "#20B2AA"
         : item.status === TransactionStatus.DECLINED
-        ? "#B22222" // Red for DECLINED
+        ? "#B22222"
         : item.status === TransactionStatus.ACTIVE
-        ? "#008000" // Standard Green for ACTIVE
-        : "#FFA500"; // Orange for PENDING
+        ? "#008000"
+        : "#FFA500";
 
     return (
       <View style={styles.transactionItem}>
@@ -261,7 +245,6 @@ const TransactionItem = React.memo(
           </Text>
         </Text>
 
-        {/* Conditionally render buyer/seller confirmed status for ACTIVE and COMPLETED */}
         {(item.status === TransactionStatus.ACTIVE ||
           item.status === TransactionStatus.COMPLETED) && (
           <>
@@ -280,9 +263,7 @@ const TransactionItem = React.memo(
           </>
         )}
 
-        {/* Action Buttons Container */}
         <View style={styles.actionButtonsContainer}>
-          {/* Seller Action Buttons (Accept/Reject) - Only for PENDING incoming transactions */}
           {isSeller && item.status === TransactionStatus.PENDING && (
             <>
               <TouchableOpacity
@@ -310,7 +291,6 @@ const TransactionItem = React.memo(
             </>
           )}
 
-          {/* Confirm Button for ACTIVE transactions (only if not yet confirmed by current user) */}
           {item.status === TransactionStatus.ACTIVE &&
             ((isBuyer && !item.buyerConfirmed) ||
               (isSeller && !item.sellerConfirmed)) && (
@@ -332,11 +312,10 @@ const TransactionItem = React.memo(
   }
 );
 
-// --- TransactionsPage Component ---
 const TransactionsPage = () => {
   const router = useRouter();
   const { user: token } = useAuth();
-  const { user } = useLoggedInUser(); // This 'user' typically holds the ID
+  const { user } = useLoggedInUser();
   const queryClient = useQueryClient();
 
   const [activeFilter, setActiveFilter] = useState<"incoming" | "outgoing">(
@@ -358,7 +337,6 @@ const TransactionsPage = () => {
   >(undefined);
   const [showAlertConfirmButton, setShowAlertConfirmButton] = useState(false);
 
-  // Unified function to show alert modal
   const showAlert = useCallback(
     (
       title: string,
@@ -368,7 +346,6 @@ const TransactionsPage = () => {
     ) => {
       setAlertTitle(title);
       setAlertMessage(message);
-      // Ensure onConfirm is stable, or use a ref if `onConfirm` itself is a dependency
       setAlertOnConfirm(() => onConfirm);
       setShowAlertConfirmButton(showConfirmButton);
       setIsAlertVisible(true);
@@ -384,7 +361,6 @@ const TransactionsPage = () => {
     setShowAlertConfirmButton(false);
   }, []);
 
-  // Helper for performing transaction actions
   const performTransactionAction = useCallback(
     async (
       transactionId: number,
@@ -411,8 +387,6 @@ const TransactionsPage = () => {
           try {
             await apiCall(token, transactionId);
 
-            // Invalidate the query for the specific transaction lists
-            // This will refetch to get the latest status (ACTIVE, DECLINED, or COMPLETED)
             await queryClient.invalidateQueries({
               queryKey: ["incomingTransactions", user?.id],
             });
@@ -420,16 +394,14 @@ const TransactionsPage = () => {
               queryKey: ["outgoingTransactions", user?.id],
             });
 
-            // Crucial: Invalidate the loggedInUser query here if balance might change
             if (action === "confirm") {
               await queryClient.invalidateQueries({
                 queryKey: ["loggedInUser"],
               });
             }
 
-            showAlert("Success", successMessage, hideAlert); // Auto-close success alert after user taps OK
+            showAlert("Success", successMessage, hideAlert);
           } catch (err: any) {
-            console.error(`Error ${action} transaction:`, err);
             showAlert(
               "Error",
               err.message || `Failed to ${action} transaction.`,
@@ -440,7 +412,7 @@ const TransactionsPage = () => {
             setActionType(null);
           }
         },
-        true // showConfirmButton = true for a confirm/cancel alert
+        true
       );
     },
     [token, user?.id, queryClient, showAlert, hideAlert]
@@ -488,7 +460,6 @@ const TransactionsPage = () => {
     [performTransactionAction]
   );
 
-  // useQuery hook for fetching incoming transactions
   const {
     data: incomingTransactions,
     isLoading: incomingLoading,
@@ -498,11 +469,10 @@ const TransactionsPage = () => {
   } = useQuery<TransactionDTO[]>({
     queryKey: ["incomingTransactions", user?.id],
     queryFn: () => fetchIncomingTransactions(token as string),
-    enabled: activeFilter === "incoming" && !!user?.id && !!token, // Ensure user.id and token exist
+    enabled: activeFilter === "incoming" && !!user?.id && !!token,
     staleTime: 5 * 60 * 1000,
   });
 
-  // useQuery hook for fetching outgoing transactions
   const {
     data: outgoingTransactions,
     isLoading: outgoingLoading,
@@ -512,22 +482,19 @@ const TransactionsPage = () => {
   } = useQuery<TransactionDTO[]>({
     queryKey: ["outgoingTransactions", user?.id],
     queryFn: () => fetchOutgoingTransactions(token as string),
-    enabled: activeFilter === "outgoing" && !!user?.id && !!token, // Ensure user.id and token exist
+    enabled: activeFilter === "outgoing" && !!user?.id && !!token,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Determine current loading, error, data, and refreshing state based on the active filter
   const isLoading =
     activeFilter === "incoming" ? incomingLoading : outgoingLoading;
   const error = activeFilter === "incoming" ? incomingError : outgoingError;
   const data =
     activeFilter === "incoming" ? incomingTransactions : outgoingTransactions;
 
-  // Combined refreshing state for FlatList
   const isRefreshing =
     activeFilter === "incoming" ? isRefetchingIncoming : isRefetchingOutgoing;
 
-  // Handler for pull-to-refresh
   const handleRefresh = useCallback(() => {
     if (activeFilter === "incoming") {
       refetchIncoming();
@@ -536,7 +503,6 @@ const TransactionsPage = () => {
     }
   }, [activeFilter, refetchIncoming, refetchOutgoing]);
 
-  // Handle case where user ID might not be available yet (e.g., still fetching from context)
   if (!user?.id) {
     return (
       <SafeAreaView style={styles.container}>
@@ -567,7 +533,7 @@ const TransactionsPage = () => {
             activeFilter === "incoming" && styles.activeFilterButton,
           ]}
           onPress={() => setActiveFilter("incoming")}
-          disabled={isLoading} // Disable filter while loading
+          disabled={isLoading}
         >
           <Text
             style={[
@@ -584,7 +550,7 @@ const TransactionsPage = () => {
             activeFilter === "outgoing" && styles.activeFilterButton,
           ]}
           onPress={() => setActiveFilter("outgoing")}
-          disabled={isLoading} // Disable filter while loading
+          disabled={isLoading}
         >
           <Text
             style={[
@@ -597,7 +563,7 @@ const TransactionsPage = () => {
         </TouchableOpacity>
       </View>
 
-      {isLoading && !isRefreshing ? ( // Only show full loading spinner for initial load, not refetching
+      {isLoading && !isRefreshing ? (
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#008B8B" />
           <Text style={styles.loadingText}>Loading transactions...</Text>
@@ -661,18 +627,17 @@ const TransactionsPage = () => {
   );
 };
 
-// --- Styles ---
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff", // Use a light background for the page container
+    backgroundColor: "#fff",
   },
   headerWrapper: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingHorizontal: 16,
-    paddingTop: Platform.OS === "android" ? 40 : 10, // Adjust for Android status bar
+    paddingTop: Platform.OS === "android" ? 40 : 10,
     paddingBottom: 15,
     backgroundColor: "#fff",
     borderBottomWidth: 1,
@@ -692,10 +657,10 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 22,
-    fontFamily: "Poppins_700Bold", // Use a defined font if available
+    fontFamily: "Poppins_700Bold",
     color: "#008B8B",
     textAlign: "center",
-    flex: 1, // Allow text to take available space
+    flex: 1,
   },
   filterContainer: {
     flexDirection: "row",
@@ -761,7 +726,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontFamily: "Poppins_700Bold",
     color: "#333",
-    flexShrink: 1, // Allow text to wrap if too long
+    flexShrink: 1,
   },
   transactionStatus: {
     fontSize: 14,
@@ -807,7 +772,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
   },
   errorText: {
-    color: "#D32F2F", // A more distinct error red
+    color: "#D32F2F",
     textAlign: "center",
     fontSize: 16,
     fontFamily: "Poppins_500Medium",
@@ -841,7 +806,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     flex: 1,
     marginHorizontal: 5,
-    minWidth: 100, // Ensure buttons have a minimum width
+    minWidth: 100,
   },
   acceptButton: {
     backgroundColor: "#20B2AA",
@@ -880,8 +845,8 @@ const modalStyles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    width: "85%", // Slightly wider modal
-    maxWidth: 400, // Max width for larger screens
+    width: "85%",
+    maxWidth: 400,
   },
   modalTitle: {
     marginBottom: 15,
@@ -898,7 +863,7 @@ const modalStyles = StyleSheet.create({
     color: "#333",
   },
   okButton: {
-    backgroundColor: "#008B8B", // Changed to match your primary color
+    backgroundColor: "#008B8B",
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 25,
@@ -927,10 +892,10 @@ const modalStyles = StyleSheet.create({
     marginHorizontal: 5,
   },
   cancelButton: {
-    backgroundColor: "#E0E0E0", // Lighter grey for cancel
+    backgroundColor: "#E0E0E0",
   },
   confirmButton: {
-    backgroundColor: "#20B2AA", // Green for confirm
+    backgroundColor: "#20B2AA",
   },
   cancelButtonText: {
     color: "#555",

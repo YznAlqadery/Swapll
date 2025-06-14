@@ -1,4 +1,3 @@
-// app/reset-password.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -8,22 +7,16 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Modal,
+  Pressable,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { Ionicons } from "@expo/vector-icons"; // Ensure Ionicons is imported
+import { Ionicons } from "@expo/vector-icons";
 
-// Correct way to define screen options for Expo Router file-system routing
 export const options = {
   title: "Create New Password",
-  headerShown: false, // Hide the header if your design doesn't have one
+  headerShown: false,
 };
-
-// --- API Configuration ---
-// IMPORTANT: Replace with your actual backend API URL
-const API_BASE_URL = "http://localhost:8080"; // For local development. Change for physical device/production!
-// If testing on a physical device, replace 'localhost' with your machine's local IP address
-// Example: const API_BASE_URL = "http://192.168.1.100:8080";
 
 interface PasswordValidity {
   minLength: boolean;
@@ -32,6 +25,47 @@ interface PasswordValidity {
   hasLower: boolean;
 }
 
+interface CustomAlertModalProps {
+  isVisible: boolean;
+  title: string;
+  message: string;
+  onClose: () => void;
+  onConfirm?: () => void;
+}
+
+const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
+  isVisible,
+  title,
+  message,
+  onClose,
+  onConfirm,
+}) => {
+  return (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
+      <Pressable style={modalStyles.centeredView} onPress={onClose}>
+        <View style={modalStyles.modalView}>
+          <Text style={modalStyles.modalTitle}>{title}</Text>
+          <Text style={modalStyles.modalMessage}>{message}</Text>
+          <TouchableOpacity
+            style={modalStyles.okButton}
+            onPress={() => {
+              onClose();
+              if (onConfirm) onConfirm();
+            }}
+          >
+            <Text style={modalStyles.okButtonText}>OK</Text>
+          </TouchableOpacity>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+};
+
 const ResetPassword: React.FC = () => {
   const [newPassword, setNewPassword] = useState<string>("");
   const [confirmPassword, setConfirmPassword] = useState<string>("");
@@ -39,11 +73,36 @@ const ResetPassword: React.FC = () => {
   const [showConfirmPassword, setShowConfirmPassword] =
     useState<boolean>(false);
 
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertOnConfirm, setAlertOnConfirm] = useState<
+    (() => void) | undefined
+  >(undefined);
+
   const router = useRouter();
   const { email, verificationCode } = useLocalSearchParams<{
     email: string;
     verificationCode: string;
   }>();
+
+  const showAlert = (
+    title: string,
+    message: string,
+    onConfirm?: () => void
+  ) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertOnConfirm(() => onConfirm);
+    setIsAlertVisible(true);
+  };
+
+  const hideAlert = () => {
+    setIsAlertVisible(false);
+    setAlertTitle("");
+    setAlertMessage("");
+    setAlertOnConfirm(undefined);
+  };
 
   const isPasswordValid = (password: string): PasswordValidity => {
     const minLength = password.length >= 8;
@@ -57,7 +116,7 @@ const ResetPassword: React.FC = () => {
 
   const handleResetPassword = async () => {
     if (newPassword !== confirmPassword) {
-      Alert.alert(
+      showAlert(
         "Password Mismatch",
         "New password and confirm password do not match."
       );
@@ -69,7 +128,7 @@ const ResetPassword: React.FC = () => {
       !passwordValidity.hasUpper ||
       !passwordValidity.hasLower
     ) {
-      Alert.alert(
+      showAlert(
         "Weak Password",
         "Please ensure your new password meets all the criteria."
       );
@@ -77,11 +136,6 @@ const ResetPassword: React.FC = () => {
     }
 
     try {
-      console.log("Attempting to reset password via API...");
-      console.log("Email:", email);
-      console.log("Verification Code:", verificationCode);
-      // IMPORTANT: In a real app, do NOT console.log the actual password!
-
       const response = await fetch(
         `${process.env.EXPO_PUBLIC_API_URL}/api/auth/reset-password`,
         {
@@ -90,39 +144,31 @@ const ResetPassword: React.FC = () => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            email: email, // Matches EmailRequest field
-            code: verificationCode, // Matches code field in ResetRequest
-            newPassword: newPassword, // Matches newPassword field in ResetRequest
+            email: email,
+            code: verificationCode,
+            newPassword: newPassword,
           }),
         }
       );
 
       if (response.ok) {
-        const message = await response.text(); // Assuming backend returns "Password reset successful" as plain text
-        Alert.alert(
+        const message = await response.text();
+        showAlert(
           "Password Reset",
           message ||
             "Your password has been successfully reset. Please log in with your new password.",
-          [
-            { text: "OK", onPress: () => router.replace("/(auth)/Login") }, // Go to home/login screen, replacing the current stack
-          ]
+          () => router.replace("/(auth)/Login")
         );
       } else {
-        const errorText = await response.text(); // Get error message from backend
-        console.error(
-          "API Error - Reset Password:",
-          response.status,
-          errorText
-        );
-        Alert.alert(
+        const errorText = await response.text();
+        showAlert(
           "Error",
           errorText ||
             "Failed to reset password. Please check the code and try again."
         );
       }
     } catch (error) {
-      console.error("Network Error - Reset Password:", error);
-      Alert.alert(
+      showAlert(
         "Error",
         "Network error. Could not connect to the server. Please try again."
       );
@@ -158,7 +204,7 @@ const ResetPassword: React.FC = () => {
           style={styles.eyeIcon}
         >
           <Ionicons
-            name={showNewPassword ? "eye" : "eye-off"} // Changed 'eye-slash' to 'eye-off' for Ionicons
+            name={showNewPassword ? "eye" : "eye-off"}
             size={20}
             color="#666"
           />
@@ -180,7 +226,7 @@ const ResetPassword: React.FC = () => {
           style={styles.eyeIcon}
         >
           <Ionicons
-            name={showConfirmPassword ? "eye" : "eye-off"} // Changed 'eye-slash' to 'eye-off' for Ionicons
+            name={showConfirmPassword ? "eye" : "eye-off"}
             size={20}
             color="#666"
           />
@@ -194,7 +240,7 @@ const ResetPassword: React.FC = () => {
               passwordValidity.minLength
                 ? "checkmark-circle"
                 : "ellipse-outline"
-            } // Changed 'circle-o' to 'ellipse-outline' for Ionicons
+            }
             size={16}
             color={passwordValidity.minLength ? "green" : "#ccc"}
           />
@@ -213,7 +259,7 @@ const ResetPassword: React.FC = () => {
               passwordValidity.hasNumber
                 ? "checkmark-circle"
                 : "ellipse-outline"
-            } // Changed 'check-circle' to 'checkmark-circle' and 'circle-o' to 'ellipse-outline' for Ionicons
+            }
             size={16}
             color={passwordValidity.hasNumber ? "green" : "#ccc"}
           />
@@ -231,7 +277,7 @@ const ResetPassword: React.FC = () => {
             name={
               passwordValidity.hasUpper && passwordValidity.hasLower
                 ? "checkmark-circle"
-                : "ellipse-outline" // Changed 'check-circle' to 'checkmark-circle' and 'circle-o' to 'ellipse-outline' for Ionicons
+                : "ellipse-outline"
             }
             size={16}
             color={
@@ -259,6 +305,14 @@ const ResetPassword: React.FC = () => {
       >
         <Text style={styles.resetButtonText}>Reset Password</Text>
       </TouchableOpacity>
+
+      <CustomAlertModal
+        isVisible={isAlertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={hideAlert}
+        onConfirm={alertOnConfirm}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -338,6 +392,69 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "bold",
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+    width: "85%",
+    borderWidth: 1,
+    borderColor: "#E0FFFF",
+  },
+  modalTitle: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
+  },
+  modalMessage: {
+    marginBottom: 25,
+    textAlign: "center",
+    fontSize: 16,
+    color: "#555",
+    fontFamily: "Poppins_400Regular",
+    lineHeight: 22,
+  },
+  okButton: {
+    backgroundColor: "#20B2AA",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    elevation: 3,
+    minWidth: 120,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  okButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 17,
+    fontFamily: "Poppins_600SemiBold",
   },
 });
 

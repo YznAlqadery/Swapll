@@ -1,4 +1,3 @@
-// app/forgot-password.tsx
 import React, { useState } from "react";
 import {
   View,
@@ -8,28 +7,95 @@ import {
   StyleSheet,
   KeyboardAvoidingView,
   Platform,
-  Alert,
+  Modal,
+  Pressable,
+  ActivityIndicator,
 } from "react-native";
-import { Link, useRouter } from "expo-router"; // Import Link and useRouter from expo-router
+import { Link, useRouter } from "expo-router";
+
+interface CustomAlertModalProps {
+  isVisible: boolean;
+  title: string;
+  message: string;
+  onClose: () => void;
+  onConfirm?: () => void;
+}
+
+const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
+  isVisible,
+  title,
+  message,
+  onClose,
+  onConfirm,
+}) => {
+  return (
+    <Modal
+      animationType="fade"
+      transparent={true}
+      visible={isVisible}
+      onRequestClose={onClose}
+    >
+      <Pressable style={modalStyles.centeredView} onPress={onClose}>
+        <View style={modalStyles.modalView}>
+          <Text style={modalStyles.modalTitle}>{title}</Text>
+          <Text style={modalStyles.modalMessage}>{message}</Text>
+          <TouchableOpacity
+            style={modalStyles.okButton}
+            onPress={() => {
+              onClose();
+              if (onConfirm) onConfirm();
+            }}
+          >
+            <Text style={modalStyles.okButtonText}>OK</Text>
+          </TouchableOpacity>
+        </View>
+      </Pressable>
+    </Modal>
+  );
+};
 
 const ForgotPasswordScreen: React.FC = () => {
-  const [email, setEmail] = useState<string>(""); // Pre-filled as in screenshot
+  const [email, setEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
-  const router = useRouter(); // Use useRouter hook for navigation
+  const router = useRouter();
+
+  const [isAlertVisible, setIsAlertVisible] = useState(false);
+  const [alertTitle, setAlertTitle] = useState("");
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertOnConfirm, setAlertOnConfirm] = useState<
+    (() => void) | undefined
+  >(undefined);
+
+  const showAlert = (
+    title: string,
+    message: string,
+    onConfirm?: () => void
+  ) => {
+    setAlertTitle(title);
+    setAlertMessage(message);
+    setAlertOnConfirm(() => onConfirm);
+    setIsAlertVisible(true);
+  };
+
+  const hideAlert = () => {
+    setIsAlertVisible(false);
+    setAlertTitle("");
+    setAlertMessage("");
+    setAlertOnConfirm(undefined);
+  };
 
   const handleSendCode = async () => {
     if (!email) {
-      Alert.alert("Error", "Please enter your email address.");
+      showAlert("Error", "Please enter your email address.");
       return;
     }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-      Alert.alert("Error", "Please enter a valid email address.");
+      showAlert("Error", "Please enter a valid email address.");
       return;
     }
 
     try {
-      console.log("Sending reset code request to backend for:", email);
       setIsLoading(true);
 
       const response = await fetch(
@@ -39,29 +105,27 @@ const ForgotPasswordScreen: React.FC = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ email: email }), // Match the EmailRequest body
+          body: JSON.stringify({ email: email }),
         }
       );
 
       if (response.ok) {
-        const message = await response.text(); // Assuming response is plain text "Reset code sent to email"
-        Alert.alert("Success", message || "Reset code sent to your email.");
-        // On success, navigate to the verification screen with email as a query parameter
-        router.push({
-          pathname: "/(pages)/VerificationScreen",
-          params: { email: email },
-        });
+        const message = await response.text();
+        showAlert("Success", message || "Reset code sent to your email.", () =>
+          router.push({
+            pathname: "/(pages)/VerificationScreen",
+            params: { email: email },
+          })
+        );
       } else {
-        const errorText = await response.text(); // Get error message from backend
-        console.error("API Error - Request Reset:", response.status, errorText);
-        Alert.alert(
+        const errorText = await response.text();
+        showAlert(
           "Error",
           errorText || "Failed to send verification code. Please try again."
         );
       }
     } catch (error) {
-      console.error("Network Error - Request Reset:", error);
-      Alert.alert(
+      showAlert(
         "Error",
         "Network error. Could not connect to the server. Please check your connection."
       );
@@ -75,13 +139,12 @@ const ForgotPasswordScreen: React.FC = () => {
       style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
-      {/* Back Arrow - Using Link for back navigation to a specific route */}
-      <Link href="/" asChild>
-        {/* Assuming '/' is your home/login screen */}
-        <TouchableOpacity style={styles.backButton}>
-          <Text style={styles.backArrow}>&larr;</Text>
-        </TouchableOpacity>
-      </Link>
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => router.replace("/(auth)/Login")}
+      >
+        <Text style={styles.backArrow}>&larr;</Text>
+      </TouchableOpacity>
 
       <Text style={styles.title}>Forgot Password</Text>
       <Text style={styles.subtitle}>
@@ -104,10 +167,20 @@ const ForgotPasswordScreen: React.FC = () => {
         onPress={handleSendCode}
         disabled={isLoading}
       >
-        <Text style={styles.sendCodeButtonText}>
-          {isLoading ? "Sending..." : "Send Code"}
-        </Text>
+        {isLoading ? (
+          <ActivityIndicator color="#fff" />
+        ) : (
+          <Text style={styles.sendCodeButtonText}>Send Code</Text>
+        )}
       </TouchableOpacity>
+
+      <CustomAlertModal
+        isVisible={isAlertVisible}
+        title={alertTitle}
+        message={alertMessage}
+        onClose={hideAlert}
+        onConfirm={alertOnConfirm}
+      />
     </KeyboardAvoidingView>
   );
 };
@@ -164,6 +237,69 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: "bold",
     fontFamily: "Poppins_700Bold",
+  },
+});
+
+const modalStyles = StyleSheet.create({
+  centeredView: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0,0,0,0.6)",
+  },
+  modalView: {
+    margin: 20,
+    backgroundColor: "white",
+    borderRadius: 15,
+    padding: 30,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 8,
+    width: "85%",
+    borderWidth: 1,
+    borderColor: "#E0FFFF",
+  },
+  modalTitle: {
+    marginBottom: 15,
+    textAlign: "center",
+    fontSize: 22,
+    fontWeight: "bold",
+    color: "#008B8B",
+    fontFamily: "Poppins_700Bold",
+  },
+  modalMessage: {
+    marginBottom: 25,
+    textAlign: "center",
+    fontSize: 16,
+    color: "#555",
+    fontFamily: "Poppins_400Regular",
+    lineHeight: 22,
+  },
+  okButton: {
+    backgroundColor: "#20B2AA",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 25,
+    elevation: 3,
+    minWidth: 120,
+    alignItems: "center",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 3,
+  },
+  okButtonText: {
+    color: "white",
+    fontWeight: "bold",
+    textAlign: "center",
+    fontSize: 17,
+    fontFamily: "Poppins_600SemiBold",
   },
 });
 

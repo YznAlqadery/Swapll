@@ -5,11 +5,10 @@ import {
   TextInput,
   TouchableOpacity,
   Keyboard,
-  // Alert, // No longer directly used
   SafeAreaView,
   ActivityIndicator,
-  Modal, // Import Modal
-  Pressable, // Import Pressable for closing modal
+  Modal,
+  Pressable,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -34,7 +33,6 @@ const ContinueSignUp = () => {
   const [checkingReferral, setCheckingReferral] = useState(false);
   const [referralError, setReferralError] = useState("");
 
-  // Modal specific states
   const [isErrorModalVisible, setIsErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -47,8 +45,32 @@ const ContinueSignUp = () => {
   const handleSignUp = async () => {
     Keyboard.dismiss();
     setLoading(true);
-    setErrorMessage(""); // Clear previous error messages
-    setIsErrorModalVisible(false); // Hide any previous error modal
+    setErrorMessage("");
+    setIsErrorModalVisible(false);
+
+    // Basic validation for phone and address
+    if (!phone.trim()) {
+      setErrorMessage("Please enter your phone number.");
+      setIsErrorModalVisible(true);
+      setLoading(false);
+      return;
+    }
+    const phoneRegex = /^[0-9]{7,15}$/; // Example: 7 to 15 digits
+    if (!phoneRegex.test(phone.trim())) {
+      setErrorMessage(
+        "Please enter a valid phone number (7-15 digits, numbers only)."
+      );
+      setIsErrorModalVisible(true);
+      setLoading(false);
+      return;
+    }
+
+    if (!address.trim()) {
+      setErrorMessage("Please enter your address.");
+      setIsErrorModalVisible(true);
+      setLoading(false);
+      return;
+    }
 
     const userPayload = {
       userName: username,
@@ -56,24 +78,45 @@ const ContinueSignUp = () => {
       lastName,
       password,
       email,
-      phone,
-      address,
-      referralCode,
+      phone: phone.trim(),
+      address: address.trim(),
+      referralCode: referralCode.trim() || null, // Ensure empty string becomes null
     };
 
     const formData = new FormData();
-
     formData.append("user", JSON.stringify(userPayload));
 
     if (image) {
       const fileUri = image as string;
-      const fileInfo = await FileSystem.getInfoAsync(fileUri);
-      if (fileInfo.exists) {
-        formData.append("profilePic", {
-          uri: fileUri,
-          name: "profile.jpg",
-          type: "image/jpeg",
-        } as any);
+      try {
+        const fileInfo = await FileSystem.getInfoAsync(fileUri);
+        if (fileInfo.exists && fileInfo.uri) {
+          const filename = fileInfo.uri.split("/").pop() ?? "profile.jpg";
+          const ext = filename.split(".").pop()?.toLowerCase();
+          const mimeType =
+            ext === "png"
+              ? "image/png"
+              : ext === "jpg" || ext === "jpeg"
+              ? "image/jpeg"
+              : "application/octet-stream";
+          formData.append("profilePic", {
+            uri: fileInfo.uri,
+            name: filename,
+            type: mimeType,
+          } as any);
+        } else {
+          setErrorMessage("Selected profile picture not found or invalid.");
+          setIsErrorModalVisible(true);
+          setLoading(false);
+          return;
+        }
+      } catch (fileError: any) {
+        setErrorMessage(
+          `Error processing profile picture: ${fileError.message}`
+        );
+        setIsErrorModalVisible(true);
+        setLoading(false);
+        return;
       }
     }
 
@@ -82,7 +125,6 @@ const ContinueSignUp = () => {
         `${process.env.EXPO_PUBLIC_API_URL}/api/auth/register`,
         {
           method: "POST",
-          // DO NOT set Content-Type header when sending FormData
           body: formData,
         }
       );
@@ -95,24 +137,18 @@ const ContinueSignUp = () => {
         } else {
           errorData = await response.text();
         }
-        console.error("Backend error status:", response.status);
-        console.error("Backend error body:", errorData);
-        // Set error message and show modal
         setErrorMessage(
           errorData.error || errorData || "Sign up failed. Please try again."
         );
         setIsErrorModalVisible(true);
-        throw new Error(errorData.error || "Sign up failed"); // Still throw to enter catch block for consistent error handling
+        throw new Error(errorData.error || "Sign up failed");
       }
 
       const data = await response.json();
-      console.log("Sign up successful:", data);
       if (setUser) {
         setUser(data.token);
       }
 
-      //Prefetch categories and offers
-      // No need for 'await' here as these are prefetch operations
       queryClient.prefetchQuery({
         queryKey: ["categories"],
         queryFn: () => fetchCategories(data.token),
@@ -130,12 +166,7 @@ const ContinueSignUp = () => {
 
       router.replace("/(tabs)/" as any);
     } catch (error: any) {
-      console.error("Sign up error (caught):", error);
-      // Error message already set and modal shown in the !response.ok block
-      // If a network error or other unexpected error occurs before !response.ok,
-      // it will be caught here.
       if (!errorMessage) {
-        // Only set if not already set by backend error response
         setErrorMessage(
           error.message || "An unexpected error occurred during sign up."
         );
@@ -156,8 +187,8 @@ const ContinueSignUp = () => {
       if (!response.ok) {
         throw new Error("Referral not found");
       }
-      const username = await response.text(); // plain text response
-      setReferralUser(username); // store the string
+      const username = await response.text();
+      setReferralUser(username);
     } catch (err: any) {
       setReferralUser(null);
       setReferralError(err.message || "Invalid referral code");
@@ -174,7 +205,7 @@ const ContinueSignUp = () => {
         setReferralUser(null);
         setReferralError("");
       }
-    }, 500); // wait 500ms after user stops typing
+    }, 500);
 
     return () => clearTimeout(delayDebounce);
   }, [referralCode]);
@@ -252,24 +283,13 @@ const ContinueSignUp = () => {
           )}
 
           {referralUser &&
-            referralUser.length > 9 && ( // Assuming username is usually shorter than 9 chars
+            referralUser.length > 0 && ( // Check for non-empty string
               <View style={styles.referralBox}>
                 <Text
                   style={{
                     color: "#008b8b",
                     fontFamily: "Poppins_400Regular",
                   }}
-                >
-                  🔴 {referralUser}
-                </Text>
-              </View>
-            )}
-
-          {referralUser &&
-            referralUser.length < 9 && ( // Assuming username is usually shorter than 9 chars
-              <View style={styles.referralBox}>
-                <Text
-                  style={{ color: "#008b8b", fontFamily: "Poppins_400Regular" }}
                 >
                   🟢 Nice! Referred by{" "}
                   <Text style={{ fontFamily: "Poppins_700Bold" }}>
@@ -303,16 +323,15 @@ const ContinueSignUp = () => {
         </TouchableOpacity>
       </View>
 
-      {/* Error Modal */}
       <Modal
         animationType="fade"
         transparent={true}
         visible={isErrorModalVisible}
-        onRequestClose={() => setIsErrorModalVisible(false)} // For Android back button
+        onRequestClose={() => setIsErrorModalVisible(false)}
       >
         <Pressable
           style={styles.modalOverlay}
-          onPress={() => setIsErrorModalVisible(false)} // Close modal when pressing outside
+          onPress={() => setIsErrorModalVisible(false)}
         >
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
@@ -377,10 +396,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
-    // Note: 'transitionDuration' is not a standard React Native style property.
-    // React Native animations are typically handled via Animated API or layout animations.
-    // If you intend for a smooth transition on focus, you'd use Animated.
-    // transitionDuration: "200ms",
   },
   inputFocused: {
     borderColor: "#008B8B",
@@ -413,12 +428,11 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#008b8b",
   },
-  // Modal Styles
   modalOverlay: {
     flex: 1,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.6)", // Semi-transparent black background
+    backgroundColor: "rgba(0, 0, 0, 0.6)",
   },
   modalContainer: {
     width: "80%",
@@ -439,7 +453,7 @@ const styles = StyleSheet.create({
   modalTitle: {
     fontSize: 20,
     fontFamily: "OpenSans_700Bold",
-    color: "#D9534F", // Red for error
+    color: "#D9534F",
     marginBottom: 15,
     textAlign: "center",
   },

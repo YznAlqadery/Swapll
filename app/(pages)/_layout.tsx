@@ -25,10 +25,6 @@ const PagesLayout = () => {
         />
         <Stack.Screen name="ResetPassword" options={{ headerShown: false }} />
         <Stack.Screen name="TransactionPage" options={{ headerShown: false }} />
-        <Stack.Screen
-          name="TransactionDetails"
-          options={{ headerShown: false }}
-        />
       </Stack>
     </>
   );
