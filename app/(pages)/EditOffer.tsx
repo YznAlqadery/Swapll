@@ -315,7 +315,7 @@ const EditOffer = () => {
     if (offer) {
       setTitle(offer.title ?? "");
       setDescription(offer.description ?? "");
-      setPrice(offer?.price ?? 0); // Price initialized directly from offer data
+      setPrice(offer?.price ? offer.price / 3 : 0); // Price initialized directly from offer data
       setImage(offer.image ?? "");
       setNewLocalImageUri(null); // Reset new local image state when offer loads
       setOfferType(offer.type ?? "");
@@ -433,10 +433,7 @@ const EditOffer = () => {
             <View style={styles.imagesContainer}>
               {image ? (
                 <View style={styles.imageWrapper}>
-                  <Image
-                    source={{ uri: image }} // Use `image` state for display
-                    style={styles.image}
-                  />
+                  <Image source={{ uri: image }} style={styles.image} />
                   <TouchableOpacity
                     style={styles.removeImageBtn}
                     onPress={removeImage}
@@ -597,27 +594,27 @@ const styles = StyleSheet.create({
     textAlign: "center",
     padding: 20,
   },
-  // New style for header row to accommodate back button
+
   headerContainer: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingHorizontal: 10,
     paddingVertical: 10,
-    marginTop: Platform.OS === "android" ? 20 : 0, // Adjust for Android SafeArea
+    marginTop: Platform.OS === "android" ? 20 : 0,
   },
   backButton: {
     padding: 10,
   },
   header: {
     fontSize: 24,
-    flex: 1, // Allows the text to take up available space, pushing buttons to sides
+    flex: 1,
     textAlign: "center",
     fontFamily: "Poppins_700Bold",
     color: "#008B8B",
   },
   backButtonPlaceholder: {
-    width: 24 + 20, // Match the width of the back button (icon size + padding) for centering
+    width: 24 + 20,
   },
   form: {
     paddingBottom: 80,
@@ -647,7 +644,7 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   inputError: {
-    borderColor: "#FF6B6B", // Red border for error
+    borderColor: "#FF6B6B",
   },
   errorFieldText: {
     color: "#FF6B6B",
@@ -719,7 +716,7 @@ const styles = StyleSheet.create({
     fontFamily: "Poppins_400Regular",
   },
   scrollContent: {
-    paddingBottom: 80, // Add padding to ensure content is not hidden by keyboard on scroll
+    paddingBottom: 80,
   },
 });
 

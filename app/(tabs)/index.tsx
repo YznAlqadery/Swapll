@@ -8,9 +8,9 @@ import {
   Image,
   ActivityIndicator,
   StatusBar,
-  LogBox, // LogBox imported here for demonstration, but best placed in App.js/index.js
+  LogBox,
 } from "react-native";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { useQuery } from "@tanstack/react-query";
@@ -22,17 +22,15 @@ import Divider from "@/components/Divider";
 import { useRouter } from "expo-router";
 import SkeletonOfferItem from "@/components/SkeletonOfferItem";
 
-// --- GLOBAL WARNING SUPPRESSION (Ideally, put this in your app's entry file like App.js or index.js) ---
 LogBox.ignoreLogs([
   "Warning: Text strings must be rendered within a <Text> component.",
   "Warning: Encountered two children with the same key,",
 ]);
-// --- END GLOBAL WARNING SUPPRESSION ---
 
 export interface Offer {
   username: string;
-  id: string; // Ensure ID is string for keyExtractor, or convert if it's number
-  ownerId: number;
+  id: string;
+  ownerId: number; // Changed to lowercase 'o' to match typical JSON serialization from Java
   title: string;
   image: string;
   description: string;
@@ -44,8 +42,6 @@ export interface Offer {
   categoryId: number;
 }
 
-// Define the structure for the logged-in user data
-// IMPORTANT: Ensure this matches the exact structure returned by your /api/user/myinfo endpoint
 interface LoggedInUser {
   id: number;
   userName: string;
@@ -66,7 +62,6 @@ type Category = {
   title: string;
 };
 
-// OfferItem Component (Refactored for Image Loading AND Description Truncation)
 const OfferItem = React.memo(({ item }: { item: Offer }) => {
   const router = useRouter();
   const [imageLoading, setImageLoading] = useState(true);
@@ -76,7 +71,7 @@ const OfferItem = React.memo(({ item }: { item: Offer }) => {
     if (item.image && !imageError) {
       return { uri: item.image };
     }
-    return require("@/assets/images/no_image.jpeg"); // Fallback no image
+    return require("@/assets/images/no_image.jpeg");
   };
 
   return (
@@ -130,7 +125,6 @@ const OfferItem = React.memo(({ item }: { item: Offer }) => {
   );
 });
 
-// API Calls (Ensure process.env.EXPO_PUBLIC_API_URL is defined in your .env file or app.config.js)
 export const fetchCategories = async (userToken: string) => {
   const response = await fetch(
     `${process.env.EXPO_PUBLIC_API_URL}/api/categories`,
@@ -158,6 +152,22 @@ export const fetchRecentOffers = async (userToken: string) => {
   return response.json();
 };
 
+// This function now explicitly filters out offers by the given userId
+// const filterOffersByUserId = (offers: Offer[], userId: number) => {
+//   console.log("Filtering offers. Current userId:", userId);
+//   const filtered = offers.filter((offer) => {
+//     // Access ownerId with lowercase 'o'
+//     console.log(
+//       `  Offer ID: ${offer.id}, Offer ownerId: ${
+//         offer.ownerId
+//       }, Is different? ${offer.ownerId !== userId}`
+//     );
+//     return offer.ownerId !== userId; // Filter OUT offers by this user
+//   });
+//   console.log("Filtered offers count:", filtered.length);
+//   return filtered;
+// };
+
 export const fetchOffersByCategory = async (
   userToken: string,
   categoryId: number
@@ -170,11 +180,10 @@ export const fetchOffersByCategory = async (
   return response.json();
 };
 
-// NEW API CALL FOR USER INFO
 export const fetchUserInfo = async (
   userToken: string
 ): Promise<LoggedInUser> => {
-  console.log("Fetching user info with token:", userToken); // For debugging purposes
+  console.log("Fetching user info with token:", userToken);
   const response = await fetch(
     `${process.env.EXPO_PUBLIC_API_URL}/api/user/myinfo`,
     {
@@ -183,7 +192,6 @@ export const fetchUserInfo = async (
   );
   if (!response.ok) {
     const errorText = await response.text();
-    // Log the full error response for debugging
     console.error(`API Error for /myinfo (${response.status}): ${errorText}`);
     throw new Error(
       `Failed fetching user info: ${errorText || response.statusText}`
@@ -193,22 +201,16 @@ export const fetchUserInfo = async (
 };
 
 const Index = () => {
-  const { user: token } = useAuth(); // Auth token from context
-  // Use LoggedInUserContext to manage user state directly
+  const { user: token } = useAuth();
   const { user: loggedInUser, setUser } = useLoggedInUser();
+
   const [userInfoLoading, setUserInfoLoading] = useState(true);
   const [userInfoError, setUserInfoError] = useState<Error | null>(null);
-  const [userInfoRefetching, setUserInfoRefetching] = useState(false); // Manually track refetching for user info
+  const [userInfoRefetching, setUserInfoRefetching] = useState(false);
 
-  const [categoryId, setCategoryId] = useState<number | null>(0); // 0 indicates "all categories" or default view
-  const [categoryName, setCategoryName] = useState("All Categories"); // Display name for the current category selection
+  const [categoryId, setCategoryId] = useState<number | null>(0);
+  const [categoryName, setCategoryName] = useState("All Categories");
 
-  // --- useEffect for User Info Fetching ---
-  // We're using useQuery below, so this manual useEffect can be simplified or removed
-  // if `loggedInUser` context's `setUser` correctly reflects the useQuery data.
-  // For robustness, keeping the pattern if `useLoggedInUser` isn't fully integrated with RQ.
-
-  // Use useQuery for loggedInUser info, which integrates with React Query's caching/invalidation
   const {
     data: fetchedLoggedInUser,
     isLoading: isUserInfoLoadingQuery,
@@ -216,17 +218,15 @@ const Index = () => {
     error: userInfoQueryError,
     refetch: refetchUserInfoQuery,
   } = useQuery<LoggedInUser>({
-    queryKey: ["loggedInUser"], // This is the key invalidated by TransactionsPage
+    queryKey: ["loggedInUser"],
     queryFn: () => fetchUserInfo(token || ""),
-    enabled: !!token, // Only run this query if a token exists
-    staleTime: 5 * 60 * 1000, // Data considered fresh for 5 minutes
-    // You can also add onError and onSuccess callbacks here if needed
+    enabled: !!token,
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Effect to update the `loggedInUser` context state when the query data changes
   useEffect(() => {
     if (!token) {
-      setUser(null); // Clear user if token is gone
+      setUser(null);
       setUserInfoLoading(false);
       setUserInfoError(null);
       return;
@@ -241,7 +241,7 @@ const Index = () => {
         setUser(null);
       } else if (fetchedLoggedInUser) {
         setUser(fetchedLoggedInUser);
-        setUserInfoError(null); // Clear previous errors on successful fetch
+        setUserInfoError(null);
       }
     }
   }, [
@@ -252,7 +252,6 @@ const Index = () => {
     setUser,
   ]);
 
-  // Categories
   const {
     data: categories,
     isLoading: categoriesLoading,
@@ -265,7 +264,6 @@ const Index = () => {
     staleTime: 5 * 60 * 1000,
   });
 
-  // Top Rated Offers
   const {
     data: topRatedOffers,
     isLoading: topRatedOffersLoading,
@@ -274,11 +272,10 @@ const Index = () => {
   } = useQuery<Offer[]>({
     queryKey: ["top-rated-offers"],
     queryFn: () => fetchTopRatedOffers(token || ""),
-    enabled: !!token && categoryId === 0, // Only fetch if "All Categories" is selected
+    enabled: !!token && categoryId === 0,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Recent Offers
   const {
     data: recentOffers,
     isLoading: recentOffersLoading,
@@ -287,11 +284,10 @@ const Index = () => {
   } = useQuery<Offer[]>({
     queryKey: ["recent-offers"],
     queryFn: () => fetchRecentOffers(token || ""),
-    enabled: !!token && categoryId === 0, // Only fetch if "All Categories" is selected
+    enabled: !!token && categoryId === 0,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Offers by Category
   const {
     data: offersByCategory,
     isLoading: offersByCategoryLoading,
@@ -300,21 +296,18 @@ const Index = () => {
   } = useQuery<Offer[]>({
     queryKey: ["offers-by-category", categoryId],
     queryFn: () => fetchOffersByCategory(token || "", categoryId || 0),
-    enabled: !!token && categoryId !== 0, // Only fetch if a specific category is selected
+    enabled: !!token && categoryId !== 0,
     staleTime: 5 * 60 * 1000,
   });
 
-  // Combine refetching states for the main pull-to-refresh indicator
   const isPageRefreshing =
-    isUserInfoRefetchingQuery || // Use the useQuery refetching state
+    isUserInfoRefetchingQuery ||
     categoriesRefetching ||
     topRatedOffersRefetching ||
     recentOffersRefetching ||
     offersByCategoryRefetching;
 
-  // Handler for pull-to-refresh
   const handleRefresh = useCallback(() => {
-    // Trigger all relevant refetches
     refetchUserInfoQuery();
     refetchCategories();
     if (categoryId === 0) {
@@ -332,17 +325,15 @@ const Index = () => {
     refetchOffersByCategory,
   ]);
 
-  // Effect to update categoryName based on selected categoryId
   useEffect(() => {
     if (categoryId === 0) {
-      setCategoryName("Our Community's Favorites"); // Default text for main view
+      setCategoryName("Our Community's Favorites");
     } else if (categories && categoryId !== null) {
       const selectedCat = categories.find((cat) => cat.id === categoryId);
       setCategoryName(selectedCat ? selectedCat.title : "Unknown Category");
     }
   }, [categories, categoryId]);
 
-  // Prepare data for CategoryFlatlist, ensuring "All Categories" is first
   const categoriesForFlatlist = React.useMemo(() => {
     const allCategoriesOption = { id: 0, title: "All Categories" };
     return categories
@@ -350,9 +341,6 @@ const Index = () => {
       : [allCategoriesOption];
   }, [categories]);
 
-  // --- Conditional Rendering for Initial States ---
-
-  // Show a full-screen loader while user info is being fetched initially
   if (userInfoLoading) {
     return (
       <SafeAreaView style={styles.centeredLoading}>
@@ -362,8 +350,6 @@ const Index = () => {
     );
   }
 
-  // Handle error for user info fetch
-  // This could mean the token is expired or invalid
   if (userInfoError) {
     return (
       <SafeAreaView style={styles.centeredLoading}>
@@ -374,7 +360,7 @@ const Index = () => {
           {"\n"}Please try refreshing or logging in again.
         </Text>
         <TouchableOpacity
-          onPress={handleRefresh} // Use handleRefresh to re-attempt fetching all data
+          onPress={handleRefresh}
           style={{
             marginTop: 20,
             padding: 10,
@@ -390,8 +376,6 @@ const Index = () => {
     );
   }
 
-  // If loggedInUser is null/undefined after loading and no error, something went wrong
-  // (e.g., API returned 200 but with no data or unexpected shape)
   if (!loggedInUser) {
     return (
       <SafeAreaView style={styles.centeredLoading}>
@@ -401,30 +385,33 @@ const Index = () => {
           Could not retrieve user profile. Please ensure you are logged in
           correctly.
         </Text>
-        {/* You might want to trigger a logout/redirect to login here */}
       </SafeAreaView>
     );
   }
 
   // Helper function to render horizontal FlatLists of offers
+  // Added excludeCurrentUserOffers boolean to control filtering
   const renderOfferSection = (
     data: Offer[] | undefined,
-    isLoading: boolean, // This indicates initial loading for the section
-    title: string
+    isLoading: boolean,
+    title: string,
+    excludeCurrentUserOffers: boolean = true // Default to true for most sections
   ) => {
-    // Filter out offers owned by the current user (using loggedInUser.id)
-    const filteredData = data?.filter(
-      (offer) => offer.ownerId !== loggedInUser?.id
-    );
-    const hasData = filteredData && filteredData.length > 0;
+    let displayData = data;
+
+    // Apply filter only if excludeCurrentUserOffers is true
+    if (excludeCurrentUserOffers && loggedInUser?.id) {
+      displayData = data?.filter((offer) => offer.ownerId !== loggedInUser.id);
+    }
+
+    const hasData = displayData && displayData.length > 0;
 
     return (
       <View>
         <Text style={styles.header}>{title}</Text>
-        {/* Show skeleton only for initial section load, not during pull-to-refresh */}
         {isLoading && !isPageRefreshing ? (
           <FlatList
-            data={[1, 2, 3]} // Placeholder data for skeleton items
+            data={[1, 2, 3]}
             renderItem={() => <SkeletonOfferItem />}
             keyExtractor={(item) => `skeleton-${item}`}
             horizontal
@@ -432,9 +419,8 @@ const Index = () => {
             contentContainerStyle={styles.skeletonListContainer}
           />
         ) : hasData ? (
-          // Render actual offers when data is available
           <FlatList
-            data={filteredData}
+            data={displayData} // Use displayData which is already filtered
             renderItem={({ item }) => <OfferItem item={item} />}
             keyExtractor={(item) => item.id}
             horizontal
@@ -442,7 +428,6 @@ const Index = () => {
             contentContainerStyle={styles.offersListContainer}
           />
         ) : (
-          // Display message if no offers are available for this section
           <Text style={styles.noOffersText}>No offers available.</Text>
         )}
       </View>
@@ -453,15 +438,12 @@ const Index = () => {
     <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#fff" }}>
       <StatusBar barStyle="dark-content" />
       <SafeAreaView style={styles.container}>
-        {/* Main FlatList acting as a ScrollView for the header content */}
         <FlatList
-          data={[]} // Empty data, as content is rendered in ListHeaderComponent
-          renderItem={null} // No individual items to render from `data`
-          ListEmptyComponent={null} // Don't show "No items" when data is empty
+          data={[]}
+          renderItem={null}
+          ListEmptyComponent={null}
           ListHeaderComponent={
-            // This is where all your main content is rendered
             <View>
-              {/* Header Row: Logo and Balance */}
               <View style={styles.headerRow}>
                 <Image
                   source={require("@/assets/images/swapll_home.png")}
@@ -472,17 +454,16 @@ const Index = () => {
                     style={styles.coinImage}
                     source={require("@/assets/images/swapll_coin.png")}
                   />
-                  {/* Use loggedInUser.balance directly as we've checked for its existence */}
+
                   <Text style={styles.balanceText}>{loggedInUser.balance}</Text>
                 </View>
               </View>
 
               <Divider />
 
-              {/* Popular Categories Section */}
               <Text style={styles.header}>Popular Categories</Text>
               <View style={{ height: 70 }}>
-                {categoriesLoading && !isPageRefreshing ? ( // Show spinner for initial category load
+                {categoriesLoading && !isPageRefreshing ? (
                   <ActivityIndicator size="small" color="#008B8B" />
                 ) : categoriesForFlatlist.length > 0 ? (
                   <CategoryFlatlist
@@ -497,37 +478,36 @@ const Index = () => {
 
               <Divider />
 
-              {/* Conditional Offer Sections based on Category Selection */}
               {categoryId !== 0 ? (
-                // Display offers by selected category when a category is chosen
                 renderOfferSection(
                   offersByCategory,
                   offersByCategoryLoading,
-                  `Offers in ${categoryName}`
+                  `Offers in ${categoryName}`,
+                  true // Exclude current user's offers from category view
                 )
               ) : (
-                // Display Top Rated and Recent Offers when "All Categories" is selected
                 <>
                   {renderOfferSection(
                     topRatedOffers,
                     topRatedOffersLoading,
-                    categoryName // This will be "Our Community's Favorites"
+                    categoryName,
+                    true // Exclude current user's offers from top rated
                   )}
                   <Divider />
                   {renderOfferSection(
                     recentOffers,
                     recentOffersLoading,
-                    "Latest Deals for You"
+                    "Latest Deals for You",
+                    true // Exclude current user's offers here
                   )}
                 </>
               )}
 
-              {/* Spacer at the bottom for better scrolling experience */}
               <View style={{ height: 60 }} />
             </View>
           }
-          onRefresh={handleRefresh} // Pull-to-refresh handler
-          refreshing={isPageRefreshing} // Indicates if refresh is in progress
+          onRefresh={handleRefresh}
+          refreshing={isPageRefreshing}
         />
       </SafeAreaView>
     </GestureHandlerRootView>
@@ -568,7 +548,7 @@ const styles = StyleSheet.create({
     width: 25,
     height: 25,
     marginRight: 4,
-    borderRadius: 50, // For circular coin
+    borderRadius: 50,
   },
   balanceText: {
     color: "#fff",

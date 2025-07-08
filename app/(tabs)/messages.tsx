@@ -1,4 +1,3 @@
-// app/(tabs)/messages.tsx
 import React from "react";
 import {
   View,
@@ -129,6 +128,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F0F7F7",
     paddingTop: 16,
+    marginBottom: 70,
   },
   headerContainer: {
     flexDirection: "row",
@@ -145,39 +145,39 @@ const styles = StyleSheet.create({
   transactionsButton: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#E0FFFF", // Light background for the button
-    paddingVertical: 10, // Increased padding
-    paddingHorizontal: 15, // Increased padding
-    borderRadius: 25, // More rounded pill shape
+    backgroundColor: "#E0FFFF",
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    borderRadius: 25,
     borderWidth: 1,
     borderColor: "#008B8B",
   },
   transactionsButtonText: {
     color: "#008B8B",
-    fontSize: 15, // Slightly larger text
+    fontSize: 15,
     fontWeight: "600",
-    marginRight: 6, // More space
+    marginRight: 6,
     fontFamily: "Poppins_500Medium",
   },
   messageBox: {
     backgroundColor: "#fff",
-    paddingVertical: 18, // More vertical padding
-    paddingHorizontal: 22, // More horizontal padding
-    borderRadius: 18, // More rounded corners
-    marginBottom: 16, // More space between items
-    marginHorizontal: 12, // Add horizontal margin to the cards themselves
+    paddingVertical: 18,
+    paddingHorizontal: 22,
+    borderRadius: 18,
+    marginBottom: 16,
+    marginHorizontal: 12,
     borderWidth: 1,
-    borderColor: "#E0F2F2", // Lighter border color
+    borderColor: "#E0F2F2",
     shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 }, // Slightly more pronounced shadow
-    shadowOpacity: 0.15, // Increased opacity
-    shadowRadius: 4, // Increased radius
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
     elevation: 4, // For Android shadow
   },
   messageHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    marginBottom: 8, // More space between header and message preview
+    marginBottom: 8,
     alignItems: "center",
     fontFamily: "Poppins_400Regular",
   },
@@ -186,36 +186,36 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   profileImage: {
-    width: 40, // Larger profile picture
+    width: 40,
     height: 40,
-    borderRadius: 20, // Half of width/height for perfect circle
-    marginRight: 12, // More space
-    backgroundColor: "#D3D3D3", // Placeholder background for image
+    borderRadius: 20,
+    marginRight: 12,
+    backgroundColor: "#D3D3D3",
   },
   sender: {
-    fontSize: 17, // Larger font
+    fontSize: 17,
     fontWeight: "700",
     color: "#008B8B",
     fontFamily: "Poppins_700Bold",
   },
   time: {
-    fontSize: 13, // Slightly larger time font
-    color: "#777", // Softer color for time
+    fontSize: 13,
+    color: "#777",
     fontFamily: "Poppins_400Regular",
   },
   lastMessagePreview: {
     fontSize: 15,
-    fontWeight: "500", // Medium weight
-    color: "#555", // Softer color for message preview
+    fontWeight: "500",
+    color: "#555",
     fontFamily: "Poppins_500Medium",
   },
   loadingIndicator: {
-    flex: 1, // Take full space for centering
+    flex: 1,
     justifyContent: "center",
     alignItems: "center",
   },
   errorText: {
-    color: "#D9534F", // A clear error red
+    color: "#D9534F",
     textAlign: "center",
     marginTop: 40,
     fontSize: 16,
@@ -224,15 +224,15 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     textAlign: "center",
-    marginTop: 60, // More space from top
-    color: "#999", // Softer grey
-    fontSize: 18, // Larger font for empty state
+    marginTop: 60,
+    color: "#999",
+    fontSize: 18,
     paddingHorizontal: 20,
     fontFamily: "Poppins_400Regular",
   },
   flatListContent: {
     paddingBottom: 20,
-    paddingHorizontal: 8, // Adjust as per `messageBox` marginHorizontal
+    paddingHorizontal: 8,
   },
 });
 

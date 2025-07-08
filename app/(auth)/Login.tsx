@@ -18,7 +18,7 @@ import {
   ScrollView,
 } from "react-native-gesture-handler";
 import { useAuth } from "@/context/AuthContext";
-import { useRevalidateQueries } from "@/hooks/useRevalidate";
+
 import {
   fetchCategories,
   fetchRecentOffers,
@@ -28,6 +28,7 @@ import { useQueryClient } from "@tanstack/react-query";
 
 const Login = () => {
   const { user, setUser } = useAuth();
+  const queryClient = useQueryClient();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,10 +36,8 @@ const Login = () => {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState<string | null>(null);
-  const queryClient = useQueryClient();
   const router = useRouter();
 
-  // Add this useEffect to observe the context user state
   useEffect(() => {
     console.log("Context User state changed:", user);
   }, [user]);
@@ -67,22 +66,21 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok && setUser) {
-        console.log("User logged in successfully:", data);
-        console.log("Token received:", data.token);
         setUser(data.token);
 
-        // Prefetch categories and offers
-        const categories = await queryClient.fetchQuery({
+        queryClient.invalidateQueries({ queryKey: ["loggedInUser"] });
+
+        await queryClient.fetchQuery({
           queryKey: ["categories"],
           queryFn: () => fetchCategories(data.token),
         });
 
-        const topRatedOffers = await queryClient.fetchQuery({
+        await queryClient.fetchQuery({
           queryKey: ["top-rated-offers"],
           queryFn: () => fetchTopRatedOffers(data.token),
         });
 
-        const recentOffers = await queryClient.fetchQuery({
+        await queryClient.fetchQuery({
           queryKey: ["recent-offers"],
           queryFn: () => fetchRecentOffers(data.token),
         });
@@ -173,7 +171,7 @@ const Login = () => {
                     onPress={() => setShowPassword(!showPassword)}
                   >
                     <FontAwesome
-                      name={showPassword ? "eye-slash" : "eye"}
+                      name={showPassword ? "eye" : "eye-slash"}
                       size={20}
                       color="#008B8B"
                     />

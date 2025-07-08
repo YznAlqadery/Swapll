@@ -9,8 +9,8 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-  Modal, // Import Modal for the custom component
-  Pressable, // Import Pressable for modal backdrop
+  Modal,
+  Pressable,
 } from "react-native";
 import React, { useState } from "react";
 import { FontAwesome } from "@expo/vector-icons";
@@ -28,13 +28,12 @@ type Category = {
   title: string;
 };
 
-// --- Custom Alert Modal Component (Copied from OfferDetails.tsx pattern) ---
 interface CustomAlertModalProps {
   isVisible: boolean;
   title: string;
   message: string;
   onClose: () => void;
-  onConfirm?: () => void; // Optional callback for "OK" button
+  onConfirm?: () => void;
 }
 
 const CustomAlertModal: React.FC<CustomAlertModalProps> = ({
@@ -88,21 +87,18 @@ const AddPost = () => {
 
   const categories = queryClient.getQueryData(["categories"]) as Category[];
 
-  // MODIFIED: Changed 'key' to match 'value' for enum consistency
   const offerTypes = [
     { key: "SKILL", value: "SKILL" },
     { key: "SERVICE", value: "SERVICE" },
     { key: "ITEM", value: "ITEM" },
   ];
 
-  // MODIFIED: Changed 'key' to match 'value' for enum consistency
   const paymentMethods = [
     { key: "SWAP", value: "SWAP" },
     { key: "COIN", value: "COIN" },
     { key: "BOTH", value: "BOTH" },
   ];
 
-  // --- State for Custom Alert Modal ---
   const [isAlertVisible, setIsAlertVisible] = useState(false);
   const [alertTitle, setAlertTitle] = useState("");
   const [alertMessage, setAlertMessage] = useState("");
@@ -117,7 +113,7 @@ const AddPost = () => {
   ) => {
     setAlertTitle(title);
     setAlertMessage(message);
-    setAlertOnConfirm(() => onConfirm); // Set the function for the callback
+    setAlertOnConfirm(() => onConfirm);
     setIsAlertVisible(true);
   };
 
@@ -138,7 +134,6 @@ const AddPost = () => {
   const removeImage = () => setImage(undefined);
 
   const handleAddOffer = async () => {
-    // Basic validation
     if (
       !title ||
       !description ||
@@ -146,13 +141,11 @@ const AddPost = () => {
       !categoryId ||
       !offerType ||
       !paymentMethod ||
-      !deliveryTime ||
-      !image
+      !deliveryTime
     ) {
-      // Using custom modal for validation error
       showAlert(
         "Missing Information",
-        "Please fill in all the required fields, including adding an image, before submitting your offer."
+        "Please fill in all the required fields before submitting your offer. Image is optional."
       );
       return;
     }
@@ -161,8 +154,8 @@ const AddPost = () => {
       title,
       description,
       price,
-      type: offerType, // This will now be "SKILL", "ITEM", or "SERVICE"
-      paymentMethod, // This will now be "SWAP", "COIN", or "BOTH"
+      type: offerType,
+      paymentMethod,
       deliveryTime,
       categoryId,
     };
@@ -176,7 +169,7 @@ const AddPost = () => {
     if (image) {
       const fileInfo = await FileSystem.getInfoAsync(image);
       if (fileInfo.exists) {
-        const filename = image.split("/").pop() ?? "profile.jpg";
+        const filename = image.split("/").pop() ?? "image.jpg"; // Default to image.jpg
         const ext = filename.split(".").pop()?.toLowerCase();
         const mimeType =
           ext === "png"
@@ -201,7 +194,6 @@ const AddPost = () => {
           method: "POST",
           headers: {
             Authorization: `Bearer ${token}`,
-            // 'Content-Type': 'multipart/form-data' is usually set automatically by FormData
           },
           body: formData,
         }
@@ -226,12 +218,10 @@ const AddPost = () => {
 
       const data = await response.json();
       console.log("Offer added:", data);
-      // Using custom modal for success message
       showAlert(
         "Offer Added",
         "Your offer has been successfully posted!",
         async () => {
-          // Reset form fields only on success and after user acknowledges
           setTitle("");
           setDescription("");
           setPrice(0);
@@ -241,8 +231,8 @@ const AddPost = () => {
           setPaymentMethod("");
           setDeliveryTime("");
 
-          await revalidate(categoryId ?? 0); // Revalidate offers based on category
-          router.replace("/(tabs)"); // Navigate to YourOffers page
+          await revalidate(categoryId ?? 0);
+          router.replace("/(tabs)");
         }
       );
     } catch (error: any) {
@@ -268,7 +258,6 @@ const AddPost = () => {
           "Could not add your offer. Please check your internet connection.";
       }
 
-      // Using custom modal for submission failure
       showAlert("Submission Failed", userFriendlyMessage);
     } finally {
       setIsLoading(false);
@@ -291,7 +280,7 @@ const AddPost = () => {
             <SelectList
               setSelected={(val: any) => setOfferType(val)}
               data={offerTypes}
-              save="value" // Keep save="value", but now key and value are the same.
+              save="value"
               fontFamily="Poppins_400Regular"
               boxStyles={styles.input}
               placeholder="Select offer type"
@@ -304,7 +293,7 @@ const AddPost = () => {
                 />
               }
               search={false}
-              defaultOption={offerTypes.find((opt) => opt.value === offerType)} // Maintain selection
+              defaultOption={offerTypes.find((opt) => opt.value === offerType)}
             />
             <View style={{ height: 70, marginLeft: -10 }}>
               <CategoryFlatlist
@@ -379,7 +368,7 @@ const AddPost = () => {
             <SelectList
               setSelected={(val: any) => setPaymentMethod(val)}
               data={paymentMethods}
-              save="value" // Keep save="value", but now key and value are the same.
+              save="value"
               boxStyles={styles.input}
               fontFamily="Poppins_400Regular"
               placeholder="Select payment method"
@@ -394,7 +383,7 @@ const AddPost = () => {
               search={false}
               defaultOption={paymentMethods.find(
                 (opt) => opt.value === paymentMethod
-              )} // Maintain selection
+              )}
             />
 
             <TouchableOpacity
@@ -547,7 +536,7 @@ const modalStyles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 4,
     elevation: 5,
-    width: "80%", // Adjust width as needed
+    width: "80%",
   },
   modalTitle: {
     marginBottom: 15,

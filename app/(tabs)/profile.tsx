@@ -1,4 +1,3 @@
-import React, { useContext, useState } from "react";
 import {
   View,
   Text,
@@ -11,7 +10,7 @@ import {
   Modal,
   Pressable,
 } from "react-native";
-import * as FileSystem from "expo-file-system";
+
 import { AuthContext } from "@/context/AuthContext";
 import {
   MaterialIcons,
@@ -28,18 +27,22 @@ import Toast, {
   BaseToastProps,
   ErrorToast,
 } from "react-native-toast-message";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useQueryClient } from "@tanstack/react-query";
+import { useContext, useState } from "react";
 
 interface User {
-  myReferralCode: string;
-  firstName: string;
-  lastName: string;
   userName: string;
   email: string;
-  phone: string;
-  address: string;
-  referralCode: string | null;
-  profilePic: string;
-  bio: string | null;
+  balance: number;
+  referralCode?: string;
+  myReferralCode?: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  address?: string;
+  bio?: string;
+  profilePic?: string;
 }
 
 interface ConfirmationModalProps {
@@ -121,6 +124,7 @@ const Profile = () => {
   const authContext = useContext(AuthContext);
   const { user } = useLoggedInUser();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   const [showLogoutModal, setShowLogoutModal] = useState(false);
 
@@ -128,9 +132,15 @@ const Profile = () => {
     setShowLogoutModal(true);
   };
 
-  const confirmLogout = () => {
+  const confirmLogout = async () => {
     setShowLogoutModal(false);
+
+    queryClient.invalidateQueries({ queryKey: ["loggedInUser"] });
+
     authContext?.setUser(null);
+
+    await AsyncStorage.clear();
+
     router.replace("/(auth)/Login");
   };
 
@@ -643,7 +653,7 @@ const modalStyles = StyleSheet.create({
     fontFamily: "Poppins_600SemiBold",
   },
   confirmButton: {
-    backgroundColor: "#D9534F", // A color indicating caution/danger
+    backgroundColor: "#D9534F",
     borderRadius: 10,
     paddingVertical: 12,
     paddingHorizontal: 25,

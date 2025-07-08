@@ -227,9 +227,8 @@ const OfferDetails = () => {
     },
     onError: (err: Error) => {
       let errorMessage = "An unexpected error occurred. Please try again.";
-      // Check if the error message contains "Insufficient funds"
       if (err.message.includes("Insufficient funds")) {
-        errorMessage = "Insufficient funds"; // Set the specific message
+        errorMessage = "Insufficient funds";
       } else {
         errorMessage = err.message || errorMessage;
       }
@@ -242,6 +241,10 @@ const OfferDetails = () => {
     !isOwner && loggedInUser?.id && data?.id && data?.ownerId;
 
   const RenderHeader = () => {
+    // State for the main offer image
+    const [mainImageLoading, setMainImageLoading] = useState(true);
+    const [mainImageError, setMainImageError] = useState(false);
+
     if (!data) return null;
 
     const getPaymentMethodString = (method: string | undefined) => {
@@ -257,18 +260,32 @@ const OfferDetails = () => {
       }
     };
 
+    const getMainImageSource = () => {
+      if (data.image && !mainImageError) {
+        return { uri: data.image };
+      }
+      return require("@/assets/images/no_image.jpeg");
+    };
+
     return (
       <>
         <View style={styles.imageWrapper}>
-          {data?.image ? (
-            <Image source={{ uri: data.image }} style={styles.offerImage} />
-          ) : (
-            <Image
-              source={require("@/assets/images/no_image.jpeg")}
-              style={styles.offerImage}
-              resizeMode="cover"
-            />
+          {mainImageLoading && data.image && !mainImageError && (
+            <View style={styles.loadingImage}>
+              <ActivityIndicator color="#008b8b" size="large" />
+            </View>
           )}
+          <Image
+            source={getMainImageSource()} // Use the dynamic image source
+            style={styles.offerImage}
+            resizeMode="cover"
+            onLoadStart={() => setMainImageLoading(true)}
+            onLoadEnd={() => setMainImageLoading(false)}
+            onError={() => {
+              setMainImageLoading(false);
+              setMainImageError(true);
+            }}
+          />
 
           <TouchableOpacity
             style={styles.backButton}
@@ -332,12 +349,11 @@ const OfferDetails = () => {
               color="#008B8B"
               style={{ marginRight: 6 }}
             />
-            {typeof data?.deliveryTime === "number" && data.deliveryTime > 2 ? (
-              <Text style={styles.deliveryText}>
-                {data.deliveryTime - 2}–{data.deliveryTime + 2} days •
-              </Text>
+            {/* Adjusted deliveryTime display logic */}
+            {data?.deliveryTime ? (
+              <Text style={styles.deliveryText}>{data.deliveryTime} •</Text>
             ) : (
-              <Text style={styles.deliveryText}>Very fast delivery •</Text>
+              <Text style={styles.deliveryText}>Delivery time N/A •</Text>
             )}
 
             <View style={styles.priceContainer}>
@@ -402,12 +418,10 @@ const OfferDetails = () => {
         <Text style={styles.sectionTitle}>Picks for you 🔥</Text>
         <FlatList
           data={offersByCategory?.filter((item: any) => item.id !== data?.id)}
-          keyExtractor={(item, index) =>
-            item.id?.toString() || `offer-${index}`
-          }
+          keyExtractor={(item) => item.id.toString()} // Ensure key is string
           renderItem={({ item }) => (
             <OfferCard
-              id={item.id}
+              id={item.id} // Pass id as string as per Offer interface
               title={item.title}
               price={item.price}
               image={item.image}
@@ -705,6 +719,16 @@ const styles = StyleSheet.create({
     color: "#008B8B",
     fontSize: 15,
     fontFamily: "Poppins_600SemiBold",
+  },
+  loadingImage: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "rgba(255, 255, 255, 0.7)",
   },
   startTransactionButton: {
     backgroundColor: "#20B2AA",

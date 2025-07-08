@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Modal,
   Pressable,
+  Platform,
 } from "react-native";
 import React, { useEffect, useState } from "react";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -146,7 +147,7 @@ const ContinueSignUp = () => {
 
       const data = await response.json();
       if (setUser) {
-        setUser(data.token);
+        setUser(data);
       }
 
       queryClient.prefetchQuery({
@@ -181,19 +182,57 @@ const ContinueSignUp = () => {
     setCheckingReferral(true);
     setReferralError("");
     try {
-      const response = await fetch(
-        `${process.env.EXPO_PUBLIC_API_URL}/api/user/ref/${code}`
-      );
+      const apiUrl = `${process.env.EXPO_PUBLIC_API_URL}/api/user/ref/${code}`;
+      console.log(`[Referral Check] Fetching from URL: ${apiUrl}`);
+
+      const response = await fetch(apiUrl);
+      console.log(`[Referral Check] Response Status: ${response.status}`);
+      console.log(`[Referral Check] Response OK: ${response.ok}`);
+
       if (!response.ok) {
+        const errorDetails = await response.text();
+        console.error(
+          `[Referral Check] Error Response Status: ${response.status}`,
+          `Status Text: ${response.statusText}`,
+          `Body: ${errorDetails}`
+        );
         throw new Error("Referral not found");
       }
+
       const username = await response.text();
-      setReferralUser(username);
+      console.log(
+        `[Referral Check] Raw successful response text: "${username}"`
+      );
+
+      // Define keywords that indicate an invalid referral even with a 200 OK status
+      const invalidReferralKeywords = ["not recognized", "not found", "oops"];
+
+      // Check if the response is empty, "null", or contains invalid referral keywords
+      if (
+        !username ||
+        username.trim() === "" ||
+        username.trim().toLowerCase() === "null" ||
+        invalidReferralKeywords.some((keyword) =>
+          username.toLowerCase().includes(keyword)
+        )
+      ) {
+        setReferralUser(null);
+        setReferralError("Invalid referral code");
+        console.log(
+          "[Referral Check] User not found (backend returned empty/null/error string with 200 OK)."
+        );
+      } else {
+        setReferralUser(username);
+        setReferralError(""); // Clear any previous error
+        console.log(`[Referral Check] User found: "${username}"`);
+      }
     } catch (err: any) {
+      console.error("[Referral Check] Catch block error:", err.message);
       setReferralUser(null);
-      setReferralError(err.message || "Invalid referral code");
+      setReferralError(err.message || "An error occurred checking referral.");
     } finally {
       setCheckingReferral(false);
+      console.log("[Referral Check] Finished checking referral.");
     }
   };
 
@@ -282,23 +321,24 @@ const ContinueSignUp = () => {
             </Text>
           )}
 
-          {referralUser &&
-            referralUser.length > 0 && ( // Check for non-empty string
-              <View style={styles.referralBox}>
-                <Text
-                  style={{
-                    color: "#008b8b",
-                    fontFamily: "Poppins_400Regular",
-                  }}
-                >
-                  🟢 Nice! Referred by{" "}
-                  <Text style={{ fontFamily: "Poppins_700Bold" }}>
-                    {referralUser}
-                  </Text>
+          {/* Only show referralUser if it's not null AND has content */}
+          {referralUser && referralUser.length > 0 && (
+            <View style={styles.referralBox}>
+              <Text
+                style={{
+                  color: "#008b8b",
+                  fontFamily: "Poppins_400Regular",
+                }}
+              >
+                🟢 Nice! Referred by{" "}
+                <Text style={{ fontFamily: "Poppins_700Bold" }}>
+                  {referralUser}
                 </Text>
-              </View>
-            )}
+              </Text>
+            </View>
+          )}
 
+          {/* Only show referralError if it's not empty */}
           {referralError ? (
             <Text
               style={{
@@ -361,7 +401,7 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#008B8B",
     marginBottom: 25,
-    fontFamily: "OpenSans_700Bold",
+    fontFamily: "Poppins_700Bold",
     textAlign: "center",
   },
   inputWrapper: {
@@ -374,7 +414,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: "#008B8B",
     marginBottom: 6,
-    fontFamily: "OpenSans_600SemiBold",
+    fontFamily: "Poppins_600SemiBold",
   },
   optionalLabel: {
     fontWeight: "400",
@@ -391,17 +431,38 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     fontFamily: "Poppins_400Regular",
     color: "#000",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 2,
+    // Platform-specific shadows
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 2,
+      },
+      web: {
+        boxShadow: "0px 1px 4px rgba(0, 0, 0, 0.1)",
+      },
+    }),
   },
   inputFocused: {
     borderColor: "#008B8B",
-    shadowColor: "#008B8B",
-    shadowOpacity: 0.4,
-    elevation: 5,
+    // Platform-specific focused shadows
+    ...Platform.select({
+      ios: {
+        shadowColor: "#008B8B",
+        shadowOpacity: 0.4,
+        shadowRadius: 4, // Added for consistency
+      },
+      android: {
+        elevation: 5,
+      },
+      web: {
+        boxShadow: "0px 1px 4px rgba(0, 139, 139, 0.4)",
+      },
+    }),
   },
   signUpBtn: {
     width: "100%",
@@ -418,7 +479,7 @@ const styles = StyleSheet.create({
   signUpText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontFamily: "OpenSans_600SemiBold",
+    fontFamily: "Poppins_600SemiBold",
   },
   referralBox: {
     backgroundColor: "#E0FFFF",
@@ -452,7 +513,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 20,
-    fontFamily: "OpenSans_700Bold",
+    fontFamily: "Poppins_700Bold",
     color: "#D9534F",
     marginBottom: 15,
     textAlign: "center",
@@ -474,7 +535,7 @@ const styles = StyleSheet.create({
   modalButtonText: {
     color: "#fff",
     fontSize: 16,
-    fontFamily: "OpenSans_600SemiBold",
+    fontFamily: "Poppins_600SemiBold",
   },
 });
 
